@@ -53,7 +53,7 @@ model User {
   redeemedReferralCodeId String?
   redeemedReferralCode ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [id])
 
-  tokenUsed Int @default(0)
+  tokenUsed Float @default(0.0)
   sessions Session[]
 
   createdAt DateTime @default(now())

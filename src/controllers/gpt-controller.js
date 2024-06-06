@@ -309,59 +309,70 @@ async function fetchGptCases(folderId, caseId) {
 }
 
 function formatCaseData(data) {
-  if (!data || typeof data !== 'object' || !data.content || typeof data.content !== 'string') {
-    throw new Error('Invalid data format');
+  if (
+    !data ||
+    typeof data !== "object" ||
+    !data.content ||
+    typeof data.content !== "string"
+  ) {
+    throw new Error("Invalid data format");
   }
 
   // Unescape the content string
   const unescapedContent = data.content
-    .replace(/\\n/g, '\n')
-    .replace(/\n(?!\s|And|&)/g, ' ') // Replace escaped newlines with actual newlines
-    .replace(/\\"/g, '"')    // Remove unnecessary backslashes before double quotes
+    .replace(/\\n/g, "\n")
+    .replace(/\n(?!\s|And|&)/g, " ") // Replace escaped newlines with actual newlines
+    .replace(/\\"/g, '"') // Remove unnecessary backslashes before double quotes
     .replace(/\\'/g, "'")
-    .replace(/\n\s{4,}/g, ' ')
-    .replace(/\n\s{4,}(?=\w{5,}\n|And\n|&\n)/g, ' ')
-    .replace(/\s+(and|&)\s+/g, ' $1 ')
-    .replace(/\n\s*\/\s*/g, '/')
-    .replace(/\n{4,}/g, '\n')
-    .replace(/(\d+)\)\s*,\s*/g, '$1),\n')
-    .replace(/([^.)\n])(\\n)/g, '$1 '); // Do not put a newline if there is no full stop before it
+    .replace(/\n\s{4,}/g, " ")
+    .replace(/\n\s{4,}(?=\w{5,}\n|And\n|&\n)/g, " ")
+    .replace(/\s+(and|&)\s+/g, " $1 ")
+    .replace(/\n\s*\/\s*/g, "/")
+    .replace(/\n{4,}/g, "\n")
+    .replace(/(\d+)\)\s*,\s*/g, "$1),\n")
+    .replace(/([^.)\n])(\\n)/g, "$1 "); // Do not put a newline if there is no full stop before it
 
   // Split the unescaped content into sections
-  const sections = unescapedContent.split('\n\n\n');
+  const sections = unescapedContent.split("\n\n\n");
   if (sections.length < 1) {
-    throw new Error('Invalid data format');
+    throw new Error("Invalid data format");
   }
 
   const formattedData = {
-    court: sections[0]?.trim() || '',
-    details: sections[1]?.trim() || '',
-    author: sections[2]?.trim() || '',
-    bench: sections[3]?.trim() || '',
-    caseNumber: sections[4]?.trim() || '',
-    judge: sections[5]?.trim() || '',
-    advocates: sections[6]?.trim() || '',
-    summary: sections.slice(7).join('\n\n').trim(),
+    court: sections[0]?.trim() || "",
+    details: sections[1]?.trim() || "",
+    author: sections[2]?.trim() || "",
+    bench: sections[3]?.trim() || "",
+    caseNumber: sections[4]?.trim() || "",
+    judge: sections[5]?.trim() || "",
+    advocates: sections[6]?.trim() || "",
+    summary: sections.slice(7).join("\n\n").trim(),
   };
 
   return formattedData;
 }
 
-
-
 async function fetchCaseDetails(req, res) {
   try {
+    const { _id } = req.body.client;
     const { folderId, caseId } = req.params;
     const data = await fetchGptCases(folderId, caseId);
+    const updatedTokenVault = await consumeToken(_id, 1);
+    console.log(updatedTokenVault);
+    const respo = formatCaseData(data);
+
     // Assuming SuccessResponse and ErrorResponse are functions that return the appropriate response formats
-    return res.status(StatusCodes.OK).json(SuccessResponse(formatCaseData(data)));
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ fetchedData: respo, ...updatedTokenVault }));
   } catch (error) {
     console.log(error);
     // Assuming ErrorResponse is a function that returns the appropriate error response format
-    res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse({}, error));
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
   }
 }
-
 
 async function fetchGptCaseQuery(body) {
   try {
@@ -394,7 +405,8 @@ async function queryCase(req, res) {
       courtName = "Supreme Court of India",
     } = req.body;
     if (!query) throw new AppError("Invalid query", StatusCodes.BAD_REQUEST);
-    const updatedTokenVault = await consumeToken(_id, 1);
+    const updatedTokenVault = await consumeToken(_id, 0.2);
+    console.log(updatedTokenVault);
     const response = await fetchGptCaseQuery({
       startDate,
       endDate,
