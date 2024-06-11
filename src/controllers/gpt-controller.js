@@ -424,6 +424,48 @@ async function queryCase(req, res) {
   }
 }
 
+//scrape data
+async function fetchCaseSummery(folderId, caseId, query) {
+  try {
+    console.log(folderId, caseId, query);
+    const response = await fetch(
+      `${FLASK_API_ENDPOINT}/overview/case/view_overview`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          folder_id: folderId,
+          case_id: caseId,
+          search_query: query,
+        }),
+      }
+    );
+    const parsed = await response.json();
+    return parsed;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Failed to make api request to gpt.claw",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+//get summery details
+async function getSummaryDetails(req, res) {
+  try {
+    const { folderId, caseId, query } = req.body;
+    const data = await fetchCaseSummery(folderId, caseId, query);
+
+    return res.json(data);
+  } catch (error) {
+    console.error("Error in getSummaryDetails:", error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
 async function deleteUserSessions(req, res) {
   try {
     const { _id } = req.body.client;
@@ -455,4 +497,6 @@ module.exports = {
   queryCase,
   getRelatedCases,
   deleteUserSessions,
+  fetchCaseSummery,
+  getSummaryDetails,
 };
