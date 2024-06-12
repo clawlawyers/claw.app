@@ -273,6 +273,13 @@ async function fetchGptUser(req, res) {
           ErrorResponse({}, { message: "Missing jwt for user authorization" })
         );
     const gptUser = await GptServices.fetchGptUser(_id);
+
+    if (gptUser) {
+      // Format the token values to one decimal place
+      gptUser.token.used = parseFloat(gptUser.token.used.toFixed(1));
+      // gptUser.token.total = parseFloat(gptUser.token.total.toFixed(1));
+    }
+
     return res.status(StatusCodes.OK).json(SuccessResponse(gptUser));
   } catch (error) {
     console.log(error);

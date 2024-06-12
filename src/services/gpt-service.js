@@ -126,14 +126,14 @@ async function consumeToken(mongoId, count = 1) {
 
       console.log(sender);
 
-      if (sender.tokenUsed > sender.plan.token)
+      if (sender.tokenUsed.toFixed(1) > sender.plan.token)
         throw new Error(
           `User does not have enough tokens, user - ${mongoId}, token to be used - ${count}`
         );
       return sender;
     });
     return {
-      token: { used: sender.tokenUsed, total: sender.plan.token },
+      token: { used: sender.tokenUsed.toFixed(1), total: sender.plan.token },
     };
   } catch (error) {
     console.log(error);
