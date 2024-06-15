@@ -409,8 +409,9 @@ async function queryCase(req, res) {
       startDate = "18-sep-01",
       endDate = "19-sep-20",
       query = "",
-      courtName = "Supreme Court of India",
+      courtName = "",
     } = req.body;
+
     if (!query) throw new AppError("Invalid query", StatusCodes.BAD_REQUEST);
     const updatedTokenVault = await consumeToken(_id, 0.2);
     console.log(updatedTokenVault);
