@@ -49,6 +49,35 @@ async function createGptUser(phoneNumber, mongoId) {
   }
 }
 
+async function incrementNumberOfSessions(mongoId, count = 1) {
+  try {
+    console.log("Incrementing number of sessions by", count);
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.update({
+        where: {
+          mongoId,
+        },
+        data: {
+          numberOfSessions: {
+            increment: count,
+          },
+        },
+      });
+
+      console.log("Updated user:", user);
+      return user;
+    });
+
+    return {
+      numberOfSessions: updatedUser.numberOfSessions,
+      mongoId: updatedUser.mongoId,
+    };
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error while incrementing number of sessions");
+  }
+}
+
 async function createModel(name, version) {
   try {
     const newModel = await prisma.model.create({
@@ -438,6 +467,35 @@ async function updateUserPlan(mongoId, newPlan) {
   }
 }
 
+async function updateStateLocation(mongoId, state) {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: {
+        mongoId,
+      },
+      data: {
+        StateLocation: state.location,
+      },
+      select: {
+        StateLocation: true,
+        // planName: true,
+        // tokenUsed: true,
+      },
+    });
+
+    return {
+      StateLocation: updatedUser.StateLocation,
+      // token: { used: updatedUser.tokenUsed, total: updatedUser.plan.token },
+    };
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while updating user plan",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function deleteSessions(mongoId, modelName) {
   try {
     await prisma.session.deleteMany({
@@ -460,6 +518,7 @@ module.exports = {
   createMessage,
   createSession,
   createGptUser,
+  incrementNumberOfSessions,
   createModel,
   createPlan,
   fetchSessions,
@@ -474,4 +533,5 @@ module.exports = {
   fetchLastMessagePair,
   updateUserPlan,
   deleteSessions,
+  updateStateLocation,
 };

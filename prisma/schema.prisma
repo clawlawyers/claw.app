@@ -41,6 +41,7 @@ model User {
   redeemedReferralCodeId  String?
   generatedReferralCode   ReferralCode? @relation("GeneratedByUser")
   sessions                Session[]
+  numberOfSessions        Int           @default(1)
   plan                    Plan          @relation(fields: [planName], references: [name])
   redeemedReferralCode    ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [id])
 }
