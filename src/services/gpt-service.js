@@ -71,6 +71,7 @@ async function incrementNumberOfSessions(mongoId, count = 1) {
     return {
       numberOfSessions: updatedUser.numberOfSessions,
       mongoId: updatedUser.mongoId,
+      StateLocation: updatedUser.StateLocation,
     };
   } catch (error) {
     console.log(error);

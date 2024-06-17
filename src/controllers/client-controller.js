@@ -112,6 +112,17 @@ async function verify(req, res) {
       1
     );
 
+    // console.log(sessions);
+
+    // console.log(sessions.StateLocation);
+
+    // console.log(
+    //   "this is updated client => ",
+    //   updatedClient,
+    //   " and this is its id => ",
+    //   updatedClient.id
+    // );
+
     const successResponse = SuccessResponse({
       newClient: false,
       verified: verified,
@@ -122,7 +133,10 @@ async function verify(req, res) {
       newGptUser: existingGptUser ? false : true,
       sessions: sessions.numberOfSessions,
       mongoId: sessions.mongoId,
+      stateLocation: sessions.StateLocation,
     });
+
+    // console.log(successResponse);
     return res.status(StatusCodes.OK).json(successResponse);
   } catch (error) {
     const errorResponse = ErrorResponse({}, error);
