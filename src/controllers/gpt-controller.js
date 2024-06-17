@@ -328,8 +328,11 @@ function formatCaseData(data) {
   // Unescape the content string
   const unescapedContent = data.content
     .replace(/\\n/g, "\n")
-    .replace(/\n(?!\s|And|&)/g, " ") // Replace escaped newlines with actual newlines
-    .replace(/\\"/g, '"') // Remove unnecessary backslashes before double quotes
+    .replace(/\t/g, " ")
+    .replace(/(\\t)+/g, (match) => "\t".repeat(match.length / 2))
+    .replace(/\\f/g, "\f")
+    .replace(/\n(?!\s|And|&)/g, " ")
+    .replace(/\\"/g, '"')
     .replace(/\\'/g, "'")
     .replace(/\n\s{4,}/g, " ")
     .replace(/\n\s{4,}(?=\w{5,}\n|And\n|&\n)/g, " ")
@@ -337,7 +340,7 @@ function formatCaseData(data) {
     .replace(/\n\s*\/\s*/g, "/")
     .replace(/\n{4,}/g, "\n")
     .replace(/(\d+)\)\s*,\s*/g, "$1),\n")
-    .replace(/([^.)\n])(\\n)/g, "$1 "); // Do not put a newline if there is no full stop before it
+    .replace(/([^.)\n])(\\n)/g, "$1 ");
 
   // Split the unescaped content into sections
   const sections = unescapedContent.split("\n\n\n");
