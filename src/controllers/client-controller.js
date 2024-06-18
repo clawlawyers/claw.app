@@ -75,6 +75,8 @@ async function verify(req, res) {
         verified,
       });
 
+      console.log(client.id);
+
       // create new corresponding gpt user
       await GptServices.createGptUser(phoneNumber, client.id);
       const data = {
@@ -83,11 +85,17 @@ async function verify(req, res) {
         registered: false,
         newGptUser: true,
         newClient: true,
+        sessions: 1,
+        mongoId: client.id,
+        stateLocation: "",
       };
       if (verified) {
         data.jwt = jwt;
         data.expiresAt = expiresAt;
       }
+
+      console.log(data);
+
       const successResponse = SuccessResponse(data);
       return res.status(StatusCodes.CREATED).json(successResponse);
     }
