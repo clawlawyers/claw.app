@@ -107,7 +107,7 @@ async function appendMessage(req, res) {
   }
 }
 
-async function fetchGptRelatedCases(context) {
+async function fetchGptRelatedCases(context, courtName) {
   console.log(context);
   try {
     const response = await fetch(`${FLASK_API_ENDPOINT}/search/relatedCases`, {
@@ -115,7 +115,7 @@ async function fetchGptRelatedCases(context) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ context }),
+      body: JSON.stringify({ context, courtName }),
     });
 
     if (!response.ok) {
@@ -144,8 +144,9 @@ async function getRelatedCases(req, res) {
       (acc, curr) => (acc = acc + " " + curr.text),
       ""
     );
+    const { courtName } = req.body;
 
-    const relatedCases = await fetchGptRelatedCases(context);
+    const relatedCases = await fetchGptRelatedCases(context, courtName);
 
     return res
       .status(StatusCodes.OK)
