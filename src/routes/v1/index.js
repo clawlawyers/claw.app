@@ -10,6 +10,7 @@ const BlogsRoutes = require('./blog-routes');
 const MailingListRoutes = require('./mailingList-routes');
 const CaseFinderRoutes = require('./case-routes');
 const PaymentRoutes = require('./payment-routes');
+const AdminRoute = require('./admin-routes')
 const CronRoutes = require('./cron-routes');
 const router = express.Router();
 
@@ -24,6 +25,7 @@ router.use('/blog', BlogsRoutes);
 router.use('/mailinglist', MailingListRoutes);
 router.use('/case', CaseFinderRoutes);
 router.use('/payment', PaymentRoutes);
+router.use('/admin', AdminRoute);
 router.use('/cron', CronRoutes);
 
 module.exports = router;

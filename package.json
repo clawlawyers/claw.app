@@ -4,13 +4,13 @@
   "description": "analytics platform backend for pgrkam",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "server": "nodemon index.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.504.0",
-    "@prisma/client": "^5.10.2",
+    "@prisma/client": "^5.15.0",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
@@ -31,6 +31,6 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.0",
-    "prisma": "^5.10.2"
+    "prisma": "^5.15.0"
   }
 }
