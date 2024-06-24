@@ -1,4 +1,5 @@
 const express = require("express");
+const express = require("express");
 const router = express.Router();
 const {
   getReferralCodes,
@@ -10,6 +11,11 @@ const {
   getMessages,
   getFeedbacks,
   getTopUsers,
+  createCoupon,
+  validateCoupon,
+  deactivateCoupon,
+  deleteCoupon,
+  allCoupon,
   generateReferralCode,
 } = require("../../controllers/admin-controller");
 
@@ -22,6 +28,11 @@ router.get("/session", getSessions);
 router.get("/message", getMessages);
 router.get("/feedback", getFeedbacks);
 router.get("/topusers", getTopUsers);
+router.post("/create", createCoupon);
+router.post("/validate", validateCoupon);
+router.post("/deactivate", deactivateCoupon);
+router.delete("/delete", deleteCoupon);
+router.get("/allcoupons", allCoupon);
 router.patch("/generateReferralCode", generateReferralCode);
 
 module.exports = router;

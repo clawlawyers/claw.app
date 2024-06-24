@@ -3,6 +3,7 @@ const { GptServices, ClientService } = require("../services");
 const { ErrorResponse, SuccessResponse } = require("../utils/common");
 const { StatusCodes } = require("http-status-codes");
 const User = require("../models/user"); // Adjust the path as per your project structure
+const Coupon = require("../models/coupon");
 
 async function generateReferralCode(req, res) {
   try {
@@ -275,6 +276,75 @@ async function getFeedbacks(req, res) {
   }
 }
 
+// Create a new coupon
+async function createCoupon(req, res) {
+  try {
+    const { code, discount, expirationDate } = req.body;
+    const newCoupon = new Coupon({ code, discount, expirationDate });
+    await newCoupon.save();
+    res.status(201).json(newCoupon);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+// Validate a coupon
+async function validateCoupon(req, res) {
+  try {
+    const { code } = req.body;
+    const coupon = await Coupon.findOne({ code, isActive: true });
+    if (!coupon)
+      return res.status(404).json({ message: "Coupon not found or inactive" });
+
+    if (new Date(coupon.expirationDate) < new Date()) {
+      return res.status(400).json({ message: "Coupon expired" });
+    }
+
+    res.status(200).json({ discount: coupon.discount });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+// Deactivate a coupon
+async function deactivateCoupon(req, res) {
+  try {
+    const { code } = req.body;
+    const coupon = await Coupon.findOneAndUpdate(
+      { code },
+      { isActive: false },
+      { new: true }
+    );
+    if (!coupon) return res.status(404).json({ message: "Coupon not found" });
+
+    res.status(200).json(coupon);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+async function deleteCoupon(req, res) {
+  try {
+    const { code } = req.body;
+    const coupon = await Coupon.findOneAndDelete({ code });
+    if (!coupon) return res.status(404).json({ message: "Coupon not found" });
+
+    res.status(200).json({ message: "Coupon deleted" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+// Get all coupons
+async function allCoupon(req, res) {
+  try {
+    const coupons = await Coupon.find({});
+    res.status(200).json(coupons);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
 module.exports = {
   getReferralCodes,
   getPlans,
@@ -286,4 +356,9 @@ module.exports = {
   getFeedbacks,
   getTopUsers,
   generateReferralCode,
+  createCoupon,
+  validateCoupon,
+  deactivateCoupon,
+  deleteCoupon,
+  allCoupon,
 };
