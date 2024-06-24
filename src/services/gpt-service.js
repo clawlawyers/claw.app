@@ -320,7 +320,49 @@ async function fetchSessionMessages(sessionId) {
   }
 }
 
-async function createReferralCode(mongoId) {
+async function CheckReferralCodeExistToUser(mongoId) {
+  try {
+    const existingCode = await prisma.referralCode.findUnique({
+      where: {
+        generatedById: mongoId,
+      },
+    });
+
+    console.log(existingCode);
+
+    if (existingCode) return existingCode.referralCode;
+    else return false;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while checking referral code existance",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function CheckReferralCodeExist(rCode) {
+  const code = rCode();
+  try {
+    const existingCodeCount = await prisma.referralCode.count({
+      where: {
+        referralCode: code,
+      },
+    });
+
+    if (existingCodeCount === 0) return true;
+    else return false;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while checking referral code existance",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function createReferralCode(mongoId, rCode) {
+  const code = rCode();
   try {
     const existingCodeCount = await prisma.referralCode.count({
       where: {
@@ -334,6 +376,7 @@ async function createReferralCode(mongoId) {
     const newReferralCode = await prisma.referralCode.create({
       data: {
         generatedById: mongoId,
+        referralCode: code,
       },
     });
 
@@ -393,6 +436,8 @@ async function fetchReferralDetails(mongoId) {
         generatedReferralCode: true,
       },
     });
+
+    console.log(response);
     if (response && response.generatedReferralCode) {
       const redeemCount = await prisma.user.count({
         where: { redeemedReferralCodeId: response.generatedReferralCode?.id },
@@ -535,4 +580,6 @@ module.exports = {
   updateUserPlan,
   deleteSessions,
   updateStateLocation,
+  CheckReferralCodeExist,
+  CheckReferralCodeExistToUser,
 };

@@ -220,11 +220,42 @@ async function createGptPlan(req, res) {
 
 async function createReferralCode(req, res) {
   try {
-    const { _id } = req.body.client;
-    const referralCode = await GptServices.createReferralCode(_id);
-    return res
-      .status(StatusCodes.OK)
-      .json(SuccessResponse({ referralCode, redeemCount: 0 }));
+    const { _id, firstName, lastName, collegeName } = req.body.client;
+    const checkCodeAlreadyExist = async (rCode) => {
+      await GptServices.CheckReferralCodeExist(rCode);
+    };
+
+    const rCode = () => {
+      return firstName?.substr(0, 4) + Math.floor(1000 + Math.random() * 9000);
+    };
+
+    if (checkCodeAlreadyExist(rCode)) {
+      const referralCode = await GptServices.createReferralCode(_id, rCode);
+      return res.status(StatusCodes.OK).json(
+        SuccessResponse({
+          referralCode,
+          redeemCount: 0,
+          client: {
+            firstName,
+            lastName,
+            collegeName,
+          },
+        })
+      );
+    }
+
+    const referralCode = await GptServices.createReferralCode(_id, rCode);
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        referralCode,
+        redeemCount: 0,
+        client: {
+          firstName,
+          lastName,
+          collegeName,
+        },
+      })
+    );
   } catch (error) {
     console.log(error);
     return res
@@ -237,8 +268,15 @@ async function redeemReferralCode(req, res) {
   try {
     const { _id } = req.body.client;
     const { referralCode } = req.body;
-    const response = await GptServices.redeemReferralCode(referralCode, _id);
-    return res.status(StatusCodes.OK).json(SuccessResponse(response));
+    console.log(req.body);
+    const rCode = () => {
+      return referralCode;
+    };
+    const existCode = await GptServices.CheckReferralCodeExist(rCode);
+    // const response = await GptServices.redeemReferralCode(referralCode, _id);
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ message: existCode ? true : false }));
   } catch (error) {
     console.log(error);
     return res
@@ -248,6 +286,7 @@ async function redeemReferralCode(req, res) {
 }
 async function fetchAmbassadorDetails(req, res) {
   try {
+    console.log(req.body);
     const { _id, firstName, lastName, collegeName } = req.body.client;
     const response = await GptServices.fetchReferralDetails(_id);
     return res.status(StatusCodes.OK).json(

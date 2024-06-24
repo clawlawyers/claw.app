@@ -9,7 +9,8 @@ datasource db {
 }
 
 model ReferralCode {
-  id            String   @id @default(cuid())
+  id            String   @default(cuid())
+  referralCode  String   @unique @id
   redeemed      Boolean  @default(false)
   generatedById String   @unique
   createdAt     DateTime @default(now())
@@ -43,7 +44,7 @@ model User {
   sessions                Session[]
   numberOfSessions        Int           @default(1)
   plan                    Plan          @relation(fields: [planName], references: [name])
-  redeemedReferralCode    ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [id])
+  redeemedReferralCode    ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [referralCode])
 }
 
 model Model {
