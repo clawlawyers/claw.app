@@ -4,6 +4,8 @@ const { ErrorResponse, SuccessResponse } = require("../utils/common");
 const { StatusCodes } = require("http-status-codes");
 const User = require("../models/user"); // Adjust the path as per your project structure
 const Coupon = require("../models/coupon");
+const Tracking = require("../models/tracking");
+const moment = require("moment");
 
 async function generateReferralCode(req, res) {
   try {
@@ -345,6 +347,189 @@ async function allCoupon(req, res) {
   }
 }
 
+// tracking data
+async function usertracking(req, res) {
+  const { path, visitDuration, userId, visitorId } = req.body;
+  try {
+    const trackingData = new Tracking({
+      path,
+      visitDuration,
+      userId: userId || null,
+      visitorId: visitorId || null,
+    });
+    await trackingData.save();
+
+    res.status(200).json(trackingData);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
+
+// User Visit for daily data
+
+async function userdailyvisit(req, res) {
+  const startOfDay = moment().startOf("day").toDate();
+  const endOfDay = moment().endOf("day").toDate();
+
+  const dailyData = await Tracking.aggregate([
+    { $match: { timestamp: { $gte: startOfDay, $lte: endOfDay } } },
+    {
+      $group: {
+        _id: {
+          path: "$path",
+          isUser: {
+            $cond: { if: { $ne: ["$userId", null] }, then: true, else: false },
+          },
+        },
+        totalVisits: { $sum: 1 },
+        totalDuration: { $sum: "$visitDuration" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        path: "$_id.path",
+        isUser: "$_id.isUser",
+        totalVisits: 1,
+        totalDuration: 1,
+      },
+    },
+    {
+      $group: {
+        _id: "$path",
+        visits: {
+          $push: {
+            isUser: "$isUser",
+            totalVisits: "$totalVisits",
+            totalDuration: "$totalDuration",
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        path: "$_id",
+        visits: 1,
+      },
+    },
+  ]);
+
+  res.json(dailyData);
+}
+
+// User Visit for monthly data
+async function usermonthlyvisit(req, res) {
+  const startOfMonth = moment().startOf("month").toDate();
+  const endOfMonth = moment().endOf("month").toDate();
+
+  const monthlyData = await Tracking.aggregate([
+    { $match: { timestamp: { $gte: startOfMonth, $lte: endOfMonth } } },
+    {
+      $group: {
+        _id: {
+          path: "$path",
+          isUser: {
+            $cond: {
+              if: { $ne: ["$userId", null] },
+              then: true,
+              else: false,
+            },
+          },
+        },
+        totalVisits: { $sum: 1 },
+        totalDuration: { $sum: "$visitDuration" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        path: "$_id.path",
+        isUser: "$_id.isUser",
+        totalVisits: 1,
+        totalDuration: 1,
+      },
+    },
+    {
+      $group: {
+        _id: "$path",
+        visits: {
+          $push: {
+            isUser: "$isUser",
+            totalVisits: "$totalVisits",
+            totalDuration: "$totalDuration",
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        path: "$_id",
+        visits: 1,
+      },
+    },
+  ]);
+
+  res.json(monthlyData);
+}
+
+// User Visit  for yearly data
+async function useryearlyvisit(req, res) {
+  const startOfYear = moment().startOf("year").toDate();
+  const endOfYear = moment().endOf("year").toDate();
+
+  const yearlyData = await Tracking.aggregate([
+    { $match: { timestamp: { $gte: startOfYear, $lte: endOfYear } } },
+    {
+      $group: {
+        _id: {
+          path: "$path",
+          isUser: {
+            $cond: {
+              if: { $ne: ["$userId", null] },
+              then: true,
+              else: false,
+            },
+          },
+        },
+        totalVisits: { $sum: 1 },
+        totalDuration: { $sum: "$visitDuration" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        path: "$_id.path",
+        isUser: "$_id.isUser",
+        totalVisits: 1,
+        totalDuration: 1,
+      },
+    },
+    {
+      $group: {
+        _id: "$path",
+        visits: {
+          $push: {
+            isUser: "$isUser",
+            totalVisits: "$totalVisits",
+            totalDuration: "$totalDuration",
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        path: "$_id",
+        visits: 1,
+      },
+    },
+  ]);
+
+  res.json(yearlyData);
+}
+
 module.exports = {
   getReferralCodes,
   getPlans,
@@ -361,4 +546,8 @@ module.exports = {
   deactivateCoupon,
   deleteCoupon,
   allCoupon,
+  usertracking,
+  userdailyvisit,
+  usermonthlyvisit,
+  useryearlyvisit,
 };
