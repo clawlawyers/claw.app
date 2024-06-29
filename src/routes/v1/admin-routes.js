@@ -16,6 +16,10 @@ const {
   deleteCoupon,
   allCoupon,
   generateReferralCode,
+  usertracking,
+  userdailyvisit,
+  usermonthlyvisit,
+  useryearlyvisit,
 } = require("../../controllers/admin-controller");
 
 router.get("/referralcode", getReferralCodes);
@@ -33,5 +37,9 @@ router.post("/deactivate", deactivateCoupon);
 router.delete("/delete", deleteCoupon);
 router.get("/allcoupons", allCoupon);
 router.patch("/generateReferralCode", generateReferralCode);
+router.post("/usertrack", usertracking);
+router.get("/dailyuserpagevisit", userdailyvisit);
+router.get("/monthlyuserpagevisit", usermonthlyvisit);
+router.get("/yearlyuserpagevisit", useryearlyvisit);
 
 module.exports = router;
