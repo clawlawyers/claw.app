@@ -1,6 +1,7 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const clientSchema = new mongoose.Schema({
+const clientSchema = new mongoose.Schema(
+  {
     email: { type: String, trim: true },
     firstName: { type: String, trim: true },
     lastName: { type: String, trim: true },
@@ -13,12 +14,27 @@ const clientSchema = new mongoose.Schema({
     registered: { type: Boolean, default: false },
     ambassador: { type: Boolean, default: false },
     account: {
-        holderName: { type: String, trim: true },
-        number: { type: Number },
-        ifsc: { type: String, trim: true }
-    }
-}, { timestamps: true });
+      holderName: { type: String, trim: true },
+      number: { type: Number },
+      ifsc: { type: String, trim: true },
+    },
+    engagementTime: {
+      daily: { type: Map, of: Number, default: {} },
+      monthly: { type: Map, of: Number, default: {} },
+      yearly: { type: Map, of: Number, default: {} },
+      total: {
+        type: Number,
+        default: 0,
+      },
+    },
+  },
+  { timestamps: true }
+);
 
-const Client = new mongoose.model('Client', clientSchema);
+clientSchema.index({ "engagementTime.daily": 1 });
+clientSchema.index({ "engagementTime.monthly": 1 });
+clientSchema.index({ "engagementTime.yearly": 1 });
+
+const Client = new mongoose.model("Client", clientSchema);
 
 module.exports = Client;

@@ -97,29 +97,81 @@ async function getReferralCodes(req, res) {
       },
     });
 
+    // Extract unique phone numbers from generatedBy and redeemedBy
     const userPhoneNumbers = [
       ...new Set([
         ...referralCodes.map((code) => code.generatedBy.phoneNumber),
-        ...referralCodes.map((code) => code.redeemedBy?.phoneNumber || ""),
+        ...referralCodes.flatMap((code) =>
+          code.redeemedBy.map((user) => user.phoneNumber)
+        ),
       ]),
     ];
 
     // Fetch user details from MongoDB
-    const users = await User.find(
-      { phoneNumber: { $in: userPhoneNumbers } },
-      "phoneNumber"
+    const users = await ClientService.getClientByPhoneNumbers(userPhoneNumbers);
+
+    // Fetch user details from Supabase
+
+    const SupaUsers = await GptServices.fetchGptUserByPhoneNumbers(
+      userPhoneNumbers
     );
 
-    // Merge user details with referral codes
+    // console.log(SupaUsers);
+
+    // Map through referral codes and merge user details
     const formattedReferralCodes = referralCodes.map((code) => {
+      // Find generatedBy user
       const generatedByUser = users.find(
         (u) => u.phoneNumber === code.generatedBy.phoneNumber
       );
-      const redeemedByUser = code.redeemedBy
-        ? users.find((u) => u.phoneNumber === code.redeemedBy.phoneNumber)
-        : null;
+
+      console.log(generatedByUser);
+
+      // Map redeemedBy users
+      const redeemedByUsers = code.redeemedBy.map((redeemedUser) => {
+        const user = users.find(
+          (u) => u.phoneNumber === redeemedUser.phoneNumber
+        );
+        const supaUser = SupaUsers.find(
+          (u) => u.phoneNumber === redeemedUser.phoneNumber
+        );
+
+        // Format engagement time
+        const engagementTime = user?.engagementTime
+          ? {
+              days: Array.from(user.engagementTime.daily.values())
+                .reduce((a, b) => a + b, 0)
+                .toFixed(2),
+              hours: Array.from(user.engagementTime.monthly.values())
+                .reduce((a, b) => a + b, 0)
+                .toFixed(2),
+              months: Array.from(user.engagementTime.yearly.values())
+                .reduce((a, b) => a + b, 0)
+                .toFixed(2),
+              totalSeconds: (user.engagementTime.total * 3600).toFixed(2),
+            }
+          : null;
+
+        return {
+          phoneNumber: redeemedUser.phoneNumber,
+          firstName: user?.firstName || "",
+          lastName: user?.lastName || "",
+          plan: supaUser
+            ? {
+                planName: supaUser.plan,
+                token: {
+                  used: supaUser.token.used,
+                  total: supaUser.token.total,
+                },
+              }
+            : null,
+          engagedTime: engagementTime,
+        };
+      });
+
       return {
         id: code.id,
+        referralCode: code.referralCode,
         redeemed: code.redeemed,
         createdAt: code.createdAt,
         updatedAt: code.updatedAt,
@@ -127,16 +179,21 @@ async function getReferralCodes(req, res) {
           phoneNumber: code.generatedBy.phoneNumber,
           firstName: generatedByUser?.firstName || "",
           lastName: generatedByUser?.lastName || "",
+          // plan: generatedByUser
+          //   ? {
+          //       planName: generatedByUser.planName,
+          //       token: {
+          //         used: generatedByUser.tokenUsed,
+          //         total: generatedByUser.plan.token,
+          //       },
+          //     }
+          //   : null,
         },
-        redeemedBy: code.redeemedBy
-          ? {
-              phoneNumber: code.redeemedBy.phoneNumber,
-              firstName: redeemedByUser?.firstName || "",
-              lastName: redeemedByUser?.lastName || "",
-            }
-          : null,
+        redeemedBy: redeemedByUsers,
       };
     });
+
+    // console.log(formattedReferralCodes);
 
     res.json(formattedReferralCodes);
   } catch (error) {
