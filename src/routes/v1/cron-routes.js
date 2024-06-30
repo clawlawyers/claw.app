@@ -78,7 +78,7 @@ const flushInMemoryDataToDatabase = async () => {
               phoneNumber,
               {
                 $set: {
-                  [`engagementTime.daily.${day}`]: dailyIncrement,
+                  [`engagementTime.daily`]: { [`${day}`]: dailyIncrement },
                 },
               },
               session
@@ -111,7 +111,9 @@ const flushInMemoryDataToDatabase = async () => {
               phoneNumber,
               {
                 $set: {
-                  [`engagementTime.monthly.${month}`]: monthlyIncrement,
+                  [`engagementTime.monthly`]: {
+                    [`${month}`]: monthlyIncrement,
+                  },
                 },
               },
               session
@@ -144,7 +146,9 @@ const flushInMemoryDataToDatabase = async () => {
               phoneNumber,
               {
                 $set: {
-                  [`engagementTime.yearly.${year}`]: yearlyIncrement,
+                  [`engagementTime.yearly`]: {
+                    [`${year}`]: yearlyIncrement,
+                  },
                 },
               },
               session
