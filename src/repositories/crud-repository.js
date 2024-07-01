@@ -23,6 +23,21 @@ class CrudRepository {
     }
   }
 
+  async updateClientByPhoneNumberWithSession(phoneNumber, update, session) {
+    phoneNumber = phoneNumber.substring(3);
+    console.log(phoneNumber, update);
+    try {
+      const response = await this.model.findOneAndUpdate(
+        { phoneNumber },
+        update,
+        { session, new: true }
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async update(id, data) {
     try {
       const response = await this.model.findByIdAndUpdate(id, data, {

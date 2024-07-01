@@ -207,6 +207,43 @@ async function createMessage(sessionId, prompt, isUser, mongoId) {
   }
 }
 
+async function fetchGptUserByPhoneNumbers(phoneNumbers) {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        phoneNumber: {
+          in: phoneNumbers,
+        },
+      },
+      include: {
+        plan: {
+          select: {
+            token: true,
+          },
+        },
+      },
+    });
+
+    if (!users || users.length === 0) return []; // Return an empty array if no users found
+
+    // Map through the users array to format the response
+    const formattedUsers = users.map((user) => ({
+      createdAt: user.createdAt,
+      phoneNumber: user.phoneNumber,
+      plan: user.planName, // Assuming user.planName exists on your user model
+      token: { used: user.tokenUsed, total: user.plan.token }, // Assuming user.plan.token exists on your plan model
+    }));
+
+    return formattedUsers;
+  } catch (error) {
+    console.error("Error while fetching users:", error);
+    throw new AppError(
+      "Error while fetching users",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function fetchGptUser(mongoId) {
   try {
     const user = await prisma.user.findUnique({
@@ -582,4 +619,5 @@ module.exports = {
   updateStateLocation,
   CheckReferralCodeExist,
   CheckReferralCodeExistToUser,
+  fetchGptUserByPhoneNumbers,
 };
