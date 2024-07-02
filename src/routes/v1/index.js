@@ -12,7 +12,7 @@ const CaseFinderRoutes = require("./case-routes");
 const PaymentRoutes = require("./payment-routes");
 const AdminRoute = require("./admin-routes");
 const CronRoutes = require("./cron-routes");
-
+const Salesman = require("./salesman");
 const router = express.Router();
 
 router.use("/user", UserRoutes);
@@ -28,5 +28,6 @@ router.use("/case", CaseFinderRoutes);
 router.use("/payment", PaymentRoutes);
 router.use("/admin", AdminRoute);
 router.use("/cron", CronRoutes);
+router.use("/salesman", Salesman);
 
 module.exports = router;
