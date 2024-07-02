@@ -160,9 +160,10 @@ async function setLocation(req, res) {
       location: req.body.location,
     });
     console.log(response);
-    SuccessResponse.data = response;
-    console.log(SuccessResponse);
-    return res.status(StatusCodes.OK).json(SuccessResponse);
+    // const SuccessResponse = SuccessResponse(response);
+    // SuccessResponse.data = response;
+    console.log(SuccessResponse());
+    return res.status(StatusCodes.OK).json(SuccessResponse());
   } catch (error) {
     ErrorResponse.error = error;
     return res.status(error.statusCode).json(ErrorResponse);

@@ -14,6 +14,15 @@ class ClientRepository extends CrudRepository {
       throw error;
     }
   }
+
+  async getAllDetails() {
+    try {
+      const clients = await Client.find();
+      return clients;
+    } catch (error) {
+      throw error;
+    }
+  }
   async getAll() {
     try {
       const clients = await Client.find().select("phoneNumber");

@@ -7,9 +7,25 @@ const Coupon = require("../models/coupon");
 const Tracking = require("../models/tracking");
 const moment = require("moment");
 
+async function updateUserPlan(req, res) {
+  try {
+    const { id, planName } = req.body;
+    const updatePlan = await GptServices.updateUserPlan(id, planName);
+    res.setHeader("Content-Type", "application/json");
+    return res.status(StatusCodes.OK).json(SuccessResponse(updatePlan));
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
 async function generateReferralCode(req, res) {
   try {
     const { _id, firstName, lastName, collegeName } = req.body.client;
+
+    console.log(req.body.client);
 
     const updatedClient = await ClientService.updateClient(_id, {
       firstName,
@@ -18,17 +34,18 @@ async function generateReferralCode(req, res) {
       ambassador: true,
     });
 
-    console.log(updatedClient);
+    // console.log(updatedClient);
 
     const referralCodeExist = await GptServices.CheckReferralCodeExistToUser(
       _id
     );
 
-    console.log(referralCodeExist);
+    // console.log(referralCodeExist);
 
-    if (GptServices.CheckReferralCodeExistToUser(_id)) {
+    if (referralCodeExist) {
       return res.status(StatusCodes.OK).json(
         SuccessResponse({
+          message: "Referral Code Already Exists",
           referralCode: referralCodeExist,
           redeemCount: 0,
           client: {
@@ -141,16 +158,16 @@ async function getReferralCodes(req, res) {
         // Format engagement time
         const engagementTime = user?.engagementTime
           ? {
-              days: Array.from(user.engagementTime.daily.values())
+              daily: Array.from(user.engagementTime.daily.values())
                 .reduce((a, b) => a + b, 0)
                 .toFixed(2),
-              hours: Array.from(user.engagementTime.monthly.values())
+              monthly: Array.from(user.engagementTime.monthly.values())
                 .reduce((a, b) => a + b, 0)
                 .toFixed(2),
-              months: Array.from(user.engagementTime.yearly.values())
+              yearly: Array.from(user.engagementTime.yearly.values())
                 .reduce((a, b) => a + b, 0)
                 .toFixed(2),
-              totalSeconds: (user.engagementTime.total * 3600).toFixed(2),
+              total: user.engagementTime.total.toFixed(2),
             }
           : null;
 
@@ -224,8 +241,80 @@ async function getUsers(req, res) {
       return startsWithValidDigit && !allDigitsSame;
     });
 
+    console.log(filteredUsers.length);
+
+    const MongoUser = await ClientService.getAllClientsDetails();
+
+    const filteredUsersMongo = MongoUser.filter((Muser) => {
+      const phoneNumber = Muser.phoneNumber;
+      const startsWithValidDigit = /^[9876]/.test(phoneNumber);
+      const allDigitsSame = /^(\d)\1*$/.test(phoneNumber);
+      return startsWithValidDigit && !allDigitsSame;
+    });
+
+    console.log(filteredUsersMongo.length);
+
+    // Merge the filtered users from both MongoDB and Supabase
+    const mergedUsers = filteredUsers.map((Muser) => {
+      const user = filteredUsersMongo.find(
+        (user) => user.phoneNumber === Muser.phoneNumber
+      );
+      console.log({
+        mongoId: Muser.mongoId,
+        phoneNumber: Muser.phoneNumber,
+        createdAt: Muser.createdAt,
+        updatedAt: Muser.updatedAt,
+        totalTokenUsed: Muser.totalTokenUsed,
+        StateLocation: Muser.StateLocation,
+        numberOfSessions: Muser.numberOfSessions,
+        planName: Muser.planName,
+        ambassador: user.ambassador,
+        engagementTime: user.engagementTime,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        collegeName: user.collegeName,
+      });
+      if (user) {
+        // Format engagement time
+        const engagementTime = user?.engagementTime
+          ? {
+              daily: Array.from(user.engagementTime.daily.values())
+                .reduce((a, b) => a + b, 0)
+                .toFixed(2),
+              monthly: Array.from(user.engagementTime.monthly.values())
+                .reduce((a, b) => a + b, 0)
+                .toFixed(2),
+              yearly: Array.from(user.engagementTime.yearly.values())
+                .reduce((a, b) => a + b, 0)
+                .toFixed(2),
+              total: user.engagementTime.total.toFixed(2),
+            }
+          : null;
+
+        return {
+          mongoId: Muser.mongoId,
+          phoneNumber: Muser.phoneNumber,
+          createdAt: Muser.createdAt,
+          updatedAt: Muser.updatedAt,
+          totalTokenUsed: Muser.totalTokenUsed,
+          StateLocation: Muser.StateLocation,
+          numberOfSessions: Muser.numberOfSessions,
+          planName: Muser.planName,
+          ambassador: user.ambassador,
+          engagementTime: engagementTime,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          collegeName: user.collegeName,
+          averageSessionEngagementTime:
+            engagementTime?.total / Muser?.numberOfSessions,
+        };
+      }
+    });
+
+    console.log(mergedUsers);
+
     // Send the filtered users as response
-    res.json(filteredUsers);
+    res.json(mergedUsers);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -607,4 +696,5 @@ module.exports = {
   userdailyvisit,
   usermonthlyvisit,
   useryearlyvisit,
+  updateUserPlan,
 };

@@ -148,6 +148,9 @@ async function consumeToken(mongoId, count = 1) {
           tokenUsed: {
             increment: count,
           },
+          totalTokenUsed: {
+            increment: count,
+          },
         },
         include: {
           plan: { select: { token: true } },
@@ -428,11 +431,14 @@ async function createReferralCode(mongoId, rCode) {
 }
 
 async function redeemReferralCode(referralCode, redeemedById) {
+  // redeemedById = "665895d4ed964292d63d8f3d";
+  console.log(referralCode, redeemedById);
+
   try {
     const updatedUser = await prisma.user.update({
       where: {
         mongoId: redeemedById,
-        planName: "free",
+        // planName: "free",
       },
       data: {
         planName: "student",

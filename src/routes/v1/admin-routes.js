@@ -20,7 +20,10 @@ const {
   userdailyvisit,
   usermonthlyvisit,
   useryearlyvisit,
+  updateUserPlan,
 } = require("../../controllers/admin-controller");
+const { setLocation } = require("../../controllers/client-controller");
+// const { updateUserPlan } = require("../../services/gpt-service");
 
 router.get("/referralcode", getReferralCodes);
 router.get("/plan", getPlans);
@@ -41,5 +44,7 @@ router.post("/usertrack", usertracking);
 router.get("/dailyuserpagevisit", userdailyvisit);
 router.get("/monthlyuserpagevisit", usermonthlyvisit);
 router.get("/yearlyuserpagevisit", useryearlyvisit);
+router.patch("/updateUserLocation", setLocation);
+router.patch("/updateUserPlan", updateUserPlan);
 
 module.exports = router;

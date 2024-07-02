@@ -47,7 +47,7 @@ const flushInMemoryDataToDatabase = async () => {
           };
         }
 
-        console.log(user.engagementTime);
+        // console.log(user.engagementTime);
 
         // Increment total engagement time
         const totalEngagementTime = Object.values(userEngagement.daily).reduce(
@@ -70,9 +70,9 @@ const flushInMemoryDataToDatabase = async () => {
               },
               session
             );
-            console.log(
-              `${phoneNumber} { '$inc': { 'engagementTime.daily.${day}': ${dailyIncrement} } }`
-            );
+            // console.log(
+            //   `${phoneNumber} { '$inc': { 'engagementTime.daily.${day}': ${dailyIncrement} } }`
+            // );
           } else {
             await ClientService.updateClientByPhoneNumberWithSession(
               phoneNumber,
@@ -83,9 +83,9 @@ const flushInMemoryDataToDatabase = async () => {
               },
               session
             );
-            console.log(
-              `${phoneNumber} { '$set': { 'engagementTime.daily.${day}': ${dailyIncrement} } }`
-            );
+            // console.log(
+            //   `${phoneNumber} { '$set': { 'engagementTime.daily.${day}': ${dailyIncrement} } }`
+            // );
           }
         }
 
@@ -103,9 +103,9 @@ const flushInMemoryDataToDatabase = async () => {
               },
               session
             );
-            console.log(
-              `${phoneNumber} { '$inc': { 'engagementTime.monthly.${month}': ${monthlyIncrement} } }`
-            );
+            // console.log(
+            //   `${phoneNumber} { '$inc': { 'engagementTime.monthly.${month}': ${monthlyIncrement} } }`
+            // );
           } else {
             await ClientService.updateClientByPhoneNumberWithSession(
               phoneNumber,
@@ -118,15 +118,15 @@ const flushInMemoryDataToDatabase = async () => {
               },
               session
             );
-            console.log(
-              `${phoneNumber} { '$set': { 'engagementTime.monthly.${month}': ${monthlyIncrement} } }`
-            );
+            // console.log(
+            //   `${phoneNumber} { '$set': { 'engagementTime.monthly.${month}': ${monthlyIncrement} } }`
+            // );
           }
         }
 
         // Increment yearly engagement time
         for (const [year, time] of Object.entries(userEngagement.yearly)) {
-          const yearlyIncrement = time / 2628000; // Convert seconds to months
+          const yearlyIncrement = time / 3600; // Convert seconds to hours
           const yearlyDate = [...user?.engagementTime?.yearly?.keys()][0];
           if (yearlyDate === year) {
             await ClientService.updateClientByPhoneNumberWithSession(
@@ -138,9 +138,9 @@ const flushInMemoryDataToDatabase = async () => {
               },
               session
             );
-            console.log(
-              `${phoneNumber} { '$inc': { 'engagementTime.yearly.${year}': ${yearlyIncrement} } }`
-            );
+            // console.log(
+            //   `${phoneNumber} { '$inc': { 'engagementTime.yearly.${year}': ${yearlyIncrement} } }`
+            // );
           } else {
             await ClientService.updateClientByPhoneNumberWithSession(
               phoneNumber,
@@ -153,9 +153,9 @@ const flushInMemoryDataToDatabase = async () => {
               },
               session
             );
-            console.log(
-              `${phoneNumber} { '$set': { 'engagementTime.yearly.${year}': ${yearlyIncrement} } }`
-            );
+            // console.log(
+            //   `${phoneNumber} { '$set': { 'engagementTime.yearly.${year}': ${yearlyIncrement} } }`
+            // );
           }
         }
 
@@ -170,11 +170,11 @@ const flushInMemoryDataToDatabase = async () => {
         );
 
         // Log the total engagement time
-        console.log(
-          `${phoneNumber} { '$inc': { 'engagementTime.total': ${
-            totalEngagementTime / 60
-          } } }`
-        );
+        // console.log(
+        //   `${phoneNumber} { '$inc': { 'engagementTime.total': ${
+        //     totalEngagementTime / 60
+        //   } } }`
+        // );
       } else {
         console.log(`User not found for phone number: ${phoneNumber}`);
       }
