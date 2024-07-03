@@ -456,7 +456,7 @@ async function queryCase(req, res) {
     } = req.body;
 
     if (!query) throw new AppError("Invalid query", StatusCodes.BAD_REQUEST);
-    const updatedTokenVault = await consumeToken(_id, 0.2);
+    // const updatedTokenVault = await consumeToken(_id, 0.2);
     console.log(updatedTokenVault);
     const response = await fetchGptCaseQuery({
       startDate,
