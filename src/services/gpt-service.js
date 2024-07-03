@@ -148,6 +148,9 @@ async function consumeToken(mongoId, count = 1) {
           tokenUsed: {
             increment: count,
           },
+          totalTokenUsed: {
+            increment: count,
+          },
         },
         include: {
           plan: { select: { token: true } },
@@ -207,6 +210,43 @@ async function createMessage(sessionId, prompt, isUser, mongoId) {
   }
 }
 
+async function fetchGptUserByPhoneNumbers(phoneNumbers) {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        phoneNumber: {
+          in: phoneNumbers,
+        },
+      },
+      include: {
+        plan: {
+          select: {
+            token: true,
+          },
+        },
+      },
+    });
+
+    if (!users || users.length === 0) return []; // Return an empty array if no users found
+
+    // Map through the users array to format the response
+    const formattedUsers = users.map((user) => ({
+      createdAt: user.createdAt,
+      phoneNumber: user.phoneNumber,
+      plan: user.planName, // Assuming user.planName exists on your user model
+      token: { used: user.tokenUsed, total: user.plan.token }, // Assuming user.plan.token exists on your plan model
+    }));
+
+    return formattedUsers;
+  } catch (error) {
+    console.error("Error while fetching users:", error);
+    throw new AppError(
+      "Error while fetching users",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function fetchGptUser(mongoId) {
   try {
     const user = await prisma.user.findUnique({
@@ -232,6 +272,58 @@ async function fetchGptUser(mongoId) {
     console.log(error);
     throw new AppError(
       "Error while fetching user",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function caseSearchOnCheck(phoneNumber) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        phoneNumber: phoneNumber,
+        isCasesearch: true,
+      },
+      include: {
+        plan: {
+          select: {
+            token: true,
+          },
+        },
+      },
+    });
+    if (user) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {}
+}
+
+async function caseSearchOn(phoneNumber) {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: {
+        phoneNumber: phoneNumber,
+      },
+      data: {
+        isCasesearch: true,
+      },
+      select: {
+        plan: {
+          select: {
+            token: true,
+          },
+        },
+        planName: true,
+        tokenUsed: true,
+      },
+    });
+    return updatedUser;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while updating user for case search",
       StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
@@ -320,7 +412,49 @@ async function fetchSessionMessages(sessionId) {
   }
 }
 
-async function createReferralCode(mongoId) {
+async function CheckReferralCodeExistToUser(mongoId) {
+  try {
+    const existingCode = await prisma.referralCode.findUnique({
+      where: {
+        generatedById: mongoId,
+      },
+    });
+
+    // console.log(existingCode);
+
+    if (existingCode) return existingCode.referralCode;
+    else return false;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while checking referral code existance",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function CheckReferralCodeExist(rCode) {
+  const code = rCode();
+  try {
+    const existingCodeCount = await prisma.referralCode.count({
+      where: {
+        referralCode: code,
+      },
+    });
+
+    if (existingCodeCount === 0) return true;
+    else return false;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while checking referral code existance",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function createReferralCode(mongoId, rCode) {
+  const code = rCode();
   try {
     const existingCodeCount = await prisma.referralCode.count({
       where: {
@@ -334,6 +468,7 @@ async function createReferralCode(mongoId) {
     const newReferralCode = await prisma.referralCode.create({
       data: {
         generatedById: mongoId,
+        referralCode: code,
       },
     });
 
@@ -348,11 +483,14 @@ async function createReferralCode(mongoId) {
 }
 
 async function redeemReferralCode(referralCode, redeemedById) {
+  // redeemedById = "665895d4ed964292d63d8f3d";
+  console.log(referralCode, redeemedById);
+
   try {
     const updatedUser = await prisma.user.update({
       where: {
         mongoId: redeemedById,
-        planName: "free",
+        // planName: "free",
       },
       data: {
         planName: "student",
@@ -393,6 +531,8 @@ async function fetchReferralDetails(mongoId) {
         generatedReferralCode: true,
       },
     });
+
+    console.log(response);
     if (response && response.generatedReferralCode) {
       const redeemCount = await prisma.user.count({
         where: { redeemedReferralCodeId: response.generatedReferralCode?.id },
@@ -429,6 +569,146 @@ async function fetchLastMessagePair(sessionId) {
     console.log(error);
     throw new AppError(
       "Error while fetching message pair",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function checkIsAdmin(phoneNumber) {
+  try {
+    phoneNumber = phoneNumber.substring(3);
+    // Fetch the user details
+    const user = await prisma.user.findUnique({
+      where: { phoneNumber: phoneNumber },
+      include: { adminUser: true },
+    });
+
+    if (!user) {
+      return { error: "User not found" };
+    }
+
+    // Check if the user is an admin
+    const isAdmin = user.adminUserId !== null;
+    return { phoneNumber: phoneNumber, isAdmin: isAdmin };
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while checking is admin",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function removeAdminUser(adminId, userId) {
+  try {
+    // Check if admin exists
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      return res.status(404).json({ error: "Admin not found" });
+    }
+
+    // Check if user exists and is associated with the admin
+    const user = await prisma.user.findUnique({
+      where: { mongoId: userId },
+      include: { adminUser: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.adminUserId !== adminId) {
+      return res
+        .status(400)
+        .json({ error: "User is not associated with this admin" });
+    }
+
+    // Update the user to dissociate from the admin
+    const updatedUser = await prisma.user.update({
+      where: { mongoId: userId },
+      data: { adminUserId: null },
+    });
+    return updatedUser;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while removing admin users",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function getAdmins() {
+  const admins = await prisma.admin.findMany({
+    include: {
+      users: true, // Include associated users
+    },
+  });
+
+  return admins;
+}
+
+async function createAdmin(adminId, userId) {
+  try {
+    // Check if admin exists
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      return res.status(404).json({ error: "Admin not found" });
+    }
+
+    // Update the user to associate with the admin
+    const updatedUser = await prisma.user.update({
+      where: { mongoId: userId },
+      data: { adminUserId: adminId },
+    });
+
+    return updatedUser;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while creating admin",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function addFirstAdminUser(userId) {
+  try {
+    // Check if the user exists
+    const user = await prisma.user.findUnique({
+      where: { mongoId: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Create a new admin and associate the user
+    const newAdmin = await prisma.admin.create({
+      data: {
+        users: {
+          connect: { mongoId: userId },
+        },
+      },
+    });
+
+    // Update the user to associate with the new admin
+    const updatedUser = await prisma.user.update({
+      where: { mongoId: userId },
+      data: { adminUserId: newAdmin.id },
+    });
+
+    return { updatedUser, newAdmin };
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while updating user plan",
       StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
@@ -535,4 +815,14 @@ module.exports = {
   updateUserPlan,
   deleteSessions,
   updateStateLocation,
+  CheckReferralCodeExist,
+  CheckReferralCodeExistToUser,
+  fetchGptUserByPhoneNumbers,
+  addFirstAdminUser,
+  createAdmin,
+  getAdmins,
+  removeAdminUser,
+  checkIsAdmin,
+  caseSearchOn,
+  caseSearchOnCheck,
 };

@@ -64,6 +64,34 @@ async function startSession(req, res) {
   }
 }
 
+async function caseSearchOnCheck(req, res) {
+  try {
+    let { phoneNumber } = req.body;
+    phoneNumber = phoneNumber.substring(3);
+    const response = await GptServices.caseSearchOnCheck(phoneNumber);
+    return res.status(StatusCodes.OK).json(SuccessResponse(response));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function caseSearchOn(req, res) {
+  try {
+    let { phoneNumber } = req.body;
+    phoneNumber = phoneNumber.substring(3);
+    const response = await GptServices.caseSearchOn(phoneNumber);
+    return res.status(StatusCodes.OK).json(SuccessResponse(response));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
 async function appendMessage(req, res) {
   try {
     const { prompt, sessionId } = req.body;
@@ -220,11 +248,42 @@ async function createGptPlan(req, res) {
 
 async function createReferralCode(req, res) {
   try {
-    const { _id } = req.body.client;
-    const referralCode = await GptServices.createReferralCode(_id);
-    return res
-      .status(StatusCodes.OK)
-      .json(SuccessResponse({ referralCode, redeemCount: 0 }));
+    const { _id, firstName, lastName, collegeName } = req.body.client;
+    const checkCodeAlreadyExist = async (rCode) => {
+      await GptServices.CheckReferralCodeExist(rCode);
+    };
+
+    const rCode = () => {
+      return firstName?.substr(0, 4) + Math.floor(1000 + Math.random() * 9000);
+    };
+
+    if (checkCodeAlreadyExist(rCode)) {
+      const referralCode = await GptServices.createReferralCode(_id, rCode);
+      return res.status(StatusCodes.OK).json(
+        SuccessResponse({
+          referralCode,
+          redeemCount: 0,
+          client: {
+            firstName,
+            lastName,
+            collegeName,
+          },
+        })
+      );
+    }
+
+    const referralCode = await GptServices.createReferralCode(_id, rCode);
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        referralCode,
+        redeemCount: 0,
+        client: {
+          firstName,
+          lastName,
+          collegeName,
+        },
+      })
+    );
   } catch (error) {
     console.log(error);
     return res
@@ -237,8 +296,15 @@ async function redeemReferralCode(req, res) {
   try {
     const { _id } = req.body.client;
     const { referralCode } = req.body;
+    console.log(req.body);
+    const rCode = () => {
+      return referralCode;
+    };
+    // const existCode = await GptServices.CheckReferralCodeExist(rCode);
     const response = await GptServices.redeemReferralCode(referralCode, _id);
-    return res.status(StatusCodes.OK).json(SuccessResponse(response));
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ message: existCode ? true : false }));
   } catch (error) {
     console.log(error);
     return res
@@ -248,6 +314,7 @@ async function redeemReferralCode(req, res) {
 }
 async function fetchAmbassadorDetails(req, res) {
   try {
+    console.log(req.body);
     const { _id, firstName, lastName, collegeName } = req.body.client;
     const response = await GptServices.fetchReferralDetails(_id);
     return res.status(StatusCodes.OK).json(
@@ -416,17 +483,21 @@ async function queryCase(req, res) {
     } = req.body;
 
     if (!query) throw new AppError("Invalid query", StatusCodes.BAD_REQUEST);
-    const updatedTokenVault = await consumeToken(_id, 0.2);
-    console.log(updatedTokenVault);
+    // const updatedTokenVault = await consumeToken(_id, 0.2);
+    // console.log(updatedTokenVault);
     const response = await fetchGptCaseQuery({
       startDate,
       endDate,
       query,
       courtName,
     });
-    return res
-      .status(StatusCodes.OK)
-      .json(SuccessResponse({ ...response, ...updatedTokenVault }));
+    console.log(response);
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse(
+        response
+        //  ...updatedTokenVault
+      )
+    );
   } catch (error) {
     console.log(error);
     res
@@ -477,6 +548,49 @@ async function getSummaryDetails(req, res) {
   }
 }
 
+//scrape date for legalgpt
+async function fetchlegalgptCaseSummery(folderId, caseId) {
+  try {
+    console.log(folderId, caseId);
+    const response = await fetch(
+      `${FLASK_API_ENDPOINT}/overview/case/view_overview_gpt`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          folder_id: folderId,
+          case_id: caseId,
+        }),
+      }
+    );
+    const parsed = await response.json();
+
+    return parsed;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Failed to make api request to gpt.claw",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+//get legalgpt summery  details
+
+async function getLegalgptSummaryDetails(req, res) {
+  try {
+    const { folderId, caseId } = req.body;
+    let data = await fetchlegalgptCaseSummery(folderId, caseId);
+
+    return res.json(data);
+  } catch (error) {
+    console.error("Error in getSummaryDetails:", error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
 async function deleteUserSessions(req, res) {
   try {
     const { _id } = req.body.client;
@@ -510,4 +624,8 @@ module.exports = {
   deleteUserSessions,
   fetchCaseSummery,
   getSummaryDetails,
+  fetchlegalgptCaseSummery,
+  getLegalgptSummaryDetails,
+  caseSearchOn,
+  caseSearchOnCheck,
 };
