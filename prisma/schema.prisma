@@ -28,6 +28,12 @@ model Plan {
   users     User[]
 }
 
+model Admin{
+    id         String  @id @default(cuid())
+    users      User[]       @relation("AdminUsers")
+
+}
+
 model User {
   mongoId                 String        @id
   phoneNumber             String        @unique @db.VarChar(10)
@@ -40,12 +46,15 @@ model User {
   StateLocation           String        @default("")
   generatedReferralCodeId String?
   redeemedReferralCodeId  String?
+  adminUserId  String?
   generatedReferralCode   ReferralCode? @relation("GeneratedByUser")
   sessions                Session[]
   numberOfSessions        Int           @default(1)
   plan                    Plan          @relation(fields: [planName], references: [name])
   redeemedReferralCode    ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [referralCode])
-}
+ adminUser                Admin?        @relation("AdminUsers", fields: [adminUserId], references: [id])
+  isCasesearch  Boolean  @default(false)  
+ }
 
 model Model {
   name      String    @id

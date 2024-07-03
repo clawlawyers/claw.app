@@ -25,7 +25,6 @@ class CrudRepository {
 
   async updateClientByPhoneNumberWithSession(phoneNumber, update, session) {
     phoneNumber = phoneNumber.substring(3);
-    console.log(phoneNumber, update);
     try {
       const response = await this.model.findOneAndUpdate(
         { phoneNumber },

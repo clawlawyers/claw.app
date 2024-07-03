@@ -272,8 +272,8 @@ async function redeemReferralCode(req, res) {
     const rCode = () => {
       return referralCode;
     };
-    const existCode = await GptServices.CheckReferralCodeExist(rCode);
-    // const response = await GptServices.redeemReferralCode(referralCode, _id);
+    // const existCode = await GptServices.CheckReferralCodeExist(rCode);
+    const response = await GptServices.redeemReferralCode(referralCode, _id);
     return res
       .status(StatusCodes.OK)
       .json(SuccessResponse({ message: existCode ? true : false }));

@@ -168,6 +168,16 @@ async function deletePostfromClient(clientId, postId) {
   }
 }
 
+async function getAllClientsDetails() {
+  try {
+    const clients = await clientRepository.getAllDetails();
+    return clients;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+  }
+}
+
 async function getAllClients() {
   try {
     const clients = await clientRepository.getAll();
@@ -186,6 +196,7 @@ module.exports = {
   updateClient,
   addPosttoClient,
   getAllClients,
+  getAllClientsDetails,
   deletePostfromClient,
   getClientByPhoneNumber,
   getClientByPhoneNumbers,
