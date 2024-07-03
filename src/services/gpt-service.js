@@ -277,6 +277,58 @@ async function fetchGptUser(mongoId) {
   }
 }
 
+async function caseSearchOnCheck(phoneNumber) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        phoneNumber: phoneNumber,
+        isCasesearch: true,
+      },
+      include: {
+        plan: {
+          select: {
+            token: true,
+          },
+        },
+      },
+    });
+    if (user) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {}
+}
+
+async function caseSearchOn(phoneNumber) {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: {
+        phoneNumber: phoneNumber,
+      },
+      data: {
+        isCasesearch: true,
+      },
+      select: {
+        plan: {
+          select: {
+            token: true,
+          },
+        },
+        planName: true,
+        tokenUsed: true,
+      },
+    });
+    return updatedUser;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while updating user for case search",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function fetchSessionBySessionId(sessionId) {
   try {
     const session = await prisma.session.findUnique({
@@ -771,4 +823,6 @@ module.exports = {
   getAdmins,
   removeAdminUser,
   checkIsAdmin,
+  caseSearchOn,
+  caseSearchOnCheck,
 };

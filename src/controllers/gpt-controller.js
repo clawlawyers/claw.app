@@ -64,6 +64,34 @@ async function startSession(req, res) {
   }
 }
 
+async function caseSearchOnCheck(req, res) {
+  try {
+    let { phoneNumber } = req.body;
+    phoneNumber = phoneNumber.substring(3);
+    const response = await GptServices.caseSearchOnCheck(phoneNumber);
+    return res.status(StatusCodes.OK).json(SuccessResponse(response));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function caseSearchOn(req, res) {
+  try {
+    let { phoneNumber } = req.body;
+    phoneNumber = phoneNumber.substring(3);
+    const response = await GptServices.caseSearchOn(phoneNumber);
+    return res.status(StatusCodes.OK).json(SuccessResponse(response));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
 async function appendMessage(req, res) {
   try {
     const { prompt, sessionId } = req.body;
@@ -595,4 +623,6 @@ module.exports = {
   getSummaryDetails,
   fetchlegalgptCaseSummery,
   getLegalgptSummaryDetails,
+  caseSearchOn,
+  caseSearchOnCheck,
 };
