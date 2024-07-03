@@ -485,16 +485,20 @@ async function queryCase(req, res) {
 
     if (!query) throw new AppError("Invalid query", StatusCodes.BAD_REQUEST);
     // const updatedTokenVault = await consumeToken(_id, 0.2);
-    console.log(updatedTokenVault);
+    // console.log(updatedTokenVault);
     const response = await fetchGptCaseQuery({
       startDate,
       endDate,
       query,
       courtName,
     });
-    return res
-      .status(StatusCodes.OK)
-      .json(SuccessResponse({ ...response, ...updatedTokenVault }));
+    console.log(response);
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse(
+        response
+        //  ...updatedTokenVault
+      )
+    );
   } catch (error) {
     console.log(error);
     res
