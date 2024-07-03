@@ -7,6 +7,76 @@ const Coupon = require("../models/coupon");
 const Tracking = require("../models/tracking");
 const moment = require("moment");
 
+async function isAdmin(req, res) {
+  const { phoneNumber } = req.params;
+  try {
+    const isAdmin = await GptServices.checkIsAdmin(phoneNumber);
+
+    return res.status(200).json(isAdmin);
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while checking admin status" });
+  }
+}
+
+async function removeAdminUser(req, res) {
+  try {
+    const { adminId } = req.params;
+    const { userId } = req.body;
+    const updatedUser = await GptServices.removeAdminUser(adminId, userId);
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "An error occurred while removing the user from the admin",
+    });
+  }
+}
+
+async function getAdmins(req, res) {
+  try {
+    const admins = await GptServices.getAdmins();
+    res.status(200).json(admins);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "An error occurred while fetching admins" });
+  }
+}
+
+async function createAdmin(req, res) {
+  const { adminId } = req.params;
+  const { userId } = req.body;
+
+  try {
+    const updatedUser = await GptServices.createAdmin(adminId, userId);
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while adding the user to the admin" });
+  }
+}
+
+async function addFirstUser(req, res) {
+  const { userId } = req.body;
+
+  try {
+    responseData = await GptServices.addFirstAdminUser(userId);
+    const { updatedUser, newAdmin } = responseData;
+
+    res.status(201).json({ admin: newAdmin, user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "An error occurred while creating the admin and adding the user",
+    });
+  }
+}
+
 async function updateUserPlan(req, res) {
   try {
     const { id, planName } = req.body;
@@ -25,7 +95,7 @@ async function generateReferralCode(req, res) {
   try {
     const { _id, firstName, lastName, collegeName } = req.body.client;
 
-    console.log(req.body.client);
+    // console.log(req.body.client);
 
     const updatedClient = await ClientService.updateClient(_id, {
       firstName,
@@ -144,7 +214,7 @@ async function getReferralCodes(req, res) {
         (u) => u.phoneNumber === code.generatedBy.phoneNumber
       );
 
-      console.log(generatedByUser);
+      // console.log(generatedByUser);
 
       // Map redeemedBy users
       const redeemedByUsers = code.redeemedBy.map((redeemedUser) => {
@@ -241,7 +311,7 @@ async function getUsers(req, res) {
       return startsWithValidDigit && !allDigitsSame;
     });
 
-    console.log(filteredUsers.length);
+    // console.log(filteredUsers.length);
 
     const MongoUser = await ClientService.getAllClientsDetails();
 
@@ -252,28 +322,28 @@ async function getUsers(req, res) {
       return startsWithValidDigit && !allDigitsSame;
     });
 
-    console.log(filteredUsersMongo.length);
+    // console.log(filteredUsersMongo.length);
 
     // Merge the filtered users from both MongoDB and Supabase
     const mergedUsers = filteredUsers.map((Muser) => {
       const user = filteredUsersMongo.find(
         (user) => user.phoneNumber === Muser.phoneNumber
       );
-      console.log({
-        mongoId: Muser.mongoId,
-        phoneNumber: Muser.phoneNumber,
-        createdAt: Muser.createdAt,
-        updatedAt: Muser.updatedAt,
-        totalTokenUsed: Muser.totalTokenUsed,
-        StateLocation: Muser.StateLocation,
-        numberOfSessions: Muser.numberOfSessions,
-        planName: Muser.planName,
-        ambassador: user.ambassador,
-        engagementTime: user.engagementTime,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        collegeName: user.collegeName,
-      });
+      // console.log({
+      //   mongoId: Muser.mongoId,
+      //   phoneNumber: Muser.phoneNumber,
+      //   createdAt: Muser.createdAt,
+      //   updatedAt: Muser.updatedAt,
+      //   totalTokenUsed: Muser.totalTokenUsed,
+      //   StateLocation: Muser.StateLocation,
+      //   numberOfSessions: Muser.numberOfSessions,
+      //   planName: Muser.planName,
+      //   ambassador: user.ambassador,
+      //   engagementTime: user.engagementTime,
+      //   firstName: user.firstName,
+      //   lastName: user.lastName,
+      //   collegeName: user.collegeName,
+      // });
       if (user) {
         // Format engagement time
         const engagementTime = user?.engagementTime
@@ -311,7 +381,7 @@ async function getUsers(req, res) {
       }
     });
 
-    console.log(mergedUsers);
+    // console.log(mergedUsers);
 
     // Send the filtered users as response
     res.json(mergedUsers);
@@ -697,4 +767,9 @@ module.exports = {
   usermonthlyvisit,
   useryearlyvisit,
   updateUserPlan,
+  addFirstUser,
+  createAdmin,
+  getAdmins,
+  removeAdminUser,
+  isAdmin,
 };

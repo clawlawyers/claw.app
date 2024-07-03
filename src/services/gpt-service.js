@@ -368,7 +368,7 @@ async function CheckReferralCodeExistToUser(mongoId) {
       },
     });
 
-    console.log(existingCode);
+    // console.log(existingCode);
 
     if (existingCode) return existingCode.referralCode;
     else return false;
@@ -522,6 +522,146 @@ async function fetchLastMessagePair(sessionId) {
   }
 }
 
+async function checkIsAdmin(phoneNumber) {
+  try {
+    phoneNumber = phoneNumber.substring(3);
+    // Fetch the user details
+    const user = await prisma.user.findUnique({
+      where: { phoneNumber: phoneNumber },
+      include: { adminUser: true },
+    });
+
+    if (!user) {
+      return { error: "User not found" };
+    }
+
+    // Check if the user is an admin
+    const isAdmin = user.adminUserId !== null;
+    return { phoneNumber: phoneNumber, isAdmin: isAdmin };
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while checking is admin",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function removeAdminUser(adminId, userId) {
+  try {
+    // Check if admin exists
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      return res.status(404).json({ error: "Admin not found" });
+    }
+
+    // Check if user exists and is associated with the admin
+    const user = await prisma.user.findUnique({
+      where: { mongoId: userId },
+      include: { adminUser: true },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (user.adminUserId !== adminId) {
+      return res
+        .status(400)
+        .json({ error: "User is not associated with this admin" });
+    }
+
+    // Update the user to dissociate from the admin
+    const updatedUser = await prisma.user.update({
+      where: { mongoId: userId },
+      data: { adminUserId: null },
+    });
+    return updatedUser;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while removing admin users",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function getAdmins() {
+  const admins = await prisma.admin.findMany({
+    include: {
+      users: true, // Include associated users
+    },
+  });
+
+  return admins;
+}
+
+async function createAdmin(adminId, userId) {
+  try {
+    // Check if admin exists
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
+    });
+
+    if (!admin) {
+      return res.status(404).json({ error: "Admin not found" });
+    }
+
+    // Update the user to associate with the admin
+    const updatedUser = await prisma.user.update({
+      where: { mongoId: userId },
+      data: { adminUserId: adminId },
+    });
+
+    return updatedUser;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while creating admin",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function addFirstAdminUser(userId) {
+  try {
+    // Check if the user exists
+    const user = await prisma.user.findUnique({
+      where: { mongoId: userId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Create a new admin and associate the user
+    const newAdmin = await prisma.admin.create({
+      data: {
+        users: {
+          connect: { mongoId: userId },
+        },
+      },
+    });
+
+    // Update the user to associate with the new admin
+    const updatedUser = await prisma.user.update({
+      where: { mongoId: userId },
+      data: { adminUserId: newAdmin.id },
+    });
+
+    return { updatedUser, newAdmin };
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while updating user plan",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function updateUserPlan(mongoId, newPlan) {
   try {
     const updatedUser = await prisma.user.update({
@@ -626,4 +766,9 @@ module.exports = {
   CheckReferralCodeExist,
   CheckReferralCodeExistToUser,
   fetchGptUserByPhoneNumbers,
+  addFirstAdminUser,
+  createAdmin,
+  getAdmins,
+  removeAdminUser,
+  checkIsAdmin,
 };
