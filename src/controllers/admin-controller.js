@@ -47,10 +47,10 @@ async function getAdmins(req, res) {
 
 async function createAdmin(req, res) {
   const { adminId } = req.params;
-  const { userId } = req.body;
+  const { phoneNumber } = req.body;
 
   try {
-    const updatedUser = await GptServices.createAdmin(adminId, userId);
+    const updatedUser = await GptServices.createAdmin(adminId, phoneNumber);
 
     res.status(200).json(updatedUser);
   } catch (error) {

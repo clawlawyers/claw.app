@@ -651,7 +651,7 @@ async function getAdmins() {
   return admins;
 }
 
-async function createAdmin(adminId, userId) {
+async function createAdmin(adminId, phoneNumber) {
   try {
     // Check if admin exists
     const admin = await prisma.admin.findUnique({
@@ -664,7 +664,7 @@ async function createAdmin(adminId, userId) {
 
     // Update the user to associate with the admin
     const updatedUser = await prisma.user.update({
-      where: { mongoId: userId },
+      where: { phoneNumber: phoneNumber },
       data: { adminUserId: adminId },
     });
 
