@@ -1,7 +1,7 @@
 const { RAZORPAY_ID, RAZORPAY_SECRET_KEY } = require("../config/server-config");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
-const { OrderService } = require("../services");
+const { OrderService, ClientService } = require("../services");
 const { ErrorResponse, SuccessResponse } = require("../utils/common");
 const { StatusCodes } = require("http-status-codes");
 const { paymentStatus } = require("../utils/common/constants");
@@ -13,16 +13,29 @@ const razorpay = new Razorpay({
 });
 
 async function createPayment(req, res) {
-  const { amount, currency, receipt, plan, billingCycle, request, session } =
-    req.body;
+  const {
+    amount,
+    currency,
+    receipt,
+    plan,
+    billingCycle,
+    request,
+    session,
+    phoneNumber,
+  } = req.body;
   // const { _id, phoneNumber } = req.body.client;
+  console.log(req.body);
+
+  const fetchUser = await ClientService.getClientByPhoneNumber(phoneNumber);
+
+  console.log(fetchUser._id.toHexString());
 
   const order = await OrderService.createOrder({
     plan,
     request,
     session,
     billingCycle,
-    user: "667c458610b669f89ebe5b76",
+    user: fetchUser._id,
     paymentStatus: paymentStatus.INITIATED,
   });
 
@@ -64,7 +77,31 @@ async function verifyPayment(req, res) {
         placedOrder.user.toString(),
         placedOrder.plan
       );
-      console.log(rs);
+      const Pdata = await prisma.plan.findUnique({
+        where: { name: placedOrder.plan },
+      });
+
+      // console.log(plansData);
+      let totalGptTokens = Pdata.gptToken;
+      let totalCaseSearchTokens = Pdata.caseSearchToken;
+
+      console.log(totalGptTokens, totalCaseSearchTokens);
+
+      const updatedUser = await prisma.user.update({
+        where: {
+          mongoId: placedOrder.user.toString(),
+        },
+        data: {
+          totalGptTokens: {
+            increment: totalGptTokens, // or any other value you want to increment by
+          },
+          totalCaseSearchTokens: {
+            increment: totalCaseSearchTokens, // or any other value you want to increment by
+          },
+        },
+      });
+
+      console.log(updatedUser);
     } catch (error) {
       console.log(error);
     }
