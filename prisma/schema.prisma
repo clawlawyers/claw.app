@@ -22,10 +22,14 @@ model ReferralCode {
 model Plan {
   name      String   @id @unique
   token     Float
+  gptToken  Int      @default(0)
+  caseSearchToken  Int  @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   session   Int      @default(1)
   users     User[]
+  planUsers           UserPlan[]
+
 }
 
 model Admin{
@@ -41,6 +45,8 @@ model User {
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
   tokenUsed               Float         @default(0.0)
+  gptTokenUsed            Int           @default(0)
+  caseSearchTokenUsed     Int           @default(0)
   totalTokenUsed          Float         @default(0.0)
   duration                Int           @default(0)
   StateLocation           String        @default("")
@@ -51,10 +57,23 @@ model User {
   sessions                Session[]
   numberOfSessions        Int           @default(1)
   plan                    Plan          @relation(fields: [planName], references: [name])
+  plans                   UserPlan[]
+
   redeemedReferralCode    ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [referralCode])
- adminUser                Admin?        @relation("AdminUsers", fields: [adminUserId], references: [id])
+  adminUser                Admin?        @relation("AdminUsers", fields: [adminUserId], references: [id])
   isCasesearch  Boolean  @default(false)  
  }
+
+model UserPlan {
+  userId   String
+  planName String
+  user     User @relation(fields: [userId], references: [mongoId], onDelete: Cascade)
+  plan     Plan @relation(fields: [planName], references: [name], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@id([userId, planName])
+}
 
 model Model {
   name      String    @id
