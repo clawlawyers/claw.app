@@ -136,7 +136,9 @@ async function createPlan(name, session, token) {
   }
 }
 
-async function consumeToken(mongoId, count = 1) {
+//case search token used
+
+async function consumeTokenCaseSearch(mongoId, count = 1) {
   try {
     console.log("count is ", count);
     const sender = await prisma.$transaction(async (tx) => {
@@ -148,7 +150,46 @@ async function consumeToken(mongoId, count = 1) {
           tokenUsed: {
             increment: count,
           },
-          totalTokenUsed: {
+          caseSearchTokenUsed: {
+            increment: count,
+          },
+        },
+        include: {
+          plan: { select: { token: true } },
+        },
+      });
+
+      console.log(sender);
+
+      if (sender.tokenUsed.toFixed(1) > sender.plan.token)
+        throw new Error(
+          `User does not have enough tokens, user - ${mongoId}, token to be used - ${count}`
+        );
+      return sender;
+    });
+    return {
+      token: { used: sender.tokenUsed.toFixed(1), total: sender.plan.token },
+    };
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error while consuming token");
+  }
+}
+
+//gpt token used
+async function consumeTokenGpt(mongoId, count = 1) {
+  try {
+    console.log("count is ", count);
+    const sender = await prisma.$transaction(async (tx) => {
+      const sender = await tx.user.update({
+        where: {
+          mongoId,
+        },
+        data: {
+          tokenUsed: {
+            increment: count,
+          },
+          gptTokenUsed: {
             increment: count,
           },
         },
@@ -716,7 +757,7 @@ async function addFirstAdminUser(userId) {
 
 async function updateUserPlan(mongoId, newPlan) {
   try {
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await prisma.userPlan.update({
       where: {
         mongoId,
       },
@@ -810,7 +851,7 @@ module.exports = {
   createReferralCode,
   redeemReferralCode,
   fetchReferralDetails,
-  consumeToken,
+  consumeTokenCaseSearch,
   fetchLastMessagePair,
   updateUserPlan,
   deleteSessions,
@@ -825,4 +866,5 @@ module.exports = {
   checkIsAdmin,
   caseSearchOn,
   caseSearchOnCheck,
+  consumeTokenGpt,
 };
