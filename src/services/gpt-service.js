@@ -161,14 +161,23 @@ async function consumeTokenCaseSearch(mongoId, count = 1) {
 
       console.log(sender);
 
-      if (sender.tokenUsed.toFixed(1) > sender.plan.token)
+      if (sender.caseSearchTokenUsed > sender.totalCaseSearchTokens)
         throw new Error(
           `User does not have enough tokens, user - ${mongoId}, token to be used - ${count}`
         );
       return sender;
     });
     return {
-      token: { used: sender.tokenUsed.toFixed(1), total: sender.plan.token },
+      token: {
+        used: {
+          gptTokenUsed: sender.gptTokenUsed,
+          caseSearchTokenUsed: sender.caseSearchTokenUsed,
+        },
+        total: {
+          totalGptTokens: sender.totalGptTokens,
+          totalCaseSearchTokens: sender.totalCaseSearchTokens,
+        },
+      },
     };
   } catch (error) {
     console.log(error);
@@ -200,14 +209,23 @@ async function consumeTokenGpt(mongoId, count = 1) {
 
       console.log(sender);
 
-      if (sender.tokenUsed.toFixed(1) > sender.plan.token)
+      if (sender.gptTokenUsed > sender.totalGptTokens)
         throw new Error(
           `User does not have enough tokens, user - ${mongoId}, token to be used - ${count}`
         );
       return sender;
     });
     return {
-      token: { used: sender.tokenUsed.toFixed(1), total: sender.plan.token },
+      token: {
+        used: {
+          gptTokenUsed: sender.gptTokenUsed,
+          caseSearchTokenUsed: sender.caseSearchTokenUsed,
+        },
+        total: {
+          totalGptTokens: sender.totalGptTokens,
+          totalCaseSearchTokens: sender.totalCaseSearchTokens,
+        },
+      },
     };
   } catch (error) {
     console.log(error);
@@ -219,7 +237,7 @@ async function createMessage(sessionId, prompt, isUser, mongoId) {
   try {
     console.log(sessionId, prompt);
     if (isUser) {
-      const updatedTokenVault = await consumeToken(mongoId, 1);
+      const updatedTokenVault = await consumeTokenGpt(mongoId, 1);
       const newMessage = await prisma.message.create({
         data: {
           sessionId,
