@@ -64,6 +64,60 @@ async function startSession(req, res) {
   }
 }
 
+async function funPlan(req, res) {
+  try {
+    const { userId, newPlan } = req.body;
+    console.log(newPlan);
+    const recievedResponse = await GptServices.updateUserPlan(userId, newPlan);
+    // const plans = await prisma.userPlan.findMany({
+    //   where: {
+    //     userId: userId,
+    //   },
+    // });
+    // const plansData = await Promise.all(
+    //   plans.map(async (plan) => {
+    //     const Pdata = await prisma.plan.findUnique({
+    //       where: { name: plan.planName },
+    //     });
+
+    //     return Pdata;
+    //   })
+    // );
+
+    const Pdata = await prisma.plan.findUnique({
+      where: { name: newPlan },
+    });
+
+    // console.log(plansData);
+    let totalGptTokens = Pdata.gptToken;
+    let totalCaseSearchTokens = Pdata.caseSearchToken;
+
+    console.log(totalGptTokens, totalCaseSearchTokens);
+
+    const updatedUser = await prisma.user.update({
+      where: {
+        mongoId: userId,
+      },
+      data: {
+        totalGptTokens: {
+          increment: totalGptTokens, // or any other value you want to increment by
+        },
+        totalCaseSearchTokens: {
+          increment: totalCaseSearchTokens, // or any other value you want to increment by
+        },
+      },
+    });
+
+    console.log(updatedUser);
+    return res.status(StatusCodes.OK).json(SuccessResponse(recievedResponse));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
 async function caseSearchOnCheck(req, res) {
   try {
     let { phoneNumber } = req.body;
@@ -342,11 +396,11 @@ async function fetchGptUser(req, res) {
         );
     const gptUser = await GptServices.fetchGptUser(_id);
 
-    if (gptUser) {
-      // Format the token values to one decimal place
-      gptUser.token.used = parseFloat(gptUser.token.used.toFixed(1));
-      // gptUser.token.total = parseFloat(gptUser.token.total.toFixed(1));
-    }
+    // if (gptUser) {
+    //   // Format the token values to one decimal place
+    //   gptUser.token.used = parseFloat(gptUser.token.used.toFixed(1));
+    //   // gptUser.token.total = parseFloat(gptUser.token.total.toFixed(1));
+    // }
 
     return res.status(StatusCodes.OK).json(SuccessResponse(gptUser));
   } catch (error) {
@@ -629,4 +683,5 @@ module.exports = {
   getLegalgptSummaryDetails,
   caseSearchOn,
   caseSearchOnCheck,
+  funPlan,
 };

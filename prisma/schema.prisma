@@ -48,6 +48,8 @@ model User {
   gptTokenUsed            Int           @default(0)
   caseSearchTokenUsed     Int           @default(0)
   totalTokenUsed          Float         @default(0.0)
+  totalGptTokens          Int           @default(0)
+  totalCaseSearchTokens   Int           @default(0)
   duration                Int           @default(0)
   StateLocation           String        @default("")
   generatedReferralCodeId String?

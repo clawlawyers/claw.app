@@ -261,12 +261,41 @@ async function fetchGptUser(mongoId) {
         },
       },
     });
+
+    const plans = await prisma.userPlan.findMany({
+      where: {
+        userId: mongoId,
+      },
+    });
+    const plansData = await Promise.all(
+      plans.map(async (plan) => {
+        const Pdata = await prisma.plan.findUnique({
+          where: { name: plan.planName },
+        });
+
+        return Pdata;
+      })
+    );
+
+    const planNames = plansData.map((plan) => {
+      return plan.name;
+    });
+
     if (!user) return null;
     return {
       createdAt: user.createdAt,
       phoneNumber: user.phoneNumber,
-      plan: user.planName,
-      token: { used: user.tokenUsed, total: user.plan.token },
+      plan: planNames,
+      token: {
+        used: {
+          gptTokenUsed: user.gptTokenUsed,
+          caseSearchTokenUsed: user.caseSearchTokenUsed,
+        },
+        total: {
+          totalGptTokens: user.totalGptTokens,
+          totalCaseSearchTokens: user.totalCaseSearchTokens,
+        },
+      },
     };
   } catch (error) {
     console.log(error);
@@ -716,28 +745,18 @@ async function addFirstAdminUser(userId) {
 
 async function updateUserPlan(mongoId, newPlan) {
   try {
-    const updatedUser = await prisma.user.update({
-      where: {
-        mongoId,
-      },
+    const updatedUser = await prisma.userPlan.create({
       data: {
+        userId: mongoId,
         planName: newPlan,
-        tokenUsed: 0,
-      },
-      select: {
-        plan: {
-          select: {
-            token: true,
-          },
-        },
-        planName: true,
-        tokenUsed: true,
       },
     });
 
+    console.log(updatedUser);
+
     return {
+      user: updatedUser.userId,
       plan: updatedUser.planName,
-      token: { used: updatedUser.tokenUsed, total: updatedUser.plan.token },
     };
   } catch (error) {
     console.error(error);
