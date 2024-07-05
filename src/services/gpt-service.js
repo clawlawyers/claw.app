@@ -803,6 +803,7 @@ async function addFirstAdminUser(userId) {
 }
 
 async function updateUserPlan(mongoId, newPlan) {
+  console.log(mongoId, newPlan);
   try {
     const updatedUser = await prisma.userPlan.create({
       data: {
