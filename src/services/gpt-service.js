@@ -1,3 +1,4 @@
+// const { isFunctionMessage } = require("openai/lib/chatCompletionUtils.mjs");
 const prisma = require("../config/prisma-client");
 const AppError = require("../utils/errors/app-error");
 const { StatusCodes } = require("http-status-codes");
@@ -264,6 +265,39 @@ async function createMessage(sessionId, prompt, isUser, mongoId) {
     console.log(error);
     throw new AppError(
       "Error while creating new message",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function getPlansByUserId(mongoId) {
+  try {
+    const plans = await prisma.userPlan.findMany({
+      where: {
+        userId: mongoId,
+      },
+    });
+
+    const plansData = await Promise.all(
+      plans.map(async (plan) => {
+        const Pdata = await prisma.plan.findUnique({
+          where: { name: plan.planName },
+        });
+        return Pdata;
+      })
+    );
+
+    // console.log(plansData);
+
+    const planNames = plansData.map((plan) => {
+      return plan.name;
+    });
+
+    return planNames;
+  } catch (e) {
+    console.error("Error while fetching plans:", e);
+    throw new AppError(
+      "Error while fetching plans",
       StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
@@ -805,19 +839,119 @@ async function addFirstAdminUser(userId) {
 async function updateUserPlan(mongoId, newPlan) {
   console.log(mongoId, newPlan);
   try {
-    const updatedUser = await prisma.userPlan.create({
+    const updatedUserPlan = await prisma.userPlan.create({
       data: {
         userId: mongoId,
         planName: newPlan,
       },
     });
 
+    const Pdata = await prisma.plan.findUnique({
+      where: { name: newPlan },
+    });
+
+    // console.log(plansData);
+    let totalGptTokens = Pdata.gptToken;
+    let totalCaseSearchTokens = Pdata.caseSearchToken;
+
+    console.log(totalGptTokens, totalCaseSearchTokens);
+
+    const updatedUser = await prisma.user.update({
+      where: {
+        mongoId: mongoId,
+      },
+      data: {
+        totalGptTokens: {
+          increment: totalGptTokens, // or any other value you want to increment by
+        },
+        totalCaseSearchTokens: {
+          increment: totalCaseSearchTokens, // or any other value you want to increment by
+        },
+      },
+    });
+
     console.log(updatedUser);
 
     return {
-      user: updatedUser.userId,
-      plan: updatedUser.planName,
+      user: updatedUser.mongoId,
+      plan: newPlan,
     };
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while updating user plan",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function removeUserPlans(userId, planNames) {
+  try {
+    const supUser = await prisma.user.findUnique({
+      where: { mongoId: userId },
+    });
+
+    for (const planName of planNames) {
+      const userPlan = await prisma.userPlan.findUnique({
+        where: {
+          userId_planName: {
+            userId: userId,
+            planName: planName,
+          },
+        },
+      });
+
+      if (userPlan) {
+        await prisma.userPlan.delete({
+          where: {
+            userId_planName: {
+              userId: userId,
+              planName: planName,
+            },
+          },
+        });
+        console.log(`Removed plan ${planName} for user ${userId}`);
+
+        const Pdata = await prisma.plan.findUnique({
+          where: { name: planName },
+        });
+
+        let totalGptTokens = Pdata.gptToken;
+        let totalCaseSearchTokens = Pdata.caseSearchToken;
+        let totalGptTokenUsed = supUser.totalGptTokens - totalGptTokens;
+
+        if (totalGptTokenUsed < 0) {
+          totalGptTokenUsed = 0;
+        }
+
+        let totalCaseSearchTokenUsed =
+          supUser.totalCaseSearchTokens - totalCaseSearchTokens;
+        if (totalCaseSearchTokenUsed < 0) {
+          totalCaseSearchTokenUsed = 0;
+        }
+
+        console.log(totalGptTokens, totalCaseSearchTokens);
+
+        await prisma.user.update({
+          where: {
+            mongoId: userId,
+          },
+          data: {
+            totalGptTokens: {
+              decrement: totalGptTokens, // or any other value you want to increment by
+            },
+            totalCaseSearchTokens: {
+              decrement: totalCaseSearchTokens, // or any other value you want to increment by
+            },
+            caseSearchTokenUsed: totalCaseSearchTokenUsed,
+            gptTokenUsed: totalGptTokens,
+          },
+        });
+      } else {
+        console.log(`Plan ${planName} not found for user ${userId}`);
+      }
+    }
+    return { userId, planNames };
   } catch (error) {
     console.error(error);
     throw new AppError(
@@ -905,4 +1039,6 @@ module.exports = {
   caseSearchOn,
   caseSearchOnCheck,
   consumeTokenGpt,
+  getPlansByUserId,
+  removeUserPlans,
 };

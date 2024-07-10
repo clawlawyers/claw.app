@@ -26,6 +26,7 @@ const {
   getAdmins,
   removeAdminUser,
   isAdmin,
+  removeUserPlan,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 // const { updateUserPlan } = require("../../services/gpt-service");
@@ -50,11 +51,12 @@ router.get("/dailyuserpagevisit", userdailyvisit);
 router.get("/monthlyuserpagevisit", usermonthlyvisit);
 router.get("/yearlyuserpagevisit", useryearlyvisit);
 router.patch("/updateUserLocation", setLocation);
-router.patch("/updateUserPlan", updateUserPlan);
+router.patch("/updateUserPlans", updateUserPlan);
 router.post("/addFirstAdminUser", addFirstUser);
 router.post("/:adminId/addAdminUser", createAdmin);
 router.get("/getAdmins", getAdmins);
 router.post("/:adminId/removeUser", removeAdminUser);
 router.get("/:phoneNumber/isAdmin", isAdmin);
+router.delete("/removeUserPlan", removeUserPlan);
 
 module.exports = router;

@@ -77,31 +77,8 @@ async function verifyPayment(req, res) {
         placedOrder.user.toString(),
         placedOrder.plan
       );
-      const Pdata = await prisma.plan.findUnique({
-        where: { name: placedOrder.plan },
-      });
 
-      // console.log(plansData);
-      let totalGptTokens = Pdata.gptToken;
-      let totalCaseSearchTokens = Pdata.caseSearchToken;
-
-      console.log(totalGptTokens, totalCaseSearchTokens);
-
-      const updatedUser = await prisma.user.update({
-        where: {
-          mongoId: placedOrder.user.toString(),
-        },
-        data: {
-          totalGptTokens: {
-            increment: totalGptTokens, // or any other value you want to increment by
-          },
-          totalCaseSearchTokens: {
-            increment: totalCaseSearchTokens, // or any other value you want to increment by
-          },
-        },
-      });
-
-      console.log(updatedUser);
+      console.log(rs);
     } catch (error) {
       console.log(error);
     }
