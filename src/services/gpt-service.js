@@ -918,19 +918,19 @@ async function removeUserPlans(userId, planNames) {
 
         let totalGptTokens = Pdata.gptToken;
         let totalCaseSearchTokens = Pdata.caseSearchToken;
-        let totalGptTokenUsed = supUser.totalGptTokens - totalGptTokens;
+        let totalGptTokenUsed = supUser.gptTokenUsed - totalGptTokens;
 
         if (totalGptTokenUsed < 0) {
           totalGptTokenUsed = 0;
         }
 
         let totalCaseSearchTokenUsed =
-          supUser.totalCaseSearchTokens - totalCaseSearchTokens;
+          supUser.caseSearchTokenUsed - totalCaseSearchTokens;
         if (totalCaseSearchTokenUsed < 0) {
           totalCaseSearchTokenUsed = 0;
         }
 
-        console.log(totalGptTokens, totalCaseSearchTokens);
+        console.log(totalGptTokenUsed, totalCaseSearchTokenUsed);
 
         await prisma.user.update({
           where: {
@@ -944,7 +944,7 @@ async function removeUserPlans(userId, planNames) {
               decrement: totalCaseSearchTokens, // or any other value you want to increment by
             },
             caseSearchTokenUsed: totalCaseSearchTokenUsed,
-            gptTokenUsed: totalGptTokens,
+            gptTokenUsed: totalGptTokenUsed,
           },
         });
       } else {
