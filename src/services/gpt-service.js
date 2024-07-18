@@ -355,6 +355,8 @@ async function fetchGptUser(mongoId) {
       },
     });
 
+    console.log(user);
+
     const plans = await prisma.userPlan.findMany({
       where: {
         userId: mongoId,

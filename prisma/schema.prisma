@@ -63,7 +63,7 @@ model User {
 
   redeemedReferralCode    ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [referralCode])
   adminUser                Admin?        @relation("AdminUsers", fields: [adminUserId], references: [id])
-  isCasesearch  Boolean  @default(false)  
+  isCasesearch  Boolean  @default(true)  
  }
 
 model UserPlan {
