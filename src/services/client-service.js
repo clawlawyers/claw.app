@@ -77,7 +77,9 @@ async function getClientFromToken(token) {
 
 async function getClientByPhoneNumber(phoneNumber) {
   try {
-    phoneNumber = phoneNumber.substring(3);
+    if (phoneNumber.startsWith("+")) {
+      phoneNumber = phoneNumber.substring(3);
+    }
     const client = await clientRepository.getClientByPhoneNumber(phoneNumber);
     return client;
   } catch (error) {
