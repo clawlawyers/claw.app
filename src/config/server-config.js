@@ -22,4 +22,7 @@ module.exports = {
   CASHFREE_URL: process.env.CASHFREE_URL,
   RAZORPAY_ID: process.env.RAZORPAY_ID,
   RAZORPAY_SECRET_KEY: process.env.RAZORPAY_SECRET_KEY,
+  MAIL_HOST: process.env.MAIL_HOST,
+  MAIL_USER: process.env.MAIL_USER,
+  MAIL_PASS: process.env.MAIL_PASS,
 };

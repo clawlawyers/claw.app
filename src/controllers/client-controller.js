@@ -51,51 +51,6 @@ async function authMe(req, res) {
   }
 }
 
-async function getBookedData(req, res) {
-  try {
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-
-    const bookings = await ClientService.getBookedData(lastMonth);
-
-    res.status(200).json(bookings);
-  } catch (err) {
-    console.error(err);
-    res.status(500).send("Internal server error.");
-  }
-}
-
-async function bookCourtRoom(req, res) {
-  try {
-    const { userId, date, hour, password } = req.body;
-
-    // Check if required fields are provided
-    if (!userId || !date || hour === undefined || !password) {
-      return res.status(400).send("Missing required fields.");
-    }
-
-    const bookingDate = new Date(date);
-
-    // book court
-
-    const respo = await ClientService.courtRoomBook(
-      userId,
-      bookingDate,
-      hour,
-      password
-    );
-
-    if (respo) {
-      return res.status(400).send(respo);
-    }
-
-    res.status(201).send("Courtroom booked successfully.");
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Internal server error.");
-  }
-}
-
 async function getClientById(req, res) {
   try {
     const response = await ClientService.getClient(req.query.id);
@@ -321,6 +276,4 @@ module.exports = {
   register,
   createLeader,
   setLocation,
-  bookCourtRoom,
-  getBookedData,
 };
