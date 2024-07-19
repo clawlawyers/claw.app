@@ -101,15 +101,24 @@ async function getBookedData(lastMonth) {
 async function loginToCourtRoom(phoneNumber, password) {
   try {
     // Get the current date and hour
-    // const currentDate = new Date();
-    // const currentHour = currentDate.getHours();
+    const currentDate = new Date();
+    const formattedDate = new Date(
+      Date.UTC(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate()
+      )
+    );
+    const currentHour = currentDate.getHours();
 
-    const currentDate = "2024-07-30";
-    const currentHour = 14;
+    console.log(formattedDate, currentHour);
+
+    // const currentDate = "2024-07-30";
+    // const currentHour = 14;
 
     // Find existing booking for the current date and hour
     const booking = await CourtRoomBooking.findOne({
-      date: currentDate,
+      date: formattedDate,
       hour: currentHour,
     });
 
@@ -117,10 +126,11 @@ async function loginToCourtRoom(phoneNumber, password) {
       return "No bookings found for the current time slot.";
     }
 
-    // console.log(booking);
+    console.log(booking);
 
     // Check if the user with the given phone number is in the booking
     const userBooking = booking.courtroomBookings.find((courtroomBooking) => {
+      console.log(courtroomBooking.phoneNumber == phoneNumber);
       return courtroomBooking.phoneNumber == phoneNumber;
     });
 
@@ -157,11 +167,11 @@ async function loginToCourtRoom(phoneNumber, password) {
 async function getClientById(phoneNumber) {
   try {
     // Get the current date and hour
-    // const currentDate = new Date();
-    // const currentHour = currentDate.getHours();
+    const currentDate = new Date();
+    const currentHour = currentDate.getHours();
 
-    const currentDate = "2024-07-30";
-    const currentHour = 14;
+    // const currentDate = "2024-07-30";
+    // const currentHour = 14;
 
     // Find existing booking for the current date and hour
     const booking = await CourtRoomBooking.findOne({
