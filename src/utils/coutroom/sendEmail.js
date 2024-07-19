@@ -9,6 +9,8 @@ const {
 const sendConfirmationEmail = async (email) => {
   const transporter = nodemailer.createTransport({
     host: MAIL_HOST,
+    port: 587,
+    secure: false, // true for 465, false for other ports
     auth: {
       user: MAIL_USER, // Replace with your email
       pass: MAIL_PASS, // Replace with your email password
