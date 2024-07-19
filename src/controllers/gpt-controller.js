@@ -10,6 +10,7 @@ const {
 const { FLASK_API_ENDPOINT } = process.env;
 
 async function fetchGptApi(body) {
+  console.log(body);
   const response = await fetch(`${FLASK_API_ENDPOINT}/gpt/generate`, {
     method: "POST",
     headers: {
@@ -17,6 +18,8 @@ async function fetchGptApi(body) {
     },
     body: JSON.stringify(body),
   });
+
+  console.log(response);
 
   return response.json();
 }
