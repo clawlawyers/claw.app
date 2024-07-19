@@ -65,4 +65,7 @@ router.patch(
   ClientController.updateClient
 );
 
+router.post("/book-courtroom", ClientController.bookCourtRoom);
+router.get("/book-courtroom", ClientController.getBookedData);
+
 module.exports = router;

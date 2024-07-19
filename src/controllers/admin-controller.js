@@ -6,6 +6,20 @@ const User = require("../models/user"); // Adjust the path as per your project s
 const Coupon = require("../models/coupon");
 const Tracking = require("../models/tracking");
 const moment = require("moment");
+const { promises } = require("form-data");
+
+async function removeUserPlan(req, res) {
+  try {
+    const { userId, planName } = req.body; // plan should be in array format
+    const deletePlan = await GptServices.removeUserPlans(userId, planName);
+    return res.status(StatusCodes.OK).json(SuccessResponse({ ...deletePlan }));
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while removing user plan" });
+  }
+}
 
 async function isAdmin(req, res) {
   const { phoneNumber } = req.params;
@@ -47,10 +61,10 @@ async function getAdmins(req, res) {
 
 async function createAdmin(req, res) {
   const { adminId } = req.params;
-  const { userId } = req.body;
+  const { phoneNumber } = req.body;
 
   try {
-    const updatedUser = await GptServices.createAdmin(adminId, userId);
+    const updatedUser = await GptServices.createAdmin(adminId, phoneNumber);
 
     res.status(200).json(updatedUser);
   } catch (error) {
@@ -79,10 +93,40 @@ async function addFirstUser(req, res) {
 
 async function updateUserPlan(req, res) {
   try {
-    const { id, planName } = req.body;
-    const updatePlan = await GptServices.updateUserPlan(id, planName);
+    let { id, planNames } = req.body;
+    const userCurrPlans = await GptServices.getPlansByUserId(id);
+
+    console.log(planNames, userCurrPlans);
+
+    let tempPlanNames = planNames;
+    let tempUserCurrPlans = userCurrPlans;
+
+    tempPlanNames = tempPlanNames.filter(
+      (plan) => !userCurrPlans.includes(plan)
+    );
+
+    tempUserCurrPlans = tempUserCurrPlans.filter(
+      (plan) => !planNames.includes(plan)
+    );
+
+    console.log(tempPlanNames);
+    console.log(tempUserCurrPlans);
+
+    if (tempUserCurrPlans.length > 0) {
+      await GptServices.removeUserPlans(id, tempUserCurrPlans);
+    }
+    if (tempPlanNames.length > 0) {
+      await Promise.all(
+        tempPlanNames?.map(async (plan) => {
+          await GptServices.updateUserPlan(id, plan);
+        })
+      );
+    }
+
     res.setHeader("Content-Type", "application/json");
-    return res.status(StatusCodes.OK).json(SuccessResponse(updatePlan));
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ ...tempPlanNames }));
   } catch (error) {
     console.log(error);
     return res
@@ -325,61 +369,69 @@ async function getUsers(req, res) {
     // console.log(filteredUsersMongo.length);
 
     // Merge the filtered users from both MongoDB and Supabase
-    const mergedUsers = filteredUsers.map((Muser) => {
-      const user = filteredUsersMongo.find(
-        (user) => user.phoneNumber === Muser.phoneNumber
-      );
-      // console.log({
-      //   mongoId: Muser.mongoId,
-      //   phoneNumber: Muser.phoneNumber,
-      //   createdAt: Muser.createdAt,
-      //   updatedAt: Muser.updatedAt,
-      //   totalTokenUsed: Muser.totalTokenUsed,
-      //   StateLocation: Muser.StateLocation,
-      //   numberOfSessions: Muser.numberOfSessions,
-      //   planName: Muser.planName,
-      //   ambassador: user.ambassador,
-      //   engagementTime: user.engagementTime,
-      //   firstName: user.firstName,
-      //   lastName: user.lastName,
-      //   collegeName: user.collegeName,
-      // });
-      if (user) {
-        // Format engagement time
-        const engagementTime = user?.engagementTime
-          ? {
-              daily: Array.from(user.engagementTime.daily.values())
-                .reduce((a, b) => a + b, 0)
-                .toFixed(2),
-              monthly: Array.from(user.engagementTime.monthly.values())
-                .reduce((a, b) => a + b, 0)
-                .toFixed(2),
-              yearly: Array.from(user.engagementTime.yearly.values())
-                .reduce((a, b) => a + b, 0)
-                .toFixed(2),
-              total: user.engagementTime.total.toFixed(2),
-            }
-          : null;
+    const mergedUsers = await Promise.all(
+      filteredUsers.map(async (Muser) => {
+        const user = filteredUsersMongo.find(
+          (user) => user.phoneNumber === Muser.phoneNumber
+        );
+        // console.log({
+        //   mongoId: Muser.mongoId,
+        //   phoneNumber: Muser.phoneNumber,
+        //   createdAt: Muser.createdAt,
+        //   updatedAt: Muser.updatedAt,
+        //   totalTokenUsed: Muser.totalTokenUsed,
+        //   StateLocation: Muser.StateLocation,
+        //   numberOfSessions: Muser.numberOfSessions,
+        //   planName: Muser.planName,
+        //   ambassador: user.ambassador,
+        //   engagementTime: user.engagementTime,
+        //   firstName: user.firstName,
+        //   lastName: user.lastName,
+        //   collegeName: user.collegeName,
+        // });
 
-        return {
-          mongoId: Muser.mongoId,
-          phoneNumber: Muser.phoneNumber,
-          createdAt: Muser.createdAt,
-          updatedAt: Muser.updatedAt,
-          totalTokenUsed: Muser.totalTokenUsed,
-          StateLocation: Muser.StateLocation,
-          numberOfSessions: Muser.numberOfSessions,
-          planName: Muser.planName,
-          ambassador: user.ambassador,
-          engagementTime: engagementTime,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          collegeName: user.collegeName,
-          averageSessionEngagementTime:
-            engagementTime?.total / Muser?.numberOfSessions,
-        };
-      }
-    });
+        if (user) {
+          const planNames = await GptServices.getPlansByUserId(Muser.mongoId);
+
+          // console.log(planNames);
+
+          // Format engagement time
+          const engagementTime = user?.engagementTime
+            ? {
+                daily: Array.from(user.engagementTime.daily.values())
+                  .reduce((a, b) => a + b, 0)
+                  .toFixed(2),
+                monthly: Array.from(user.engagementTime.monthly.values())
+                  .reduce((a, b) => a + b, 0)
+                  .toFixed(2),
+                yearly: Array.from(user.engagementTime.yearly.values())
+                  .reduce((a, b) => a + b, 0)
+                  .toFixed(2),
+                total: user.engagementTime.total.toFixed(2),
+              }
+            : null;
+
+          return {
+            mongoId: Muser.mongoId,
+            phoneNumber: Muser.phoneNumber,
+            createdAt: Muser.createdAt,
+            updatedAt: Muser.updatedAt,
+            totalTokenUsed: Muser.totalTokenUsed,
+            StateLocation: Muser.StateLocation,
+            numberOfSessions: Muser.numberOfSessions,
+            // planName: Muser.planName,
+            planNames,
+            ambassador: user.ambassador,
+            engagementTime: engagementTime,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            collegeName: user.collegeName,
+            averageSessionEngagementTime:
+              engagementTime?.total / Muser?.numberOfSessions,
+          };
+        }
+      })
+    );
 
     // console.log(mergedUsers);
 
@@ -772,4 +824,5 @@ module.exports = {
   getAdmins,
   removeAdminUser,
   isAdmin,
+  removeUserPlan,
 };
