@@ -6,6 +6,7 @@ const { ErrorResponse, SuccessResponse } = require("../utils/common");
 const { StatusCodes } = require("http-status-codes");
 const { paymentStatus } = require("../utils/common/constants");
 const { hashPassword } = require("../utils/coutroom/auth");
+const { sendConfirmationEmail } = require("../utils/coutroom/sendEmail");
 
 const razorpay = new Razorpay({
   key_id: RAZORPAY_ID,
@@ -67,7 +68,7 @@ async function verifyPayment(req, res) {
       });
 
       // update the plan for user
-      console.log(placedOrder.user.toString(), placedOrder.plan);
+      console.log(placedOrder);
       // const rs = await GptServices.updateUserPlan(
       //   placedOrder.user.toString(),
       //   placedOrder.plan
