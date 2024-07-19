@@ -4,7 +4,7 @@ const { CourtroomService } = require("../services");
 
 async function bookCourtRoom(req, res) {
   try {
-    const { name, phoneNumber, email, password, slots } = req.body;
+    const { name, phoneNumber, email, password, slots, recording } = req.body;
 
     // Check if required fields are provided
     if (
@@ -35,7 +35,8 @@ async function bookCourtRoom(req, res) {
         email,
         hashedPassword,
         bookingDate,
-        hour
+        hour,
+        recording
       );
 
       if (respo) {
@@ -65,7 +66,25 @@ async function getBookedData(req, res) {
   }
 }
 
+async function loginToCourtRoom(req, res) {
+  const { phoneNumber, password } = req.body;
+  try {
+    if (!phoneNumber || !password) {
+      return res.status(400).send("Missing required fields.");
+    }
+    const response = await CourtroomService.loginToCourtRoom(
+      phoneNumber,
+      password
+    );
+    res.status(200).json(response);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal server error.");
+  }
+}
+
 module.exports = {
   bookCourtRoom,
   getBookedData,
+  loginToCourtRoom,
 };

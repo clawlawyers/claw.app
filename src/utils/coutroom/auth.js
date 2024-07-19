@@ -21,7 +21,7 @@ const generateToken = (payload) => {
 };
 
 // Function to verify JWT token
-const verifyToken = (token) => {
+const verifyTokenCR = (token) => {
   try {
     return jwt.verify(token, jwtSecret);
   } catch (err) {
@@ -33,5 +33,5 @@ module.exports = {
   hashPassword,
   comparePassword,
   generateToken,
-  verifyToken,
+  verifyTokenCR,
 };

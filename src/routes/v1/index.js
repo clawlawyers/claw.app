@@ -15,6 +15,7 @@ const AdminRoute = require("./admin-routes");
 const CronRoutes = require("./cron-routes");
 const Salesman = require("./salesman");
 const Razorpay = require("./razorpay-routes");
+const BookingPayment = require("./bookingPayment-routes");
 const router = express.Router();
 
 router.use("/user", UserRoutes);
@@ -29,6 +30,7 @@ router.use("/mailinglist", MailingListRoutes);
 router.use("/case", CaseFinderRoutes);
 // router.use("/payment", PaymentRoutes);
 router.use("/payment", Razorpay);
+router.use("/booking-payment", BookingPayment);
 router.use("/admin", AdminRoute);
 router.use("/cron", CronRoutes);
 router.use("/salesman", Salesman);

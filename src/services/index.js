@@ -9,5 +9,6 @@ module.exports = {
   MailingListService: require("./mailingList-service"),
   GptServices: require("./gpt-service"),
   OrderService: require("./order-service"),
+  BookingPayment: require("./bookingPayment-service"),
   PaymentService: require("./payment-service"),
 };

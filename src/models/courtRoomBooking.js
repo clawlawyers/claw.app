@@ -1,14 +1,13 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
-const { v4: uuidv4 } = require("uuid");
 
 // Define the individual courtroom booking subdocument schema
 const CourtroomBookingSchema = new Schema({
-  // userId: { type: String, default: uuidv4, unique: true },
   name: { type: String, required: true },
-  phoneNumber: { type: Number, required: true },
+  phoneNumber: { type: String, required: true },
   email: { type: String, required: true },
   password: { type: String, required: true },
+  recording: { type: Boolean, required: true },
 });
 
 // Define the booking schema
