@@ -8,12 +8,18 @@ const {
 // Function to send confirmation email
 const sendConfirmationEmail = async (email) => {
   const transporter = nodemailer.createTransport({
-    host: MAIL_HOST,
-    port: 587,
-    secure: false, // true for 465, false for other ports
+    service: "gmail",
+    port: 465,
+    secure: true, // true for 465, false for other ports
+    logger: true,
+    debug: true,
+    secureConnection: true,
     auth: {
       user: MAIL_USER, // Replace with your email
       pass: MAIL_PASS, // Replace with your email password
+    },
+    tls: {
+      rejectUnauthorized: true,
     },
   });
 
