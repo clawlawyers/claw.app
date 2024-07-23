@@ -17,7 +17,16 @@ const comparePassword = async (password, hashedPassword) => {
 
 // Function to generate JWT token
 const generateToken = (payload) => {
-  return jwt.sign(payload, jwtSecret, { expiresIn: "1h" });
+  // Get the current time
+  const now = new Date();
+
+  // Calculate the remaining time in seconds until the next hour
+  const minutes = now.getMinutes();
+  const seconds = now.getSeconds();
+  const remainingSeconds = (60 - minutes) * 60 - seconds;
+
+  // Generate the token with the calculated expiration time
+  return jwt.sign(payload, jwtSecret, { expiresIn: remainingSeconds });
 };
 
 // Function to verify JWT token

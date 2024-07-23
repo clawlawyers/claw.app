@@ -3,9 +3,10 @@ const Schema = mongoose.Schema;
 
 // Define the individual case history subdocument schema
 const CaseHistorySchema = new Schema({
-  caseDetails: { type: String, required: true },
-  arguments: { type: String, required: true },
-  conclusion: { type: String, required: true },
+  argument: [{ type: String, required: true }],
+  counter_argument: [{ type: String, required: true }],
+  judgement: [{ type: String, required: true }],
+  potential_objection: [{ type: String, required: true }],
   verdict: { type: String, default: "NA" },
 });
 
@@ -14,12 +15,13 @@ const CourtroomHistorySchema = new Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Client",
+      ref: "CourtroomUser",
       required: true,
     },
     slot: {
-      date: { type: Date, required: true },
-      hour: { type: Number, required: true, min: 0, max: 23 },
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CourtRoomBooking",
+      required: true,
     },
     history: [CaseHistorySchema],
     latestCaseHistory: CaseHistorySchema,

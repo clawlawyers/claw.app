@@ -1,7 +1,10 @@
 const { StatusCodes } = require("http-status-codes");
 const AppError = require("../utils/errors/app-error");
 const CourtRoomBooking = require("../models/courtRoomBooking");
+const CourtroomUser = require("../models/CourtroomUser");
 const { comparePassword, generateToken } = require("../utils/coutroom/auth");
+const CourtroomHistory = require("../models/courtRoomHistory");
+const { COURTROOM_API_ENDPOINT } = process.env;
 
 async function courtRoomBook(
   name,
@@ -17,7 +20,7 @@ async function courtRoomBook(
     let booking = await CourtRoomBooking.findOne({
       date: bookingDate,
       hour: hour,
-    });
+    }).populate("courtroomBookings");
 
     if (!booking) {
       // Create a new booking if it doesn't exist
@@ -52,14 +55,20 @@ async function courtRoomBook(
       return `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`;
     }
 
-    // Add the new booking
-    booking.courtroomBookings.push({
+    // Create a new courtroom user
+    const newCourtroomUser = new CourtroomUser({
       name,
       phoneNumber,
       email,
       password: hashedPassword,
-      recording,
+      recording: recording, // Assuming recording is required and set to true
     });
+
+    // Save the new courtroom user
+    const savedCourtroomUser = await newCourtroomUser.save();
+
+    // Add the new booking
+    booking.courtroomBookings.push(savedCourtroomUser._id);
 
     // Save the booking
     await booking.save();
@@ -70,12 +79,12 @@ async function courtRoomBook(
   }
 }
 
-async function getBookedData(lastMonth) {
+async function getBookedData(startDate, endDate) {
   try {
     const bookings = await CourtRoomBooking.aggregate([
       {
         $match: {
-          date: { $gte: lastMonth },
+          date: { $gte: startDate, $lte: endDate },
         },
       },
       {
@@ -91,10 +100,11 @@ async function getBookedData(lastMonth) {
         $sort: { "_id.date": 1, "_id.hour": 1 },
       },
     ]);
+
     return bookings;
   } catch (error) {
-    console.log(error);
-    throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+    console.error(error);
+    throw new Error("Internal server error.");
   }
 }
 
@@ -120,7 +130,7 @@ async function loginToCourtRoom(phoneNumber, password) {
     const booking = await CourtRoomBooking.findOne({
       date: formattedDate,
       hour: currentHour,
-    });
+    }).populate("courtroomBookings");
 
     if (!booking) {
       return "No bookings found for the current time slot.";
@@ -156,15 +166,42 @@ async function loginToCourtRoom(phoneNumber, password) {
       phoneNumber: userBooking.phoneNumber,
     });
 
+    let userId;
+
+    if (!userBooking.userId) {
+      userId = await registerNewCourtRoomUser();
+    } else {
+      userId = userBooking.userId;
+    }
+
     // Respond with the token
-    return { token };
+    return {
+      token,
+      userId: userId.user_id,
+      phoneNumber: userBooking.phoneNumber,
+    };
   } catch (error) {
     console.error(error);
     throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
   }
 }
 
-async function getClientById(phoneNumber) {
+async function registerNewCourtRoomUser(body) {
+  console.log(body);
+  const response = await fetch(`${COURTROOM_API_ENDPOINT}/user_id`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  console.log(response);
+
+  return response.json();
+}
+
+async function getClientByPhoneNumber(phoneNumber) {
   try {
     // Get the current date and hour
     const currentDate = new Date();
@@ -197,9 +234,77 @@ async function getClientById(phoneNumber) {
   }
 }
 
+async function getClientByUserid(userid) {
+  try {
+    // Get the current date and hour
+    const currentDate = new Date();
+    const currentHour = currentDate.getHours();
+
+    // const currentDate = "2024-07-30";
+    // const currentHour = 14;
+
+    // Find existing booking for the current date and hour
+    const booking = await CourtRoomBooking.findOne({
+      date: currentDate,
+      hour: currentHour,
+    });
+
+    if (!booking) {
+      return "No bookings found for the current time slot.";
+    }
+
+    // Check if the user with the given phone number is in the booking
+    const userBooking = booking.courtroomBookings.find((courtroomBooking) => {
+      return courtroomBooking.userId == userid;
+    });
+
+    console.log(userBooking);
+
+    return { User_id: userBooking._id, Booking_id: booking };
+  } catch (error) {
+    console.error(error);
+    throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+  }
+}
+
+async function storeCaseHistory(userId, slotId, caseHistoryDetails) {
+  try {
+    // Find the courtroom history by userId and slotId
+    let courtroomHistory = await CourtroomHistory.findOne({
+      userId: userId,
+      slot: slotId,
+    });
+
+    if (!courtroomHistory) {
+      // Create a new courtroom history if it doesn't exist
+      courtroomHistory = new CourtroomHistory({
+        userId: userId,
+        slot: slotId,
+        history: [],
+        latestCaseHistory: {},
+      });
+    }
+
+    // Append the new case history details to the history array
+    courtroomHistory.history.push(caseHistoryDetails);
+    // Set the latest case history
+    courtroomHistory.latestCaseHistory = caseHistoryDetails;
+
+    // Save the updated courtroom history
+    await courtroomHistory.save();
+    console.log("Case history saved.");
+    return courtroomHistory;
+  } catch (error) {
+    console.error("Error saving case history:", error);
+    throw new Error("Internal server error.");
+  }
+}
+
 module.exports = {
   courtRoomBook,
   getBookedData,
   loginToCourtRoom,
-  getClientById,
+  getClientByPhoneNumber,
+  getClientByUserid,
+  storeCaseHistory,
 };
