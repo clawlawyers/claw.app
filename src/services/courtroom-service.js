@@ -13,8 +13,10 @@ async function courtRoomBook(
   hashedPassword,
   bookingDate,
   hour,
-  recording
+  recording,
+  caseOverview
 ) {
+  console.log("Here is caseOverview", caseOverview);
   try {
     // Find existing booking for the same date and hour
     let booking = await CourtRoomBooking.findOne({
@@ -62,10 +64,15 @@ async function courtRoomBook(
       email,
       password: hashedPassword,
       recording: recording, // Assuming recording is required and set to true
+      caseOverview: "NA",
     });
+
+    console.log(newCourtroomUser);
 
     // Save the new courtroom user
     const savedCourtroomUser = await newCourtroomUser.save();
+
+    console.log(savedCourtroomUser);
 
     // Add the new booking
     booking.courtroomBookings.push(savedCourtroomUser._id);

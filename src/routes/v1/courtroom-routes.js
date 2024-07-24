@@ -19,6 +19,7 @@ router.post(
 ); // use letter
 router.post("/newcase", upload.single("file"), CourtroomController.newcase);
 router.post("/edit_case", CourtroomController.edit_case);
+router.post("/getCaseOverview", CourtroomController.getCaseOverview);
 router.post("/user_arguemnt", CourtroomController.user_arguemnt);
 router.post("/api/lawyer", CourtroomController.lawyer_arguemnt);
 router.post("/api/judge", CourtroomController.judge_arguemnt);

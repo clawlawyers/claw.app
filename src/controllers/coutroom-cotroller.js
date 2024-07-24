@@ -26,6 +26,7 @@ async function bookCourtRoom(req, res) {
     }
 
     const hashedPassword = await hashPassword(password);
+    const caseOverview = "";
 
     for (const slot of slots) {
       const { date, hour } = slot;
@@ -42,7 +43,8 @@ async function bookCourtRoom(req, res) {
         hashedPassword,
         bookingDate,
         hour,
-        recording
+        recording,
+        caseOverview
       );
 
       if (respo) {
@@ -162,7 +164,7 @@ async function newcase(req, res) {
     console.log(courtroomUser);
 
     // Append the case overview to the user's caseOverview array
-    courtroomUser.caseOverview.push(case_overview.case_overview);
+    courtroomUser.caseOverview = case_overview.case_overview;
 
     console.log(courtroomUser);
 
@@ -213,6 +215,8 @@ async function getOverview({ file }) {
 
 async function edit_case(req, res) {
   const { user_id, case_overview } = req.body;
+
+  // console.log(req.body, " this is body");
   try {
     const editedArgument = await FetchEdit_Case({ user_id, case_overview });
 
@@ -225,17 +229,15 @@ async function edit_case(req, res) {
         .json({ error: "User not found" });
     }
 
-    console.log(courtroomUser);
-
     // Append the case overview to the user's caseOverview array
-    courtroomUser.caseOverview.push(editedArgument.case_overview);
+    courtroomUser.caseOverview = editedArgument.case_overview;
 
-    console.log(courtroomUser);
+    // console.log(courtroomUser);
 
     // Save the updated CourtroomUser document
     await courtroomUser.save();
 
-    console.log(courtroomUser);
+    // console.log(courtroomUser);
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ editedArgument }));
   } catch (error) {
@@ -247,7 +249,7 @@ async function edit_case(req, res) {
 }
 
 async function FetchEdit_Case(body) {
-  console.log(body);
+  // console.log(body);
   const response = await fetch(`${COURTROOM_API_ENDPOINT}/edit_case`, {
     method: "POST",
     headers: {
@@ -255,8 +257,35 @@ async function FetchEdit_Case(body) {
     },
     body: JSON.stringify(body),
   });
-  console.log(response);
+  // console.log(response);
   return response.json();
+}
+
+async function getCaseOverview(req, res) {
+  const { user_id } = req.body;
+  try {
+    // Find the CourtroomUser document by userId
+    const courtroomUser = await CourtroomUser.findOne({ userId: user_id });
+
+    if (!courtroomUser) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "User not found" });
+    }
+
+    // console.log(courtroomUser);
+
+    // Append the case overview to the user's caseOverview array
+    const case_overview = courtroomUser.caseOverview;
+
+    // console.log(case_overview);
+    return res.status(StatusCodes.OK).json(SuccessResponse({ case_overview }));
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
 }
 
 async function user_arguemnt(req, res) {
@@ -565,4 +594,5 @@ module.exports = {
   CaseHistory,
   edit_case,
   getUserDetails,
+  getCaseOverview,
 };

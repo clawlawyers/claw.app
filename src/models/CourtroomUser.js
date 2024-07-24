@@ -9,12 +9,11 @@ const CourtroomUserSchema = new Schema({
   email: { type: String, required: true },
   password: { type: String, required: true },
   recording: { type: Boolean, required: true },
-  caseOverview: [
-    {
-      type: String,
-      required: true,
-    },
-  ],
+  caseOverview: {
+    type: String,
+    required: true,
+    default: "",
+  },
 });
 
 const CourtroomUser = mongoose.model("CourtroomUser", CourtroomUserSchema);
