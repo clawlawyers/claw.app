@@ -4,6 +4,9 @@ const { CourtroomService } = require("../services");
 const { ErrorResponse, SuccessResponse } = require("../utils/common");
 const { StatusCodes } = require("http-status-codes");
 const { COURTROOM_API_ENDPOINT } = process.env;
+const path = require("path");
+const CourtroomUser = require("../models/CourtroomUser");
+const FormData = require("form-data");
 
 async function bookCourtRoom(req, res) {
   try {
@@ -112,7 +115,7 @@ async function getUserDetails(req, res) {
 
     // Respond with the token
     return {
-      token,
+      ...token,
       userId: courtroomClient.userId,
       phoneNumber: userBooking.phoneNumber,
     };
@@ -120,12 +123,55 @@ async function getUserDetails(req, res) {
 }
 
 async function newcase(req, res) {
-  const { user_id, case_details_link } = req.body;
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+
+  const { userId } = req.body;
+
+  console.log(userId);
+
+  console.log(file);
+
+  const extension = path.extname(file.originalname); // Extract the file extension
+  const newFilename = `${userId}${extension}`; // Preserve the extension in the new filename
+
+  // Create a renamed file object with buffer data
+  const renamedFile = {
+    ...file,
+    originalname: newFilename,
+  };
+
+  console.log(renamedFile);
+
   try {
-    // const case_overview = await getOverview({ user_id, case_details_link });
-    return res
-      .status(StatusCodes.OK)
-      .json(SuccessResponse({ case_overview: "something come from case" }));
+    const case_overview = await getOverview({ file: renamedFile });
+
+    console.log(case_overview);
+
+    // Find the CourtroomUser document by userId
+    const courtroomUser = await CourtroomUser.findOne({ userId });
+
+    if (!courtroomUser) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "User not found" });
+    }
+
+    console.log(courtroomUser);
+
+    // Append the case overview to the user's caseOverview array
+    courtroomUser.caseOverview.push(case_overview.case_overview);
+
+    console.log(courtroomUser);
+
+    // Save the updated CourtroomUser document
+    await courtroomUser.save();
+
+    console.log(courtroomUser);
+
+    return res.status(StatusCodes.OK).json(SuccessResponse({ case_overview }));
   } catch (error) {
     const errorResponse = ErrorResponse({}, error);
     return res
@@ -133,26 +179,64 @@ async function newcase(req, res) {
       .json(errorResponse);
   }
 }
+async function getOverview({ file }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
 
-async function getOverview(body) {
-  console.log(body);
-  const response = await fetch(`${COURTROOM_API_ENDPOINT}/newCase`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+    const formData = new FormData();
+    formData.append("file", file.buffer, {
+      filename: file.originalname,
+      contentType: file.mimetype,
+    });
 
-  console.log(response);
+    const response = await fetch(`${COURTROOM_API_ENDPOINT}/new_case`, {
+      method: "POST",
+      body: formData,
+      headers: formData.getHeaders(), // Ensure correct headers are set
+    });
 
-  return response.json();
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error("Error in getOverview:", error);
+    throw error;
+  }
 }
 
 async function edit_case(req, res) {
   const { user_id, case_overview } = req.body;
   try {
-    const editedArgument = await FetchEdit_argument({ user_id, case_overview });
+    const editedArgument = await FetchEdit_Case({ user_id, case_overview });
+
+    // Find the CourtroomUser document by userId
+    const courtroomUser = await CourtroomUser.findOne({ userId: user_id });
+
+    if (!courtroomUser) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ error: "User not found" });
+    }
+
+    console.log(courtroomUser);
+
+    // Append the case overview to the user's caseOverview array
+    courtroomUser.caseOverview.push(editedArgument.case_overview);
+
+    console.log(courtroomUser);
+
+    // Save the updated CourtroomUser document
+    await courtroomUser.save();
+
+    console.log(courtroomUser);
+
     return res.status(StatusCodes.OK).json(SuccessResponse({ editedArgument }));
   } catch (error) {
     const errorResponse = ErrorResponse({}, error);
@@ -162,7 +246,7 @@ async function edit_case(req, res) {
   }
 }
 
-async function FetchEdit_argument(body) {
+async function FetchEdit_Case(body) {
   console.log(body);
   const response = await fetch(`${COURTROOM_API_ENDPOINT}/edit_case`, {
     method: "POST",
@@ -176,9 +260,13 @@ async function FetchEdit_argument(body) {
 }
 
 async function user_arguemnt(req, res) {
-  const { user_id, argument, index } = req.body;
+  const { user_id, argument, argument_index } = req.body;
   try {
-    const argumentIndex = await argument_index({ user_id, argument, index });
+    const argumentIndex = await Fetch_argument_index({
+      user_id,
+      argument,
+      argument_index,
+    });
     return res.status(StatusCodes.OK).json(SuccessResponse({ argumentIndex }));
   } catch (error) {
     const errorResponse = ErrorResponse({}, error);
@@ -188,7 +276,7 @@ async function user_arguemnt(req, res) {
   }
 }
 
-async function argument_index(body) {
+async function Fetch_argument_index(body) {
   console.log(body);
   const response = await fetch(`${COURTROOM_API_ENDPOINT}/user_argument`, {
     method: "POST",
@@ -417,6 +505,8 @@ async function CaseHistory(req, res) {
       user_id
     );
 
+    // console.log(User_id, Booking_id);
+
     await CourtroomService.storeCaseHistory(User_id, Booking_id, caseHistory);
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ caseHistory }));
@@ -429,16 +519,34 @@ async function CaseHistory(req, res) {
 }
 
 async function FetchCaseHistory(body) {
-  console.log(body);
-  const response = await fetch(`${COURTROOM_API_ENDPOINT}/api/history`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  console.log(response);
-  return response.json();
+  try {
+    console.log("Request Body:", body);
+
+    const response = await fetch(`${COURTROOM_API_ENDPOINT}/api/history`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    // console.log("Response Status:", response.status);
+    // console.log("Response Headers:", response.headers);
+
+    if (!response.ok) {
+      const errorText = await response.text(); // Capture error text
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+
+    const responseData = await response.json();
+    console.log("Response Data:", responseData);
+    return responseData;
+  } catch (error) {
+    console.error("Error in FetchCaseHistory:", error);
+    throw error;
+  }
 }
 
 module.exports = {

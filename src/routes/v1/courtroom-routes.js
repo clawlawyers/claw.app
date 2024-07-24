@@ -1,18 +1,23 @@
 const express = require("express");
 const { CourtroomController } = require("../../controllers");
 const { authMiddleware } = require("../../middlewares");
+const multer = require("multer");
 
 const router = express.Router();
+
+// Set up Multer for file upload
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 router.post("/book-courtroom", CourtroomController.bookCourtRoom);
 router.get("/book-courtroom", CourtroomController.getBookedData);
 router.post("/login", CourtroomController.loginToCourtRoom);
 router.post(
-  "/getUser",
+  "/getCourtroomUser",
   authMiddleware.checkCourtroomAuth,
   CourtroomController.getUserDetails
 ); // use letter
-router.post("/newcase", CourtroomController.newcase);
+router.post("/newcase", upload.single("file"), CourtroomController.newcase);
 router.post("/edit_case", CourtroomController.edit_case);
 router.post("/user_arguemnt", CourtroomController.user_arguemnt);
 router.post("/api/lawyer", CourtroomController.lawyer_arguemnt);

@@ -169,15 +169,18 @@ async function loginToCourtRoom(phoneNumber, password) {
     let userId;
 
     if (!userBooking.userId) {
-      userId = await registerNewCourtRoomUser();
+      const userId1 = await registerNewCourtRoomUser();
+      userBooking.userId = userId1.user_id;
+      userId = userId1.user_id;
+      await userBooking.save();
     } else {
       userId = userBooking.userId;
     }
 
     // Respond with the token
     return {
-      token,
-      userId: userId.user_id,
+      ...token,
+      userId: userId,
       phoneNumber: userBooking.phoneNumber,
     };
   } catch (error) {
@@ -238,19 +241,32 @@ async function getClientByUserid(userid) {
   try {
     // Get the current date and hour
     const currentDate = new Date();
+    const formattedDate = new Date(
+      Date.UTC(
+        currentDate.getFullYear(),
+        currentDate.getMonth(),
+        currentDate.getDate()
+      )
+    );
     const currentHour = currentDate.getHours();
 
-    // const currentDate = "2024-07-30";
-    // const currentHour = 14;
+    console.log(formattedDate, currentHour);
+
+    // Manual Override for Testing
+    // const formattedDate = new Date("2024-07-23T00:00:00.000Z");
+    // const currentHour = 20;
 
     // Find existing booking for the current date and hour
     const booking = await CourtRoomBooking.findOne({
-      date: currentDate,
+      date: formattedDate,
       hour: currentHour,
-    });
+    }).populate("courtroomBookings");
+
+    console.log(booking);
 
     if (!booking) {
-      return "No bookings found for the current time slot.";
+      throw Error("No bookings found for the current time slot.");
+      // return "No bookings found for the current time slot.";
     }
 
     // Check if the user with the given phone number is in the booking

@@ -25,8 +25,13 @@ const generateToken = (payload) => {
   const seconds = now.getSeconds();
   const remainingSeconds = (60 - minutes) * 60 - seconds;
 
+  // Calculate the expiration time
+  const expiresAt = now.getTime() + remainingSeconds * 1000;
+
   // Generate the token with the calculated expiration time
-  return jwt.sign(payload, jwtSecret, { expiresIn: remainingSeconds });
+  const token = jwt.sign(payload, jwtSecret, { expiresIn: remainingSeconds });
+
+  return { token, expiresAt };
 };
 
 // Function to verify JWT token
