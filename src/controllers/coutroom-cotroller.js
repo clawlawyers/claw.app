@@ -66,7 +66,6 @@ async function bookCourtRoomValidation(req, res) {
   try {
     const { name, phoneNumber, email, password, slots, recording } = req.body;
 
-    console.log(name, phoneNumber, email, password, slots, recording)
     // Check if required fields are provided
     if (
       !name ||
