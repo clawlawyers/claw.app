@@ -6,6 +6,7 @@ const {
   createToken,
   verifyToken,
 } = require("../utils/common/auth");
+const CourtRoomBooking = require("../models/courtRoomBooking");
 
 const clientRepository = new ClientRepository();
 
@@ -76,6 +77,9 @@ async function getClientFromToken(token) {
 
 async function getClientByPhoneNumber(phoneNumber) {
   try {
+    if (phoneNumber.startsWith("+")) {
+      phoneNumber = phoneNumber.substring(3);
+    }
     const client = await clientRepository.getClientByPhoneNumber(phoneNumber);
     return client;
   } catch (error) {
