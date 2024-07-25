@@ -86,6 +86,68 @@ async function courtRoomBook(
   }
 }
 
+async function courtRoomBookValidation(
+  name,
+  phoneNumber,
+  email,
+  hashedPassword,
+  bookingDate,
+  hour,
+  recording,
+  caseOverview
+) {
+  console.log("Here is caseOverview", caseOverview);
+  try {
+    // Find existing booking for the same date and hour
+    let booking = await CourtRoomBooking.findOne({
+      date: bookingDate,
+      hour: hour,
+    }).populate("courtroomBookings");
+
+    if (!booking) {
+      // Create a new booking if it doesn't exist
+      booking = new CourtRoomBooking({
+        date: bookingDate,
+        hour: hour,
+        courtroomBookings: [],
+      });
+    }
+
+    // Check if the total bookings exceed the limit
+    if (booking.courtroomBookings.length >= 4) {
+      console.log(
+        `Maximum of 4 courtrooms can be booked at ${hour}:00 on ${bookingDate.toDateString()}.`
+      );
+      // throw new Error(
+      //   `Maximum of 4 courtrooms can be booked at ${hour}:00 on ${bookingDate.toDateString()}.`
+      // );
+      return `Maximum of 4 courtrooms can be booked at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    }
+
+    // Check if the user with the same mobile number or email already booked a slot at the same hour
+    const existingBooking = booking.courtroomBookings.find(
+      (courtroomBooking) =>
+        courtroomBooking.phoneNumber == phoneNumber ||
+        courtroomBooking.email == email
+    );
+
+    console.log(existingBooking);
+
+    if (existingBooking) {
+      console.log(
+        `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`
+      );
+      // throw new Error(
+      //   `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`
+      // );
+      return `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    }
+  } catch (error) {
+    console.error(error);
+    throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+  }
+}
+
 async function getBookedData(startDate, endDate) {
   try {
     const bookings = await CourtRoomBooking.aggregate([
@@ -375,4 +437,5 @@ module.exports = {
   getClientByPhoneNumber,
   getClientByUserid,
   storeCaseHistory,
+  courtRoomBookValidation,
 };

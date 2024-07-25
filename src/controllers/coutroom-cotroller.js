@@ -62,6 +62,65 @@ async function bookCourtRoom(req, res) {
   }
 }
 
+async function bookCourtRoomValidation(req, res) {
+  try {
+    const { name, phoneNumber, email, password, slots, recording } = req.body;
+
+    // Check if required fields are provided
+    if (
+      !name ||
+      !phoneNumber ||
+      !email ||
+      !password ||
+      !slots ||
+      !Array.isArray(slots) ||
+      slots.length === 0
+    ) {
+      return res.status(400).send("Missing required fields.");
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const caseOverview = "";
+
+    for (const slot of slots) {
+      const { date, hour } = slot;
+      if (!date || hour === undefined) {
+        return res.status(400).send("Missing required fields in slot.");
+      }
+
+      const bookingDate = new Date(date);
+
+      const resp = await CourtroomService.courtRoomBookValidation(
+        name,
+        phoneNumber,
+        email,
+        hashedPassword,
+        bookingDate,
+        hour,
+        recording,
+        caseOverview
+      );
+
+      console.log(resp);
+
+      if (resp) {
+        return res.status(StatusCodes.OK).json(SuccessResponse({ data: resp }));
+      }
+    }
+
+    console.log("slot can be book");
+
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ data: "Slot can be book" }));
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
 async function getBookedData(req, res) {
   try {
     const today = new Date();
@@ -435,8 +494,12 @@ async function FetchChangeState(body) {
     },
     body: JSON.stringify(body),
   });
-  console.log(response);
-  return response.json();
+  console.log("done");
+  const details = await response.json();
+  console.log("done");
+
+  console.log(details);
+  return details;
 }
 
 async function restCase(req, res) {
@@ -529,8 +592,9 @@ async function FetchHallucinationQuestions(body) {
       body: JSON.stringify(body),
     }
   );
-  console.log(response);
-  return response.json();
+  const details = await response.json();
+  console.log(details);
+  return details;
 }
 
 async function CaseHistory(req, res) {
@@ -604,4 +668,5 @@ module.exports = {
   edit_case,
   getUserDetails,
   getCaseOverview,
+  bookCourtRoomValidation,
 };
