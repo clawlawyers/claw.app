@@ -152,7 +152,7 @@ async function loginToCourtRoom(phoneNumber, password) {
 
     // Find existing booking for the current date and hour
     const booking = await CourtRoomBooking.findOne({
-      date: formattedDate,
+      date: currentDate,
       hour: currentHour,
     }).populate("courtroomBookings");
 
