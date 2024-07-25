@@ -60,6 +60,7 @@ async function checkCourtroomAuth(req, res, next) {
     if (!client) {
       throw new AppError("No user found", StatusCodes.NOT_FOUND);
     }
+    // console.log(client);
     req.body.courtroomClient = client;
     next();
   } catch (error) {

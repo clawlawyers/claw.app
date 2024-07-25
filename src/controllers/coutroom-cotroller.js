@@ -1,4 +1,4 @@
-const { hashPassword } = require("../utils/coutroom/auth");
+const { hashPassword, generateToken } = require("../utils/coutroom/auth");
 const { sendConfirmationEmail } = require("../utils/coutroom/sendEmail");
 const { CourtroomService } = require("../services");
 const { ErrorResponse, SuccessResponse } = require("../utils/common");
@@ -101,27 +101,36 @@ async function loginToCourtRoom(req, res) {
 async function getUserDetails(req, res) {
   const { courtroomClient } = req.body;
   try {
+    // console.log(courtroomClient);
     // Generate a JWT token
     const token = generateToken({
       userId: courtroomClient._id,
       phoneNumber: courtroomClient.phoneNumber,
     });
 
-    // let userId;
+    // console.log(token, courtroomClient);
 
-    // if (!userBooking.userId) {
-    //   userId = await registerNewCourtRoomUser();
-    // } else {
-    //   userId = userBooking.userId;
-    // }
+    // console.log({
+    //   ...token,
+    //   userId: courtroomClient.userId,
+    //   phoneNumber: courtroomClient.phoneNumber,
+    // });
 
-    // Respond with the token
-    return {
-      ...token,
-      userId: courtroomClient.userId,
-      phoneNumber: userBooking.phoneNumber,
-    };
-  } catch {}
+    console.log("here");
+
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        ...token,
+        userId: courtroomClient.userId,
+        phoneNumber: courtroomClient.phoneNumber,
+      })
+    );
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
 }
 
 async function newcase(req, res) {
