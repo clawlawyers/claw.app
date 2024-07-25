@@ -265,6 +265,7 @@ async function loginToCourtRoom(phoneNumber, password) {
 
     // Respond with the token
     return {
+      slotTime: booking.hour,
       ...token,
       userId: userId,
       phoneNumber: userBooking.phoneNumber,
@@ -344,7 +345,7 @@ async function getClientByPhoneNumber(phoneNumber) {
 
     // console.log(userBooking);
 
-    return userBooking;
+    return { userBooking, slotTime: booking.hour };
   } catch (error) {
     console.error(error);
     throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);

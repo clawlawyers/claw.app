@@ -160,12 +160,13 @@ async function loginToCourtRoom(req, res) {
 async function getUserDetails(req, res) {
   const { courtroomClient } = req.body;
   try {
-    // console.log(courtroomClient);
+    console.log(courtroomClient);
     // Generate a JWT token
     const token = generateToken({
-      userId: courtroomClient._id,
-      phoneNumber: courtroomClient.phoneNumber,
+      userId: courtroomClient.userBooking._id,
+      phoneNumber: courtroomClient.userBooking.phoneNumber,
     });
+    console.log(courtroomClient);
 
     // console.log(token, courtroomClient);
 
@@ -179,9 +180,10 @@ async function getUserDetails(req, res) {
 
     return res.status(StatusCodes.OK).json(
       SuccessResponse({
+        slotTime: courtroomClient.slotTime,
         ...token,
-        userId: courtroomClient.userId,
-        phoneNumber: courtroomClient.phoneNumber,
+        userId: courtroomClient.userBooking._id,
+        phoneNumber: courtroomClient.userBooking.phoneNumber,
       })
     );
   } catch (error) {
@@ -495,6 +497,8 @@ async function FetchChangeState(body) {
     body: JSON.stringify(body),
   });
   console.log("done");
+
+  console.log(response);
   const details = await response.json();
   console.log("done");
 
