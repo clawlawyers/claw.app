@@ -142,6 +142,7 @@ async function updateClientByPhoneNumberWithSession(
 async function updateClient(id, data) {
   try {
     const client = await clientRepository.update(id, data);
+
     return client;
   } catch (error) {
     console.log(error);

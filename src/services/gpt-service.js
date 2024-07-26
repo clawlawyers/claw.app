@@ -351,6 +351,24 @@ async function fetchGptUserByPhoneNumbers(phoneNumbers) {
   }
 }
 
+async function getUserPlan(mongoId) {
+  try {
+    const plans = await prisma.userPlan.findMany({
+      where: {
+        userId: mongoId,
+      },
+    });
+
+    return plans;
+  } catch (err) {
+    console.error("Error while fetching users:", err);
+    throw new AppError(
+      "Error while fetching users",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function fetchGptUser(mongoId) {
   try {
     const user = await prisma.user.findUnique({
@@ -1054,4 +1072,5 @@ module.exports = {
   consumeTokenGpt,
   getPlansByUserId,
   removeUserPlans,
+  getUserPlan,
 };

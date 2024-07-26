@@ -99,6 +99,19 @@ async function verify(req, res) {
       const successResponse = SuccessResponse(data);
       return res.status(StatusCodes.CREATED).json(successResponse);
     }
+
+    const plan = await GptServices.getUserPlan(existing.id);
+
+    if (!plan) {
+      await prisma.userPlan.create({
+        data: {
+          userId: mongoId,
+          planName: "free",
+          expiresAt: expiresAt,
+        },
+      });
+    }
+
     // fetch updated client
     const updatedClient = await ClientService.updateClient(existing.id, {
       verified,
