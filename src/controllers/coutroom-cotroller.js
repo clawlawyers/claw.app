@@ -7,6 +7,8 @@ const { COURTROOM_API_ENDPOINT } = process.env;
 const path = require("path");
 const CourtroomUser = require("../models/CourtroomUser");
 const FormData = require("form-data");
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
 
 async function bookCourtRoom(req, res) {
   try {
@@ -463,7 +465,7 @@ async function getDraft(req, res) {
 
 async function FetchGetDraft(body) {
   console.log(body);
-  const response = await fetch(`${COURTROOM_API_ENDPOINT}/api/draft`, {
+  const response = await fetch(`${COURTROOM_API_ENDPOINT}/api/generate_draft`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -658,11 +660,76 @@ async function FetchCaseHistory(body) {
     }
 
     const responseData = await response.json();
-    console.log("Response Data:", responseData);
+    // console.log("Response Data:", responseData);
     return responseData;
   } catch (error) {
     console.error("Error in FetchCaseHistory:", error);
     throw error;
+  }
+}
+
+async function downloadCaseHistory(req, res) {
+  const { user_id } = req.body;
+  try {
+    const caseHistory = await FetchCaseHistory({ user_id });
+
+    console.log(caseHistory);
+
+    const doc = new PDFDocument();
+    const fontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Regular.ttf"
+    );
+    doc.registerFont("NotoSans", fontPath);
+    doc.font("NotoSans");
+
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      res.setHeader(
+        "Content-disposition",
+        `attachment; filename="case_history_${user_id}.pdf"`
+      );
+      res.setHeader("Content-type", "application/pdf");
+      res.send(pdfBuffer);
+    });
+
+    // Add the case history content to the PDF
+    doc.fontSize(16).text("Case History", { align: "center" });
+    doc.moveDown();
+
+    const addSection = (title, contentArray) => {
+      doc.fontSize(14).text(title, { underline: true });
+      doc.moveDown(0.5);
+      contentArray.forEach((content) => {
+        doc.fontSize(12).text(content);
+        doc.moveDown(0.5);
+      });
+      doc.moveDown();
+    };
+
+    addSection("Argument", caseHistory.argument);
+    addSection("Counter Argument", caseHistory.counter_argument);
+    addSection("Judgement", caseHistory.judgement);
+    addSection("Potential Objection", caseHistory.potential_objection);
+
+    if (caseHistory.verdict) {
+      doc.fontSize(14).text("Verdict", { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(12).text(caseHistory.verdict);
+      doc.moveDown();
+    }
+
+    doc.end();
+  } catch (error) {
+    console.log(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
   }
 }
 
@@ -684,4 +751,5 @@ module.exports = {
   getUserDetails,
   getCaseOverview,
   bookCourtRoomValidation,
+  downloadCaseHistory,
 };

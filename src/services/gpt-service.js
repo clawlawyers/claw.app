@@ -40,6 +40,17 @@ async function createGptUser(phoneNumber, mongoId) {
         mongoId,
       },
     });
+
+    const expiresAt = new Date(2024, 7, 30); // Month is 0-indexed, so 7 represents August
+
+    await prisma.userPlan.create({
+      data: {
+        userId: mongoId,
+        planName: "free",
+        expiresAt: expiresAt,
+      },
+    });
+
     return newUser;
   } catch (error) {
     console.log(error);
