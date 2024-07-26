@@ -488,22 +488,33 @@ async function changeState(req, res) {
 }
 
 async function FetchChangeState(body) {
-  console.log(body);
-  const response = await fetch(`${COURTROOM_API_ENDPOINT}/api/change_state`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  console.log("done");
+  try {
+    console.log(body);
 
-  console.log(response);
-  const details = await response.json();
-  console.log("done");
+    const response = await fetch(
+      `${COURTROOM_API_ENDPOINT}/api/change_states`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }
+    );
 
-  console.log(details);
-  return details;
+    console.log("done");
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const details = await response.json();
+
+    return details;
+  } catch (error) {
+    console.error("Error:", error);
+    return { error: error.message };
+  }
 }
 
 async function restCase(req, res) {
