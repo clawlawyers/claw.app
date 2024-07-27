@@ -63,7 +63,7 @@ const htmlTemplate = `
       <li>Date: {{date}}, Hour: {{hour}}</li>
       {{/each}}
     </ul>
-    <p><strong>Invoice:</strong> <a href="{{invoiceLink}}" target="_blank">View your invoice by Razorpay</a></p>
+    <p><strong>Total cost :</strong> {{amount}}</p>
     <p>If you have any questions or need assistance, feel free to reach out to us.</p>
     <p>Best regards,<br>The Claw Team</p>
   </div>
@@ -80,7 +80,7 @@ const sendConfirmationEmail = async (
   phoneNumber,
   password,
   slots,
-  invoiceResponse
+  amount
 ) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -103,7 +103,7 @@ const sendConfirmationEmail = async (
     phoneNumber,
     password,
     slots,
-    invoiceLink: "https://example.com/invoice/12345", // Replace with your invoice link
+    amount: amount, // Replace with your invoice link
   });
 
   const mailOptions = {

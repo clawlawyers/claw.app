@@ -53,7 +53,14 @@ async function bookCourtRoom(req, res) {
         return res.status(400).send(respo);
       }
     }
-    await sendConfirmationEmail(email, name, phoneNumber, password, slots);
+    await sendConfirmationEmail(
+      email,
+      name,
+      phoneNumber,
+      password,
+      slots,
+      (amount = slots.length * 100)
+    );
 
     res.status(201).send("Courtroom slots booked successfully.");
   } catch (error) {

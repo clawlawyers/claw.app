@@ -119,21 +119,21 @@ async function verifyPayment(req, res) {
         }
       }
 
-      // Generate invoice
-      const invoiceOptions = {
-        type: "link",
-        description: "Courtroom Booking Invoice",
-        customer: {
-          email: email,
-          contact: phoneNumber,
-        },
-        amount: amount, // amount in paise
-        currency: "INR",
-        order_id: razorpay_order_id,
-      };
+      // // Generate invoice
+      // const invoiceOptions = {
+      //   type: "link",
+      //   description: "Courtroom Booking Invoice",
+      //   customer: {
+      //     email: email,
+      //     contact: phoneNumber,
+      //   },
+      //   amount: amount, // amount in paise
+      //   currency: "INR",
+      //   order_id: razorpay_order_id,
+      // };
 
-      const invoiceResponse = await razorpay.invoices.create(invoiceOptions);
-      console.log(invoiceResponse);
+      // const invoiceResponse = await razorpay.invoices.create(invoiceOptions);
+      // console.log(invoiceResponse);
 
       await sendConfirmationEmail(
         email,
@@ -141,7 +141,7 @@ async function verifyPayment(req, res) {
         phoneNumber,
         password,
         slots,
-        invoiceResponse
+        (amount = amount / 100)
       );
     } catch (error) {
       console.log(error);
