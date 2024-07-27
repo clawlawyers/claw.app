@@ -11,4 +11,5 @@ module.exports = {
   OrderService: require("./order-service"),
   BookingPayment: require("./bookingPayment-service"),
   PaymentService: require("./payment-service"),
+  DbAutomationService: require("./dbAutomation-service"),
 };

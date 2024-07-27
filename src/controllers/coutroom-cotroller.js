@@ -1,4 +1,4 @@
-const { hashPassword } = require("../utils/coutroom/auth");
+const { hashPassword, generateToken } = require("../utils/coutroom/auth");
 const { sendConfirmationEmail } = require("../utils/coutroom/sendEmail");
 const { CourtroomService } = require("../services");
 const { ErrorResponse, SuccessResponse } = require("../utils/common");
@@ -7,6 +7,8 @@ const { COURTROOM_API_ENDPOINT } = process.env;
 const path = require("path");
 const CourtroomUser = require("../models/CourtroomUser");
 const FormData = require("form-data");
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
 
 async function bookCourtRoom(req, res) {
   try {
@@ -62,6 +64,65 @@ async function bookCourtRoom(req, res) {
   }
 }
 
+async function bookCourtRoomValidation(req, res) {
+  try {
+    const { name, phoneNumber, email, password, slots, recording } = req.body;
+
+    // Check if required fields are provided
+    if (
+      !name ||
+      !phoneNumber ||
+      !email ||
+      !password ||
+      !slots ||
+      !Array.isArray(slots) ||
+      slots.length === 0
+    ) {
+      return res.status(400).send("Missing required fields.");
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const caseOverview = "";
+
+    for (const slot of slots) {
+      const { date, hour } = slot;
+      if (!date || hour === undefined) {
+        return res.status(400).send("Missing required fields in slot.");
+      }
+
+      const bookingDate = new Date(date);
+
+      const resp = await CourtroomService.courtRoomBookValidation(
+        name,
+        phoneNumber,
+        email,
+        hashedPassword,
+        bookingDate,
+        hour,
+        recording,
+        caseOverview
+      );
+
+      console.log(resp);
+
+      if (resp) {
+        return res.status(StatusCodes.OK).json(SuccessResponse({ data: resp }));
+      }
+    }
+
+    console.log("slot can be book");
+
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ data: "Slot can be book" }));
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
 async function getBookedData(req, res) {
   try {
     const today = new Date();
@@ -101,27 +162,38 @@ async function loginToCourtRoom(req, res) {
 async function getUserDetails(req, res) {
   const { courtroomClient } = req.body;
   try {
+    console.log(courtroomClient);
     // Generate a JWT token
     const token = generateToken({
-      userId: courtroomClient._id,
-      phoneNumber: courtroomClient.phoneNumber,
+      userId: courtroomClient.userBooking._id,
+      phoneNumber: courtroomClient.userBooking.phoneNumber,
     });
+    console.log(courtroomClient);
 
-    // let userId;
+    // console.log(token, courtroomClient);
 
-    // if (!userBooking.userId) {
-    //   userId = await registerNewCourtRoomUser();
-    // } else {
-    //   userId = userBooking.userId;
-    // }
+    // console.log({
+    //   ...token,
+    //   userId: courtroomClient.userId,
+    //   phoneNumber: courtroomClient.phoneNumber,
+    // });
 
-    // Respond with the token
-    return {
-      ...token,
-      userId: courtroomClient.userId,
-      phoneNumber: userBooking.phoneNumber,
-    };
-  } catch {}
+    console.log("here");
+
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        slotTime: courtroomClient.slotTime,
+        ...token,
+        userId: courtroomClient.userBooking._id,
+        phoneNumber: courtroomClient.userBooking.phoneNumber,
+      })
+    );
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
 }
 
 async function newcase(req, res) {
@@ -393,7 +465,7 @@ async function getDraft(req, res) {
 
 async function FetchGetDraft(body) {
   console.log(body);
-  const response = await fetch(`${COURTROOM_API_ENDPOINT}/api/draft`, {
+  const response = await fetch(`${COURTROOM_API_ENDPOINT}/api/generate_draft`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -418,16 +490,33 @@ async function changeState(req, res) {
 }
 
 async function FetchChangeState(body) {
-  console.log(body);
-  const response = await fetch(`${COURTROOM_API_ENDPOINT}/api/change_state`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  console.log(response);
-  return response.json();
+  try {
+    console.log(body);
+
+    const response = await fetch(
+      `${COURTROOM_API_ENDPOINT}/api/change_states`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      }
+    );
+
+    console.log("done");
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const details = await response.json();
+
+    return details;
+  } catch (error) {
+    console.error("Error:", error);
+    return { error: error.message };
+  }
 }
 
 async function restCase(req, res) {
@@ -520,8 +609,9 @@ async function FetchHallucinationQuestions(body) {
       body: JSON.stringify(body),
     }
   );
-  console.log(response);
-  return response.json();
+  const details = await response.json();
+  console.log(details);
+  return details;
 }
 
 async function CaseHistory(req, res) {
@@ -570,11 +660,76 @@ async function FetchCaseHistory(body) {
     }
 
     const responseData = await response.json();
-    console.log("Response Data:", responseData);
+    // console.log("Response Data:", responseData);
     return responseData;
   } catch (error) {
     console.error("Error in FetchCaseHistory:", error);
     throw error;
+  }
+}
+
+async function downloadCaseHistory(req, res) {
+  const { user_id } = req.body;
+  try {
+    const caseHistory = await FetchCaseHistory({ user_id });
+
+    console.log(caseHistory);
+
+    const doc = new PDFDocument();
+    const fontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Regular.ttf"
+    );
+    doc.registerFont("NotoSans", fontPath);
+    doc.font("NotoSans");
+
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      res.setHeader(
+        "Content-disposition",
+        `attachment; filename="case_history_${user_id}.pdf"`
+      );
+      res.setHeader("Content-type", "application/pdf");
+      res.send(pdfBuffer);
+    });
+
+    // Add the case history content to the PDF
+    doc.fontSize(16).text("Case History", { align: "center" });
+    doc.moveDown();
+
+    const addSection = (title, contentArray) => {
+      doc.fontSize(14).text(title, { underline: true });
+      doc.moveDown(0.5);
+      contentArray.forEach((content) => {
+        doc.fontSize(12).text(content);
+        doc.moveDown(0.5);
+      });
+      doc.moveDown();
+    };
+
+    addSection("Argument", caseHistory.argument);
+    addSection("Counter Argument", caseHistory.counter_argument);
+    addSection("Judgement", caseHistory.judgement);
+    addSection("Potential Objection", caseHistory.potential_objection);
+
+    if (caseHistory.verdict) {
+      doc.fontSize(14).text("Verdict", { underline: true });
+      doc.moveDown(0.5);
+      doc.fontSize(12).text(caseHistory.verdict);
+      doc.moveDown();
+    }
+
+    doc.end();
+  } catch (error) {
+    console.log(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
   }
 }
 
@@ -595,4 +750,6 @@ module.exports = {
   edit_case,
   getUserDetails,
   getCaseOverview,
+  bookCourtRoomValidation,
+  downloadCaseHistory,
 };

@@ -86,6 +86,68 @@ async function courtRoomBook(
   }
 }
 
+async function courtRoomBookValidation(
+  name,
+  phoneNumber,
+  email,
+  hashedPassword,
+  bookingDate,
+  hour,
+  recording,
+  caseOverview
+) {
+  console.log("Here is caseOverview", caseOverview);
+  try {
+    // Find existing booking for the same date and hour
+    let booking = await CourtRoomBooking.findOne({
+      date: bookingDate,
+      hour: hour,
+    }).populate("courtroomBookings");
+
+    if (!booking) {
+      // Create a new booking if it doesn't exist
+      booking = new CourtRoomBooking({
+        date: bookingDate,
+        hour: hour,
+        courtroomBookings: [],
+      });
+    }
+
+    // Check if the total bookings exceed the limit
+    if (booking.courtroomBookings.length >= 4) {
+      console.log(
+        `Maximum of 4 courtrooms can be booked at ${hour}:00 on ${bookingDate.toDateString()}.`
+      );
+      // throw new Error(
+      //   `Maximum of 4 courtrooms can be booked at ${hour}:00 on ${bookingDate.toDateString()}.`
+      // );
+      return `Maximum of 4 courtrooms can be booked at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    }
+
+    // Check if the user with the same mobile number or email already booked a slot at the same hour
+    const existingBooking = booking.courtroomBookings.find(
+      (courtroomBooking) =>
+        courtroomBooking.phoneNumber == phoneNumber ||
+        courtroomBooking.email == email
+    );
+
+    console.log(existingBooking);
+
+    if (existingBooking) {
+      console.log(
+        `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`
+      );
+      // throw new Error(
+      //   `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`
+      // );
+      return `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    }
+  } catch (error) {
+    console.error(error);
+    throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+  }
+}
+
 async function getBookedData(startDate, endDate) {
   try {
     const bookings = await CourtRoomBooking.aggregate([
@@ -203,6 +265,7 @@ async function loginToCourtRoom(phoneNumber, password) {
 
     // Respond with the token
     return {
+      slotTime: booking.hour,
       ...token,
       userId: userId,
       phoneNumber: userBooking.phoneNumber,
@@ -230,9 +293,35 @@ async function registerNewCourtRoomUser(body) {
 
 async function getClientByPhoneNumber(phoneNumber) {
   try {
-    // Get the current date and hour
-    const currentDate = new Date();
-    const currentHour = currentDate.getHours();
+    let currentDate, currentHour;
+
+    if (process.env.NODE_ENV === "production") {
+      // Get current date and time in UTC
+      const now = new Date();
+
+      // Convert to milliseconds
+      const utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
+
+      // IST offset is +5:30
+      const istOffset = 5.5 * 60 * 60000;
+
+      // Create new date object for IST
+      const istTime = new Date(utcTime + istOffset);
+
+      currentDate = new Date(
+        Date.UTC(istTime.getFullYear(), istTime.getMonth(), istTime.getDate())
+      );
+      currentHour = istTime.getHours();
+    } else {
+      // Get the current date and hour in local time (for development)
+      const now = new Date();
+      currentDate = new Date(
+        Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+      );
+      currentHour = now.getHours();
+    }
+
+    console.log(currentDate, currentHour);
 
     // const currentDate = "2024-07-30";
     // const currentHour = 14;
@@ -241,20 +330,22 @@ async function getClientByPhoneNumber(phoneNumber) {
     const booking = await CourtRoomBooking.findOne({
       date: currentDate,
       hour: currentHour,
-    });
+    }).populate("courtroomBookings");
 
     if (!booking) {
       return "No bookings found for the current time slot.";
     }
+
+    // console.log(booking);
 
     // Check if the user with the given phone number is in the booking
     const userBooking = booking.courtroomBookings.find((courtroomBooking) => {
       return courtroomBooking.phoneNumber == phoneNumber;
     });
 
-    console.log(userBooking);
+    // console.log(userBooking);
 
-    return userBooking;
+    return { userBooking, slotTime: booking.hour };
   } catch (error) {
     console.error(error);
     throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
@@ -347,4 +438,5 @@ module.exports = {
   getClientByPhoneNumber,
   getClientByUserid,
   storeCaseHistory,
+  courtRoomBookValidation,
 };

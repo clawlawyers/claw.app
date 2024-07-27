@@ -10,6 +10,10 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 router.post("/book-courtroom", CourtroomController.bookCourtRoom);
+router.post(
+  "/book-courtroom-validation",
+  CourtroomController.bookCourtRoomValidation
+);
 router.get("/book-courtroom", CourtroomController.getBookedData);
 router.post("/login", CourtroomController.loginToCourtRoom);
 router.post(
@@ -32,5 +36,6 @@ router.post(
   CourtroomController.hallucination_questions
 );
 router.post("/api/history", CourtroomController.CaseHistory);
+router.post("/api/downloadhistory", CourtroomController.downloadCaseHistory);
 
 module.exports = router;

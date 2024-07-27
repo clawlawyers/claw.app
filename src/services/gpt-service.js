@@ -40,6 +40,23 @@ async function createGptUser(phoneNumber, mongoId) {
         mongoId,
       },
     });
+
+    const expiresAt = new Date(2024, 7, 30); // Month is 0-indexed, so 7 represents August
+
+    // const newPlan = await prisma.userPlan.create({
+    //   data: {
+    //     userId: mongoId,
+    //     planName: "free",
+    //     expiresAt: expiresAt,
+    //   },
+    // });
+
+    // console.log(newPlan);
+
+    const newPlan = await updateUserPlan(mongoId, "free", expiresAt);
+
+    console.log(newPlan);
+
     return newUser;
   } catch (error) {
     console.log(error);
@@ -333,6 +350,24 @@ async function fetchGptUserByPhoneNumbers(phoneNumbers) {
     return formattedUsers;
   } catch (error) {
     console.error("Error while fetching users:", error);
+    throw new AppError(
+      "Error while fetching users",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function getUserPlan(mongoId) {
+  try {
+    const plans = await prisma.userPlan.findMany({
+      where: {
+        userId: mongoId,
+      },
+    });
+
+    return plans;
+  } catch (err) {
+    console.error("Error while fetching users:", err);
     throw new AppError(
       "Error while fetching users",
       StatusCodes.INTERNAL_SERVER_ERROR
@@ -838,15 +873,25 @@ async function addFirstAdminUser(userId) {
   }
 }
 
-async function updateUserPlan(mongoId, newPlan) {
+async function updateUserPlan(mongoId, newPlan, expiresAt) {
   console.log(mongoId, newPlan);
   try {
-    const updatedUserPlan = await prisma.userPlan.create({
-      data: {
-        userId: mongoId,
-        planName: newPlan,
-      },
-    });
+    if (expiresAt) {
+      const updatedUserPlan = await prisma.userPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          expiresAt: expiresAt,
+        },
+      });
+    } else {
+      const updatedUserPlan = await prisma.userPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+        },
+      });
+    }
 
     const Pdata = await prisma.plan.findUnique({
       where: { name: newPlan },
@@ -1043,4 +1088,5 @@ module.exports = {
   consumeTokenGpt,
   getPlansByUserId,
   removeUserPlans,
+  getUserPlan,
 };
