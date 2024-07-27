@@ -53,9 +53,9 @@ async function createGptUser(phoneNumber, mongoId) {
 
     // console.log(newPlan);
 
-    const newPlan = await updateUserPlan(mongoId, "free", expiresAt);
+    // const newPlan = await updateUserPlan(mongoId, "free", expiresAt);   // it will be open in few ocations
 
-    console.log(newPlan);
+    // console.log(newPlan);
 
     return newUser;
   } catch (error) {
