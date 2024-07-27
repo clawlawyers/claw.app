@@ -89,28 +89,29 @@ async function verify(req, res) {
         mongoId: client.id,
         stateLocation: "",
       };
+
       if (verified) {
         data.jwt = jwt;
         data.expiresAt = expiresAt;
       }
 
-      console.log(data);
+      // console.log(data);
 
       const successResponse = SuccessResponse(data);
       return res.status(StatusCodes.CREATED).json(successResponse);
     }
 
     const plan = await GptServices.getUserPlan(existing.id);
+    console.log(plan.length);
+    console.log(new Date());
 
-    if (!plan) {
+    if (plan.length === 0) {
       console.log("user do not have any plan. plan will be creating");
-      await prisma.userPlan.create({
-        data: {
-          userId: mongoId,
-          planName: "free",
-          expiresAt: expiresAt,
-        },
-      });
+
+      const expiresAt = new Date(2024, 7, 30); // Month is 0-indexed, so 7 represents August
+      console.log(new Date());
+
+      await GptServices.updateUserPlan(existing.id, "free", expiresAt);
 
       console.log("plan created");
     }

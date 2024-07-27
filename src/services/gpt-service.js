@@ -43,13 +43,17 @@ async function createGptUser(phoneNumber, mongoId) {
 
     const expiresAt = new Date(2024, 7, 30); // Month is 0-indexed, so 7 represents August
 
-    const newPlan = await prisma.userPlan.create({
-      data: {
-        userId: mongoId,
-        planName: "free",
-        expiresAt: expiresAt,
-      },
-    });
+    // const newPlan = await prisma.userPlan.create({
+    //   data: {
+    //     userId: mongoId,
+    //     planName: "free",
+    //     expiresAt: expiresAt,
+    //   },
+    // });
+
+    // console.log(newPlan);
+
+    const newPlan = await updateUserPlan(mongoId, "free", expiresAt);
 
     console.log(newPlan);
 
@@ -869,15 +873,25 @@ async function addFirstAdminUser(userId) {
   }
 }
 
-async function updateUserPlan(mongoId, newPlan) {
+async function updateUserPlan(mongoId, newPlan, expiresAt) {
   console.log(mongoId, newPlan);
   try {
-    const updatedUserPlan = await prisma.userPlan.create({
-      data: {
-        userId: mongoId,
-        planName: newPlan,
-      },
-    });
+    if (expiresAt) {
+      const updatedUserPlan = await prisma.userPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          expiresAt: expiresAt,
+        },
+      });
+    } else {
+      const updatedUserPlan = await prisma.userPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+        },
+      });
+    }
 
     const Pdata = await prisma.plan.findUnique({
       where: { name: newPlan },
