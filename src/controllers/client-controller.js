@@ -103,6 +103,7 @@ async function verify(req, res) {
     const plan = await GptServices.getUserPlan(existing.id);
 
     if (!plan) {
+      console.log("user do not have any plan. plan will be creating");
       await prisma.userPlan.create({
         data: {
           userId: mongoId,
@@ -110,6 +111,8 @@ async function verify(req, res) {
           expiresAt: expiresAt,
         },
       });
+
+      console.log("plan created");
     }
 
     // fetch updated client
