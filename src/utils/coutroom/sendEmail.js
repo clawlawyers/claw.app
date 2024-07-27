@@ -6,11 +6,10 @@ const {
 } = require("../../config/server-config");
 const fs = require("fs");
 const path = require("path");
-
-// Construct the absolute path to the HTML template
-const templatePath = path.join(__dirname, "htmlTemplates", "newBooking.html");
+const handlebars = require("handlebars");
 
 // Load the HTML template
+const templatePath = path.join(__dirname, "htmlTemplates", "newBooking.html");
 let htmlTemplate;
 try {
   htmlTemplate = fs.readFileSync(templatePath, "utf-8");
@@ -19,21 +18,7 @@ try {
   process.exit(1);
 }
 
-// Function to replace placeholders in the template
-function replacePlaceholders(template, details) {
-  let result = template
-    .replace(/{{name}}/g, details.name)
-    .replace(/{{phoneNumber}}/g, details.phoneNumber)
-    .replace(/{{password}}/g, details.password)
-    .replace(/{{invoiceLink}}/g, details.invoiceLink);
-
-  const slotsList = details.slots
-    .map((slot) => `<li>Date: ${slot.date}, Hour: ${slot.hour}</li>`)
-    .join("");
-  result = result.replace(/{{slots}}/g, slotsList);
-
-  return result;
-}
+const template = handlebars.compile(htmlTemplate);
 
 // Function to send confirmation email
 const sendConfirmationEmail = async (
@@ -60,7 +45,7 @@ const sendConfirmationEmail = async (
     },
   });
 
-  const replacedHtml = replacePlaceholders(htmlTemplate, {
+  const filledTemplate = template({
     name,
     phoneNumber,
     password,
@@ -72,7 +57,7 @@ const sendConfirmationEmail = async (
     from: "claw enterprise",
     to: email,
     subject: "Courtroom Booking Confirmation",
-    html: replacedHtml,
+    html: filledTemplate,
   };
 
   try {
