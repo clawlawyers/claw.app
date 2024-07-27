@@ -28,6 +28,8 @@ async function createPayment(req, res) {
     paymentStatus: paymentStatus.INITIATED,
   });
 
+  console.log(order);
+
   try {
     const options = {
       amount: amount * 100,
@@ -43,6 +45,7 @@ async function createPayment(req, res) {
     console.log(combinedResponse);
     res.status(200).json(combinedResponse);
   } catch (error) {
+    console.log(error);
     res.status(500).json(error);
   }
 }
@@ -54,6 +57,7 @@ async function verifyPayment(req, res) {
     razorpay_signature,
     _id,
     bookingData,
+    amount,
   } = req.body;
 
   const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
@@ -123,7 +127,7 @@ async function verifyPayment(req, res) {
           email: email,
           contact: phoneNumber,
         },
-        amount: placedOrder.amount, // amount in paise
+        amount: amount, // amount in paise
         currency: "INR",
         order_id: razorpay_order_id,
       };

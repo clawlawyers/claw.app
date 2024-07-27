@@ -14,6 +14,8 @@ let htmlTemplate;
 try {
   htmlTemplate = fs.readFileSync(templatePath, "utf-8");
 } catch (err) {
+  console.log(__dirname);
+  console.log("Current working directory:", process.cwd());
   console.error(`Error reading file at ${templatePath}:`, err.message);
   process.exit(1);
 }
