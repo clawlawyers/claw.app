@@ -36,6 +36,13 @@ router.post(
   CourtroomController.hallucination_questions
 );
 router.post("/api/history", CourtroomController.CaseHistory);
-router.post("/api/downloadhistory", CourtroomController.downloadCaseHistory);
+router.post(
+  "/api/downloadCaseHistory",
+  CourtroomController.downloadCaseHistory
+);
+router.post(
+  "/api/downloadSessionCaseHistory",
+  CourtroomController.downloadSessionCaseHistory
+);
 
 module.exports = router;

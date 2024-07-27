@@ -377,7 +377,7 @@ async function getClientByUserid(userid) {
       hour: currentHour,
     }).populate("courtroomBookings");
 
-    console.log(booking);
+    // console.log(booking);
 
     if (!booking) {
       throw Error("No bookings found for the current time slot.");
@@ -389,7 +389,7 @@ async function getClientByUserid(userid) {
       return courtroomBooking.userId == userid;
     });
 
-    console.log(userBooking);
+    // console.log(userBooking);
 
     return { User_id: userBooking._id, Booking_id: booking };
   } catch (error) {
@@ -431,6 +431,18 @@ async function storeCaseHistory(userId, slotId, caseHistoryDetails) {
   }
 }
 
+async function getSessionCaseHistory(userId) {
+  try {
+    console.log(userId);
+    const caseHistory = await CourtroomHistory.findOne({ userId: userId });
+    // console.log("Case history retrieved:", caseHistory);
+    return caseHistory;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+  }
+}
+
 module.exports = {
   courtRoomBook,
   getBookedData,
@@ -439,4 +451,5 @@ module.exports = {
   getClientByUserid,
   storeCaseHistory,
   courtRoomBookValidation,
+  getSessionCaseHistory,
 };

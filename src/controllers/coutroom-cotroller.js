@@ -758,6 +758,114 @@ async function downloadCaseHistory(req, res) {
   }
 }
 
+async function downloadSessionCaseHistory(req, res) {
+  const { user_id } = req.body;
+  try {
+    const { User_id } = await CourtroomService.getClientByUserid(user_id);
+
+    if (!User_id) {
+      throw new Error("User not found");
+    }
+
+    const FetchedCaseHistorys = await CourtroomService.getSessionCaseHistory(
+      User_id
+    );
+
+    const caseHistorys = FetchedCaseHistorys.history;
+
+    // console.log(caseHistorys);
+
+    const doc = new PDFDocument();
+    const regularFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Regular.ttf"
+    );
+    const boldFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Bold.ttf"
+    );
+
+    // Register both regular and bold fonts
+    doc.registerFont("NotoSans", regularFontPath);
+    doc.registerFont("NotoSans-Bold", boldFontPath);
+
+    doc.font("NotoSans");
+
+    // Define a function to add bold headings
+    const addBoldHeading = (heading) => {
+      doc.font("NotoSans-Bold").fontSize(14).text(heading, { align: "left" });
+      doc.font("NotoSans").fontSize(12);
+    };
+
+    // Add the header
+    doc
+      .font("NotoSans-Bold")
+      .fontSize(18)
+      .text("Case Sesion History", { align: "center" });
+
+    let caseCount = 1;
+
+    for (let caseHistory of caseHistorys) {
+      // Add the header
+      doc
+        .font("NotoSans-Bold")
+        .fontSize(16)
+        .text(`Case ${caseCount}`, { align: "left" });
+      doc.moveDown();
+
+      caseCount = caseCount + 1;
+
+      // Iterate through each argument, counter-argument, judgement, and potential objection
+      for (let i = 0; i < caseHistory.argument.length; i++) {
+        addBoldHeading("Argument:");
+        doc.text(caseHistory.argument[i]);
+        doc.moveDown();
+
+        addBoldHeading("Counter Argument:");
+        doc.text(caseHistory.counter_argument[i]);
+        doc.moveDown();
+
+        addBoldHeading("Potential Objection:");
+        doc.text(caseHistory.potential_objection[i]);
+        doc.moveDown();
+
+        addBoldHeading("Judgement:");
+        doc.text(caseHistory.judgement[i]);
+        doc.moveDown();
+      }
+
+      // Add verdict at the end
+      addBoldHeading("Verdict:");
+      doc.text(caseHistory.verdict);
+    }
+
+    // Collect the PDF in chunks
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      res.setHeader(
+        "Content-disposition",
+        `attachment; filename="case_history_${user_id}.pdf"`
+      );
+      res.setHeader("Content-type", "application/pdf");
+      res.send(pdfBuffer);
+    });
+
+    // End the PDF document
+    doc.end();
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
 module.exports = {
   bookCourtRoom,
   getBookedData,
@@ -777,4 +885,5 @@ module.exports = {
   getCaseOverview,
   bookCourtRoomValidation,
   downloadCaseHistory,
+  downloadSessionCaseHistory,
 };
