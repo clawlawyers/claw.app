@@ -8,17 +8,68 @@ const fs = require("fs");
 const path = require("path");
 const handlebars = require("handlebars");
 
-// Load the HTML template
-const templatePath = path.join(__dirname, "htmlTemplates", "newBooking.html");
-let htmlTemplate;
-try {
-  htmlTemplate = fs.readFileSync(templatePath, "utf-8");
-} catch (err) {
-  console.log(__dirname);
-  console.log("Current working directory:", process.cwd());
-  console.error(`Error reading file at ${templatePath}:`, err.message);
-  process.exit(1);
-}
+// // Load the HTML template
+// const templatePath = path.join(__dirname, "htmlTemplates", "newBooking.html");
+// let htmlTemplate;
+// try {
+//   htmlTemplate = fs.readFileSync(templatePath, "utf-8");
+// } catch (err) {
+//   console.log(__dirname);
+//   console.log("Current working directory:", process.cwd());
+//   console.error(`Error reading file at ${templatePath}:`, err.message);
+//   process.exit(1);
+// }
+
+const htmlTemplate = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Courtroom Slot Booking</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .welcome-header {
+      color: #3498db;
+    }
+    .slot-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .slot-list li {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 class="welcome-header">Welcome to Courtroom Slot Booking!</h2>
+    <p>Dear {{name}},</p>
+    <p>Thank you for booking slots with us. We are excited to have you on board!</p>
+    <p>Your booking details are as follows:</p>
+    <p><strong>Name:</strong> {{name}}</p>
+    <p><strong>Phone Number:</strong> {{phoneNumber}}</p>
+    <p><strong>Password:</strong> {{password}}</p>
+    <p><strong>Slots Booked:</strong></p>
+    <ul class="slot-list">
+      {{#each slots}}
+      <li>Date: {{date}}, Hour: {{hour}}</li>
+      {{/each}}
+    </ul>
+    <p><strong>Invoice:</strong> <a href="{{invoiceLink}}" target="_blank">View your invoice by Razorpay</a></p>
+    <p>If you have any questions or need assistance, feel free to reach out to us.</p>
+    <p>Best regards,<br>The Claw Team</p>
+  </div>
+</body>
+</html>
+`;
 
 const template = handlebars.compile(htmlTemplate);
 
