@@ -114,7 +114,31 @@ async function verifyPayment(req, res) {
           return res.status(400).send(respo);
         }
       }
-      await sendConfirmationEmail(email);
+
+      // Generate invoice
+      const invoiceOptions = {
+        type: "link",
+        description: "Courtroom Booking Invoice",
+        customer: {
+          email: email,
+          contact: phoneNumber,
+        },
+        amount: placedOrder.amount, // amount in paise
+        currency: "INR",
+        order_id: razorpay_order_id,
+      };
+
+      const invoiceResponse = await razorpay.invoices.create(invoiceOptions);
+      console.log(invoiceResponse);
+
+      await sendConfirmationEmail(
+        email,
+        name,
+        phoneNumber,
+        password,
+        slots,
+        invoiceResponse
+      );
     } catch (error) {
       console.log(error);
     }
