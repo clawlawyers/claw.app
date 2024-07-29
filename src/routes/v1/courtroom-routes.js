@@ -44,5 +44,6 @@ router.post(
   "/api/downloadSessionCaseHistory",
   CourtroomController.downloadSessionCaseHistory
 );
+router.get("/:user_id/getHistory", CourtroomController.getHistory);
 
 module.exports = router;

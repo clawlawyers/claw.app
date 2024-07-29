@@ -866,6 +866,20 @@ async function downloadSessionCaseHistory(req, res) {
   }
 }
 
+async function getHistory(req, res) {
+  const { user_id } = req.params;
+  try {
+    const caseHistory = await FetchCaseHistory({ user_id });
+
+    res.status(StatusCodes.OK).json(SuccessResponse({ caseHistory }));
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
 module.exports = {
   bookCourtRoom,
   getBookedData,
@@ -886,4 +900,5 @@ module.exports = {
   bookCourtRoomValidation,
   downloadCaseHistory,
   downloadSessionCaseHistory,
+  getHistory,
 };

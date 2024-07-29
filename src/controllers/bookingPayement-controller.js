@@ -135,13 +135,15 @@ async function verifyPayment(req, res) {
       // const invoiceResponse = await razorpay.invoices.create(invoiceOptions);
       // console.log(invoiceResponse);
 
+      let amout1 = amount;
+
       await sendConfirmationEmail(
         email,
         name,
         phoneNumber,
         password,
         slots,
-        (amount = amount / 100)
+        (amout1 = amout1 / 100)
       );
     } catch (error) {
       console.log(error);
