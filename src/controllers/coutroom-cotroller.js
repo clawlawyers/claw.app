@@ -342,9 +342,13 @@ async function FetchEdit_Case(body) {
 
 async function getCaseOverview(req, res) {
   const { user_id } = req.body;
+
+  console.log(user_id);
   try {
     // Find the CourtroomUser document by userId
     const courtroomUser = await CourtroomUser.findOne({ userId: user_id });
+
+    console.log(courtroomUser);
 
     if (!courtroomUser) {
       return res
@@ -760,6 +764,8 @@ async function downloadCaseHistory(req, res) {
 
 async function downloadSessionCaseHistory(req, res) {
   const { user_id } = req.body;
+
+  console.log(user_id);
   try {
     const { User_id } = await CourtroomService.getClientByUserid(user_id);
 
@@ -770,6 +776,7 @@ async function downloadSessionCaseHistory(req, res) {
     const FetchedCaseHistorys = await CourtroomService.getSessionCaseHistory(
       User_id
     );
+    console.log(FetchedCaseHistorys);
 
     const caseHistorys = FetchedCaseHistorys.history;
 
@@ -859,6 +866,7 @@ async function downloadSessionCaseHistory(req, res) {
     // End the PDF document
     doc.end();
   } catch (error) {
+    console.error(error);
     const errorResponse = ErrorResponse({}, error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)

@@ -119,12 +119,12 @@ async function updateUserTiming(req, res) {
 async function updateUserDetails(req, res) {
   try {
     const { userId } = req.params;
-    const { name, phoneNumber, email } = req.body;
+    const { name, phoneNumber, email, recording } = req.body;
 
     console.log(req.body);
 
     // Validate input
-    if (!name && !phoneNumber && !email) {
+    if (!name && !phoneNumber && !email && !recording) {
       return res.status(400).send("No fields to update.");
     }
 
@@ -139,7 +139,7 @@ async function updateUserDetails(req, res) {
     if (name) user.name = name;
     if (phoneNumber) user.phoneNumber = phoneNumber;
     if (email) user.email = email;
-    // if (password) user.password = password; // Ensure this is hashed if it's a password
+    if (recording) user.recording = recording;
 
     // Save the updated user document
     await user.save();

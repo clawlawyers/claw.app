@@ -6,6 +6,34 @@ const { comparePassword, generateToken } = require("../utils/coutroom/auth");
 const CourtroomHistory = require("../models/courtRoomHistory");
 const { COURTROOM_API_ENDPOINT } = process.env;
 
+async function createCourtRoomUser(
+  name,
+  phoneNumber,
+  email,
+  hashedPassword,
+  recording,
+  caseOverview
+) {
+  // Create a new courtroom user
+  const newCourtroomUser = new CourtroomUser({
+    name,
+    phoneNumber,
+    email,
+    password: hashedPassword,
+    recording: recording, // Assuming recording is required and set to true
+    caseOverview: "NA",
+  });
+
+  console.log(newCourtroomUser);
+
+  // Save the new courtroom user
+  const savedCourtroomUser = await newCourtroomUser.save();
+
+  console.log(savedCourtroomUser);
+
+  return savedCourtroomUser._id;
+}
+
 async function courtRoomBook(
   name,
   phoneNumber,
@@ -57,25 +85,33 @@ async function courtRoomBook(
       return `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`;
     }
 
-    // Create a new courtroom user
-    const newCourtroomUser = new CourtroomUser({
+    // // Create a new courtroom user
+    // const newCourtroomUser = new CourtroomUser({
+    //   name,
+    //   phoneNumber,
+    //   email,
+    //   password: hashedPassword,
+    //   recording: recording, // Assuming recording is required and set to true
+    //   caseOverview: "NA",
+    // });
+
+    // console.log(newCourtroomUser);
+
+    // // Save the new courtroom user
+    // const savedCourtroomUser = await newCourtroomUser.save();
+
+    // console.log(savedCourtroomUser);
+
+    const CourtroomUserId = createCourtRoomUser(
       name,
       phoneNumber,
       email,
-      password: hashedPassword,
-      recording: recording, // Assuming recording is required and set to true
-      caseOverview: "NA",
-    });
-
-    console.log(newCourtroomUser);
-
-    // Save the new courtroom user
-    const savedCourtroomUser = await newCourtroomUser.save();
-
-    console.log(savedCourtroomUser);
+      hashedPassword,
+      recording
+    );
 
     // Add the new booking
-    booking.courtroomBookings.push(savedCourtroomUser._id);
+    booking.courtroomBookings.push(CourtroomUserId);
 
     // Save the booking
     await booking.save();
