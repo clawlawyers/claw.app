@@ -150,11 +150,22 @@ async function courtRoomBookValidation(
 
 async function getBookedData(startDate, endDate) {
   try {
+    // Ensure startDate is at the beginning of the day
+    const adjustedStartDate = new Date(startDate);
+    adjustedStartDate.setHours(0, 0, 0, 0); // Set to 00:00:00.000
+
+    // Ensure endDate includes the end of the day
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setHours(23, 59, 59, 999); // Include the entire last day of the range
+
     const bookings = await CourtRoomBooking.aggregate([
       {
         $match: {
-          date: { $gte: startDate, $lte: endDate },
+          date: { $gte: adjustedStartDate, $lte: adjustedEndDate },
         },
+      },
+      {
+        $unwind: "$courtroomBookings", // Flatten the array to process each booking separately
       },
       {
         $group: {
@@ -162,13 +173,16 @@ async function getBookedData(startDate, endDate) {
             date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
             hour: "$hour",
           },
-          bookingCount: { $sum: { $size: "$courtroomBookings" } },
+          bookingCount: { $sum: 1 }, // Count each booking
         },
       },
       {
         $sort: { "_id.date": 1, "_id.hour": 1 },
       },
     ]);
+
+    // Log the results to check for anomalies
+    console.log("Aggregated bookings:", bookings);
 
     return bookings;
   } catch (error) {
