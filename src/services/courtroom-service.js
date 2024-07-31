@@ -5,6 +5,10 @@ const CourtroomUser = require("../models/CourtroomUser");
 const { comparePassword, generateToken } = require("../utils/coutroom/auth");
 const CourtroomHistory = require("../models/courtRoomHistory");
 const ContactUs = require("../models/contact");
+const {
+  sendAdminContactUsNotification,
+} = require("../utils/coutroom/sendEmail");
+const { trusted } = require("mongoose");
 const { COURTROOM_API_ENDPOINT } = process.env;
 
 async function addContactUsQuery(
@@ -26,17 +30,27 @@ async function addContactUsQuery(
       preferredContactMode,
       businessName,
       query,
-      queryPushedToEmail: false, // Flag to indicate if the query was pushed to the email
+      queryPushedToEmail: true, // Flag to indicate if the query was pushed to the email
     });
 
     // Save the new contact us query
     await newContactUsQuery.save();
 
+    await sendAdminContactUsNotification({
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+      preferredContactMode,
+      businessName,
+      query,
+    });
+
     console.log(newContactUsQuery);
 
     return newContactUsQuery;
   } catch (error) {
-    console.error(error);
+    console.log(error.message);
     throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
   }
 }

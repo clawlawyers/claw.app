@@ -10,7 +10,7 @@ const ContactUsSchema = new Schema(
     phoneNumber: { type: String, required: true, trim: true },
     preferredContactMode: { type: String, required: true, trim: true },
     businessName: { type: String, trim: true },
-    query: { type: String, required: true, trim: true },
+    query: { type: String, required: true },
     queryPushedToEmail: { type: Boolean, default: false }, // Flag to indicate if the query was pushed to the email
   },
   { timestamps: true }

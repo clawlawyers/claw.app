@@ -898,20 +898,21 @@ async function AddContactUsQuery(req, res) {
     businessName,
     query,
   } = req.body;
+
   try {
-    const queryResponse = await CourtroomService.addContactUsQuery({
+    const queryResponse = await CourtroomService.addContactUsQuery(
       firstName,
       lastName,
       email,
       phoneNumber,
       preferredContactMode,
       businessName,
-      query,
-    });
+      query
+    );
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ queryResponse }));
   } catch (error) {
-    console.error(error);
+    // console.error(error.message);
     const errorResponse = ErrorResponse({}, error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
