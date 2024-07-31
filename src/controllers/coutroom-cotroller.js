@@ -874,6 +874,145 @@ async function downloadSessionCaseHistory(req, res) {
   }
 }
 
+async function downloadFirtDraft(req, res) {
+  const { user_id } = req.body;
+  try {
+    const draft = await FetchGetDraft({ user_id });
+
+    const draftDetail = draft.detailed_draft;
+
+    const doc = new PDFDocument();
+    const regularFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Regular.ttf"
+    );
+    const boldFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Bold.ttf"
+    );
+
+    // Register both regular and bold fonts
+    doc.registerFont("NotoSans", regularFontPath);
+    doc.registerFont("NotoSans-Bold", boldFontPath);
+
+    doc.font("NotoSans");
+
+    // Define a function to add bold headings
+    const addBoldHeading = (heading) => {
+      doc.font("NotoSans-Bold").fontSize(14).text(heading, { align: "left" });
+      doc.font("NotoSans").fontSize(12);
+    };
+
+    // Add the header
+    doc
+      .font("NotoSans-Bold")
+      .fontSize(14)
+      .text("First Draft", { align: "center" });
+
+    doc.moveDown();
+
+    doc.font("NotoSans").fontSize(12);
+
+    doc.text(draftDetail);
+
+    // Collect the PDF in chunks
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      res.setHeader(
+        "Content-disposition",
+        `attachment; filename="draft_${user_id}.pdf"`
+      );
+      res.setHeader("Content-type", "application/pdf");
+      res.send(pdfBuffer);
+    });
+
+    // End the PDF document
+    doc.end();
+  } catch (error) {
+    console.error(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function download(req, res) {
+  const { data, user_id } = req.body;
+
+  try {
+    //   const draft = await FetchGetDraft({ user_id });
+
+    //   const draftDetail = draft.detailed_draft;
+
+    const doc = new PDFDocument();
+    const regularFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Regular.ttf"
+    );
+    const boldFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Bold.ttf"
+    );
+
+    // Register both regular and bold fonts
+    doc.registerFont("NotoSans", regularFontPath);
+    doc.registerFont("NotoSans-Bold", boldFontPath);
+
+    doc.font("NotoSans");
+
+    // Define a function to add bold headings
+    const addBoldHeading = (heading) => {
+      doc.font("NotoSans-Bold").fontSize(14).text(heading, { align: "left" });
+      doc.font("NotoSans").fontSize(12);
+    };
+
+    // Add the header
+    doc
+      .font("NotoSans-Bold")
+      .fontSize(14)
+      .text("First Draft", { align: "center" });
+
+    doc.moveDown();
+
+    doc.font("NotoSans").fontSize(12);
+
+    doc.text(data);
+
+    // Collect the PDF in chunks
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      res.setHeader(
+        "Content-disposition",
+        `attachment; filename="draft${user_id}.pdf"`
+      );
+      res.setHeader("Content-type", "application/pdf");
+      res.send(pdfBuffer);
+    });
+
+    // End the PDF document
+    doc.end();
+  } catch (error) {
+    console.error(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
 async function getHistory(req, res) {
   const { user_id } = req.params;
   try {
@@ -942,4 +1081,6 @@ module.exports = {
   downloadSessionCaseHistory,
   getHistory,
   AddContactUsQuery,
+  downloadFirtDraft,
+  download,
 };

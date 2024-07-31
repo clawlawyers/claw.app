@@ -44,6 +44,9 @@ router.post(
   "/api/downloadSessionCaseHistory",
   CourtroomController.downloadSessionCaseHistory
 );
+
+router.post("/api/downloadFirtDraft", CourtroomController.downloadFirtDraft);
+router.post("/api/download", CourtroomController.download);
 router.get("/:user_id/getHistory", CourtroomController.getHistory);
 
 // AddContactUsQuery Route
