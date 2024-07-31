@@ -4,7 +4,42 @@ const CourtRoomBooking = require("../models/courtRoomBooking");
 const CourtroomUser = require("../models/CourtroomUser");
 const { comparePassword, generateToken } = require("../utils/coutroom/auth");
 const CourtroomHistory = require("../models/courtRoomHistory");
+const ContactUs = require("../models/contact");
 const { COURTROOM_API_ENDPOINT } = process.env;
+
+async function addContactUsQuery(
+  firstName,
+  lastName,
+  email,
+  phoneNumber,
+  preferredContactMode,
+  businessName,
+  query
+) {
+  try {
+    // Create a new contact us query
+    const newContactUsQuery = new ContactUs({
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+      preferredContactMode,
+      businessName,
+      query,
+      queryPushedToEmail: false, // Flag to indicate if the query was pushed to the email
+    });
+
+    // Save the new contact us query
+    await newContactUsQuery.save();
+
+    console.log(newContactUsQuery);
+
+    return newContactUsQuery;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+  }
+}
 
 async function createCourtRoomUser(
   name,
@@ -85,33 +120,25 @@ async function courtRoomBook(
       return `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`;
     }
 
-    // // Create a new courtroom user
-    // const newCourtroomUser = new CourtroomUser({
-    //   name,
-    //   phoneNumber,
-    //   email,
-    //   password: hashedPassword,
-    //   recording: recording, // Assuming recording is required and set to true
-    //   caseOverview: "NA",
-    // });
-
-    // console.log(newCourtroomUser);
-
-    // // Save the new courtroom user
-    // const savedCourtroomUser = await newCourtroomUser.save();
-
-    // console.log(savedCourtroomUser);
-
-    const CourtroomUserId = createCourtRoomUser(
+    // Create a new courtroom user
+    const newCourtroomUser = new CourtroomUser({
       name,
       phoneNumber,
       email,
-      hashedPassword,
-      recording
-    );
+      password: hashedPassword,
+      recording: recording, // Assuming recording is required and set to true
+      caseOverview: "NA",
+    });
+
+    console.log(newCourtroomUser);
+
+    // Save the new courtroom user
+    const savedCourtroomUser = await newCourtroomUser.save();
+
+    console.log(savedCourtroomUser);
 
     // Add the new booking
-    booking.courtroomBookings.push(CourtroomUserId);
+    booking.courtroomBookings.push(savedCourtroomUser._id);
 
     // Save the booking
     await booking.save();
@@ -274,9 +301,11 @@ async function loginToCourtRoom(phoneNumber, password) {
 
     console.log(booking);
 
+    console.log(booking.courtroomBookings.length);
+
     // Check if the user with the given phone number is in the booking
     const userBooking = booking.courtroomBookings.find((courtroomBooking) => {
-      console.log(courtroomBooking.phoneNumber == phoneNumber);
+      console.log(courtroomBooking.phoneNumber, phoneNumber);
       return courtroomBooking.phoneNumber == phoneNumber;
     });
 
@@ -502,4 +531,5 @@ module.exports = {
   storeCaseHistory,
   courtRoomBookValidation,
   getSessionCaseHistory,
+  addContactUsQuery,
 };

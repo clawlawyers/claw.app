@@ -46,4 +46,8 @@ router.post(
 );
 router.get("/:user_id/getHistory", CourtroomController.getHistory);
 
+// AddContactUsQuery Route
+
+router.post("/add/ContactUsQuery", CourtroomController.AddContactUsQuery);
+
 module.exports = router;

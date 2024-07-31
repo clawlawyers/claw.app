@@ -888,6 +888,37 @@ async function getHistory(req, res) {
   }
 }
 
+async function AddContactUsQuery(req, res) {
+  const {
+    firstName,
+    lastName,
+    email,
+    phoneNumber,
+    preferredContactMode,
+    businessName,
+    query,
+  } = req.body;
+  try {
+    const queryResponse = await CourtroomService.addContactUsQuery({
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+      preferredContactMode,
+      businessName,
+      query,
+    });
+
+    return res.status(StatusCodes.OK).json(SuccessResponse({ queryResponse }));
+  } catch (error) {
+    console.error(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
 module.exports = {
   bookCourtRoom,
   getBookedData,
@@ -909,4 +940,5 @@ module.exports = {
   downloadCaseHistory,
   downloadSessionCaseHistory,
   getHistory,
+  AddContactUsQuery,
 };
