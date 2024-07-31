@@ -944,7 +944,7 @@ async function downloadFirtDraft(req, res) {
 }
 
 async function download(req, res) {
-  const { data, user_id } = req.body;
+  const { data, user_id, type } = req.body;
 
   try {
     //   const draft = await FetchGetDraft({ user_id });
@@ -978,10 +978,7 @@ async function download(req, res) {
     };
 
     // Add the header
-    doc
-      .font("NotoSans-Bold")
-      .fontSize(14)
-      .text("First Draft", { align: "center" });
+    doc.font("NotoSans-Bold").fontSize(14).text(type, { align: "center" });
 
     doc.moveDown();
 
