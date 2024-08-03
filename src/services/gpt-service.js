@@ -22,6 +22,8 @@ async function fetchContext(sessionId) {
       context += `${text}\n`;
     });
 
+    console.log("context: " + context);
+
     return context;
   } catch (error) {
     console.log(error);
@@ -53,9 +55,9 @@ async function createGptUser(phoneNumber, mongoId) {
 
     // console.log(newPlan);
 
-    // const newPlan = await updateUserPlan(mongoId, "free", expiresAt);   // it will be open in few ocations
+    const newPlan = await updateUserPlan(mongoId, "free", expiresAt); // it will be open in few ocations
 
-    // console.log(newPlan);
+    console.log(newPlan);
 
     return newUser;
   } catch (error) {

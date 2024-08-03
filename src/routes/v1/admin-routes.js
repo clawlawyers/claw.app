@@ -27,6 +27,10 @@ const {
   removeAdminUser,
   isAdmin,
   removeUserPlan,
+  getAllCourtRoomData,
+  deleteBooking,
+  updateUserDetails,
+  updateUserTiming,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 // const { updateUserPlan } = require("../../services/gpt-service");
@@ -58,5 +62,12 @@ router.get("/getAdmins", getAdmins);
 router.post("/:adminId/removeUser", removeAdminUser);
 router.get("/:phoneNumber/isAdmin", isAdmin);
 router.delete("/removeUserPlan", removeUserPlan);
+
+// CourtRoom Admin routes
+
+router.get("/allCourtRoomData", getAllCourtRoomData);
+router.delete("/bookings/:bookingId/users/:userId", deleteBooking);
+router.put("/update/users/:userId", updateUserDetails);
+router.put("/bookings/:bookingId/users/:userId/slot", updateUserTiming);
 
 module.exports = router;

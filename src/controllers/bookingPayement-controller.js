@@ -28,6 +28,8 @@ async function createPayment(req, res) {
     paymentStatus: paymentStatus.INITIATED,
   });
 
+  console.log(order);
+
   try {
     const options = {
       amount: amount * 100,
@@ -43,6 +45,7 @@ async function createPayment(req, res) {
     console.log(combinedResponse);
     res.status(200).json(combinedResponse);
   } catch (error) {
+    console.log(error);
     res.status(500).json(error);
   }
 }
@@ -54,6 +57,7 @@ async function verifyPayment(req, res) {
     razorpay_signature,
     _id,
     bookingData,
+    amount,
   } = req.body;
 
   const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
@@ -115,21 +119,23 @@ async function verifyPayment(req, res) {
         }
       }
 
-      // Generate invoice
-      const invoiceOptions = {
-        type: "link",
-        description: "Courtroom Booking Invoice",
-        customer: {
-          email: email,
-          contact: phoneNumber,
-        },
-        amount: placedOrder.amount, // amount in paise
-        currency: "INR",
-        order_id: razorpay_order_id,
-      };
+      // // Generate invoice
+      // const invoiceOptions = {
+      //   type: "link",
+      //   description: "Courtroom Booking Invoice",
+      //   customer: {
+      //     email: email,
+      //     contact: phoneNumber,
+      //   },
+      //   amount: amount, // amount in paise
+      //   currency: "INR",
+      //   order_id: razorpay_order_id,
+      // };
 
-      const invoiceResponse = await razorpay.invoices.create(invoiceOptions);
-      console.log(invoiceResponse);
+      // const invoiceResponse = await razorpay.invoices.create(invoiceOptions);
+      // console.log(invoiceResponse);
+
+      let amout1 = amount;
 
       await sendConfirmationEmail(
         email,
@@ -137,7 +143,7 @@ async function verifyPayment(req, res) {
         phoneNumber,
         password,
         slots,
-        invoiceResponse
+        (amout1 = amout1 / 100)
       );
     } catch (error) {
       console.log(error);

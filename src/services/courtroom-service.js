@@ -4,7 +4,84 @@ const CourtRoomBooking = require("../models/courtRoomBooking");
 const CourtroomUser = require("../models/CourtroomUser");
 const { comparePassword, generateToken } = require("../utils/coutroom/auth");
 const CourtroomHistory = require("../models/courtRoomHistory");
+const ContactUs = require("../models/contact");
+const {
+  sendAdminContactUsNotification,
+} = require("../utils/coutroom/sendEmail");
+const { trusted } = require("mongoose");
 const { COURTROOM_API_ENDPOINT } = process.env;
+
+async function addContactUsQuery(
+  firstName,
+  lastName,
+  email,
+  phoneNumber,
+  preferredContactMode,
+  businessName,
+  query
+) {
+  try {
+    // Create a new contact us query
+    const newContactUsQuery = new ContactUs({
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+      preferredContactMode,
+      businessName,
+      query,
+      queryPushedToEmail: true, // Flag to indicate if the query was pushed to the email
+    });
+
+    // Save the new contact us query
+    await newContactUsQuery.save();
+
+    await sendAdminContactUsNotification({
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+      preferredContactMode,
+      businessName,
+      query,
+    });
+
+    console.log(newContactUsQuery);
+
+    return newContactUsQuery;
+  } catch (error) {
+    console.log(error.message);
+    throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+  }
+}
+
+async function createCourtRoomUser(
+  name,
+  phoneNumber,
+  email,
+  hashedPassword,
+  recording,
+  caseOverview
+) {
+  // Create a new courtroom user
+  const newCourtroomUser = new CourtroomUser({
+    name,
+    phoneNumber,
+    email,
+    password: hashedPassword,
+    recording: recording, // Assuming recording is required and set to true
+    caseOverview: "NA",
+  });
+
+  console.log(newCourtroomUser);
+
+  // Save the new courtroom user
+  const savedCourtroomUser = await newCourtroomUser.save();
+
+  console.log(savedCourtroomUser);
+
+  return savedCourtroomUser._id;
+}
 
 async function courtRoomBook(
   name,
@@ -150,11 +227,22 @@ async function courtRoomBookValidation(
 
 async function getBookedData(startDate, endDate) {
   try {
+    // Ensure startDate is at the beginning of the day
+    const adjustedStartDate = new Date(startDate);
+    adjustedStartDate.setHours(0, 0, 0, 0); // Set to 00:00:00.000
+
+    // Ensure endDate includes the end of the day
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setHours(23, 59, 59, 999); // Include the entire last day of the range
+
     const bookings = await CourtRoomBooking.aggregate([
       {
         $match: {
-          date: { $gte: startDate, $lte: endDate },
+          date: { $gte: adjustedStartDate, $lte: adjustedEndDate },
         },
+      },
+      {
+        $unwind: "$courtroomBookings", // Flatten the array to process each booking separately
       },
       {
         $group: {
@@ -162,13 +250,16 @@ async function getBookedData(startDate, endDate) {
             date: { $dateToString: { format: "%Y-%m-%d", date: "$date" } },
             hour: "$hour",
           },
-          bookingCount: { $sum: { $size: "$courtroomBookings" } },
+          bookingCount: { $sum: 1 }, // Count each booking
         },
       },
       {
         $sort: { "_id.date": 1, "_id.hour": 1 },
       },
     ]);
+
+    // Log the results to check for anomalies
+    console.log("Aggregated bookings:", bookings);
 
     return bookings;
   } catch (error) {
@@ -224,9 +315,11 @@ async function loginToCourtRoom(phoneNumber, password) {
 
     console.log(booking);
 
+    console.log(booking.courtroomBookings.length);
+
     // Check if the user with the given phone number is in the booking
     const userBooking = booking.courtroomBookings.find((courtroomBooking) => {
-      console.log(courtroomBooking.phoneNumber == phoneNumber);
+      console.log(courtroomBooking.phoneNumber, phoneNumber);
       return courtroomBooking.phoneNumber == phoneNumber;
     });
 
@@ -377,7 +470,7 @@ async function getClientByUserid(userid) {
       hour: currentHour,
     }).populate("courtroomBookings");
 
-    console.log(booking);
+    // console.log(booking);
 
     if (!booking) {
       throw Error("No bookings found for the current time slot.");
@@ -389,7 +482,7 @@ async function getClientByUserid(userid) {
       return courtroomBooking.userId == userid;
     });
 
-    console.log(userBooking);
+    // console.log(userBooking);
 
     return { User_id: userBooking._id, Booking_id: booking };
   } catch (error) {
@@ -431,6 +524,18 @@ async function storeCaseHistory(userId, slotId, caseHistoryDetails) {
   }
 }
 
+async function getSessionCaseHistory(userId) {
+  try {
+    console.log(userId);
+    const caseHistory = await CourtroomHistory.findOne({ userId: userId });
+    // console.log("Case history retrieved:", caseHistory);
+    return caseHistory;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
+  }
+}
+
 module.exports = {
   courtRoomBook,
   getBookedData,
@@ -439,4 +544,6 @@ module.exports = {
   getClientByUserid,
   storeCaseHistory,
   courtRoomBookValidation,
+  getSessionCaseHistory,
+  addContactUsQuery,
 };
