@@ -8,7 +8,10 @@ const ContactUs = require("../models/contact");
 const {
   sendAdminContactUsNotification,
 } = require("../utils/coutroom/sendEmail");
-const { trusted } = require("mongoose");
+const TrailCourtRoomBooking = require("../models/trailCourtRoomBooking");
+const TrailCourtroomUser = require("../models/trailCourtRoomUser");
+const TrailCourtroomHistory = require("../models/trailCourtRoomHistory");
+const TrailBooking = require("../models/trailBookingAllow");
 const { COURTROOM_API_ENDPOINT } = process.env;
 
 async function addContactUsQuery(
@@ -64,7 +67,7 @@ async function createCourtRoomUser(
   caseOverview
 ) {
   // Create a new courtroom user
-  const newCourtroomUser = new CourtroomUser({
+  const newCourtroomUser = new TrailCourtroomUser({
     name,
     phoneNumber,
     email,
@@ -83,7 +86,7 @@ async function createCourtRoomUser(
   return savedCourtroomUser._id;
 }
 
-async function courtRoomBook(
+async function adminCourtRoomBook(
   name,
   phoneNumber,
   email,
@@ -95,15 +98,31 @@ async function courtRoomBook(
 ) {
   console.log("Here is caseOverview", caseOverview);
   try {
+    // // Check if the booking date and hour fall within the allowed slots
+    // const trailBooking = await TrailBooking.findOne({
+    //   date: bookingDate,
+    //   startSlot: { $lte: hour },
+    //   endSlot: { $gte: hour },
+    //   phoneNumber: phoneNumber,
+    //   email: email,
+    // });
+
+    // if (!trailBooking) {
+    //   console.log(
+    //     `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
+    //   );
+    //   return `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    // }
+
     // Find existing booking for the same date and hour
-    let booking = await CourtRoomBooking.findOne({
+    let booking = await TrailCourtRoomBooking.findOne({
       date: bookingDate,
       hour: hour,
     }).populate("courtroomBookings");
 
     if (!booking) {
       // Create a new booking if it doesn't exist
-      booking = new CourtRoomBooking({
+      booking = new TrailCourtRoomBooking({
         date: bookingDate,
         hour: hour,
         courtroomBookings: [],
@@ -135,7 +154,103 @@ async function courtRoomBook(
     }
 
     // Create a new courtroom user
-    const newCourtroomUser = new CourtroomUser({
+    const newCourtroomUser = new TrailCourtroomUser({
+      name,
+      phoneNumber,
+      email,
+      password: hashedPassword,
+      recording: recording, // Assuming recording is required and set to true
+      caseOverview: "NA",
+    });
+
+    console.log(newCourtroomUser);
+
+    // Save the new courtroom user
+    const savedCourtroomUser = await newCourtroomUser.save();
+
+    console.log(savedCourtroomUser);
+
+    // Add the new booking
+    booking.courtroomBookings.push(savedCourtroomUser._id);
+
+    // Save the booking
+    await booking.save();
+    console.log("Booking saved.");
+  } catch (error) {
+    console.error(error);
+    throw new Error("Internal server error.");
+  }
+}
+
+async function courtRoomBook(
+  name,
+  phoneNumber,
+  email,
+  hashedPassword,
+  bookingDate,
+  hour,
+  recording,
+  caseOverview
+) {
+  console.log("Here is caseOverview", caseOverview);
+  try {
+    // Check if the booking date and hour fall within the allowed slots
+    const trailBooking = await TrailBooking.findOne({
+      date: bookingDate,
+      startSlot: { $lte: hour },
+      endSlot: { $gte: hour },
+      phoneNumber: phoneNumber,
+      email: email,
+    });
+
+    if (!trailBooking) {
+      console.log(
+        `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
+      );
+      return `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    }
+
+    // Find existing booking for the same date and hour
+    let booking = await TrailCourtRoomBooking.findOne({
+      date: bookingDate,
+      hour: hour,
+    }).populate("courtroomBookings");
+
+    if (!booking) {
+      // Create a new booking if it doesn't exist
+      booking = new TrailCourtRoomBooking({
+        date: bookingDate,
+        hour: hour,
+        courtroomBookings: [],
+      });
+    }
+
+    // Check if the total bookings exceed the limit
+    if (booking.courtroomBookings.length >= 4) {
+      console.log(
+        `Maximum of 4 courtrooms can be booked at ${hour}:00 on ${bookingDate.toDateString()}.`
+      );
+      return `Maximum of 4 courtrooms can be booked at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    }
+
+    // Check if the user with the same mobile number or email already booked a slot at the same hour
+    const existingBooking = booking.courtroomBookings.find(
+      (courtroomBooking) =>
+        courtroomBooking.phoneNumber == phoneNumber ||
+        courtroomBooking.email == email
+    );
+
+    console.log(existingBooking);
+
+    if (existingBooking) {
+      console.log(
+        `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`
+      );
+      return `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    }
+
+    // Create a new courtroom user
+    const newCourtroomUser = new TrailCourtroomUser({
       name,
       phoneNumber,
       email,
@@ -175,15 +290,39 @@ async function courtRoomBookValidation(
 ) {
   console.log("Here is caseOverview", caseOverview);
   try {
+    // Ensure hour is an integer and within valid range
+    if (hour < 0 || hour > 23) {
+      console.log(`Invalid hour: ${hour}`);
+      return `Invalid hour: ${hour}. Hour must be between 0 and 23.`;
+    }
+
+    // Check if the booking date and hour fall within the allowed slots
+    const trailBooking = await TrailBooking.findOne({
+      date: bookingDate,
+      StartHour: { $lte: hour },
+      EndHour: { $gte: hour },
+      phoneNumber: phoneNumber,
+      email: email,
+    });
+
+    console.log(trailBooking);
+
+    if (!trailBooking) {
+      console.log(
+        `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
+      );
+      return `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    }
+
     // Find existing booking for the same date and hour
-    let booking = await CourtRoomBooking.findOne({
+    let booking = await TrailCourtRoomBooking.findOne({
       date: bookingDate,
       hour: hour,
     }).populate("courtroomBookings");
 
     if (!booking) {
       // Create a new booking if it doesn't exist
-      booking = new CourtRoomBooking({
+      booking = new TrailCourtRoomBooking({
         date: bookingDate,
         hour: hour,
         courtroomBookings: [],
@@ -235,7 +374,7 @@ async function getBookedData(startDate, endDate) {
     const adjustedEndDate = new Date(endDate);
     adjustedEndDate.setHours(23, 59, 59, 999); // Include the entire last day of the range
 
-    const bookings = await CourtRoomBooking.aggregate([
+    const bookings = await TrailCourtRoomBooking.aggregate([
       {
         $match: {
           date: { $gte: adjustedStartDate, $lte: adjustedEndDate },
@@ -304,7 +443,7 @@ async function loginToCourtRoom(phoneNumber, password) {
     // const currentHour = 14;
 
     // Find existing booking for the current date and hour
-    const booking = await CourtRoomBooking.findOne({
+    const booking = await TrailCourtRoomBooking.findOne({
       date: currentDate,
       hour: currentHour,
     }).populate("courtroomBookings");
@@ -420,7 +559,7 @@ async function getClientByPhoneNumber(phoneNumber) {
     // const currentHour = 14;
 
     // Find existing booking for the current date and hour
-    const booking = await CourtRoomBooking.findOne({
+    const booking = await TrailCourtRoomBooking.findOne({
       date: currentDate,
       hour: currentHour,
     }).populate("courtroomBookings");
@@ -465,7 +604,7 @@ async function getClientByUserid(userid) {
     // const currentHour = 20;
 
     // Find existing booking for the current date and hour
-    const booking = await CourtRoomBooking.findOne({
+    const booking = await TrailCourtRoomBooking.findOne({
       date: formattedDate,
       hour: currentHour,
     }).populate("courtroomBookings");
@@ -494,14 +633,14 @@ async function getClientByUserid(userid) {
 async function storeCaseHistory(userId, slotId, caseHistoryDetails) {
   try {
     // Find the courtroom history by userId and slotId
-    let courtroomHistory = await CourtroomHistory.findOne({
+    let courtroomHistory = await TrailCourtroomHistory.findOne({
       userId: userId,
       slot: slotId,
     });
 
     if (!courtroomHistory) {
       // Create a new courtroom history if it doesn't exist
-      courtroomHistory = new CourtroomHistory({
+      courtroomHistory = new TrailCourtroomHistory({
         userId: userId,
         slot: slotId,
         history: [],
@@ -527,7 +666,7 @@ async function storeCaseHistory(userId, slotId, caseHistoryDetails) {
 async function getSessionCaseHistory(userId) {
   try {
     console.log(userId);
-    const caseHistory = await CourtroomHistory.findOne({ userId: userId });
+    const caseHistory = await TrailCourtroomHistory.findOne({ userId: userId });
     // console.log("Case history retrieved:", caseHistory);
     return caseHistory;
   } catch (error) {
@@ -538,6 +677,7 @@ async function getSessionCaseHistory(userId) {
 
 module.exports = {
   courtRoomBook,
+  adminCourtRoomBook,
   getBookedData,
   loginToCourtRoom,
   getClientByPhoneNumber,

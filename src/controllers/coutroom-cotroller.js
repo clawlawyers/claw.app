@@ -9,6 +9,68 @@ const CourtroomUser = require("../models/CourtroomUser");
 const FormData = require("form-data");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
+const TrailCourtroomUser = require("../models/trailCourtRoomUser");
+
+async function adminBookCourtRoom(req, res) {
+  try {
+    const { name, phoneNumber, email, password, slots, recording } = req.body;
+
+    // Check if required fields are provided
+    if (
+      !name ||
+      !phoneNumber ||
+      !email ||
+      !password ||
+      !slots ||
+      !Array.isArray(slots) ||
+      slots.length === 0
+    ) {
+      return res.status(400).send("Missing required fields.");
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const caseOverview = "";
+
+    for (const slot of slots) {
+      const { date, hour } = slot;
+      if (!date || hour === undefined) {
+        return res.status(400).send("Missing required fields in slot.");
+      }
+
+      const bookingDate = new Date(date);
+
+      const respo = await CourtroomService.adminCourtRoomBook(
+        name,
+        phoneNumber,
+        email,
+        hashedPassword,
+        bookingDate,
+        hour,
+        recording,
+        caseOverview
+      );
+
+      if (respo) {
+        return res.status(400).send(respo);
+      }
+    }
+    await sendConfirmationEmail(
+      email,
+      name,
+      phoneNumber,
+      password,
+      slots,
+      (amount = slots.length * 100)
+    );
+
+    res.status(201).send("Courtroom slots booked successfully.");
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
 
 async function bookCourtRoom(req, res) {
   try {
@@ -232,7 +294,7 @@ async function newcase(req, res) {
     console.log(case_overview);
 
     // Find the CourtroomUser document by userId
-    const courtroomUser = await CourtroomUser.findOne({ userId });
+    const courtroomUser = await TrailCourtroomUser.findOne({ userId });
 
     if (!courtroomUser) {
       return res
@@ -300,7 +362,7 @@ async function edit_case(req, res) {
     const editedArgument = await FetchEdit_Case({ user_id, case_overview });
 
     // Find the CourtroomUser document by userId
-    const courtroomUser = await CourtroomUser.findOne({ userId: user_id });
+    const courtroomUser = await TrailCourtroomUser.findOne({ userId: user_id });
 
     if (!courtroomUser) {
       return res
@@ -346,7 +408,7 @@ async function getCaseOverview(req, res) {
   console.log(user_id);
   try {
     // Find the CourtroomUser document by userId
-    const courtroomUser = await CourtroomUser.findOne({ userId: user_id });
+    const courtroomUser = await TrailCourtroomUser.findOne({ userId: user_id });
 
     console.log(courtroomUser);
 
@@ -1058,6 +1120,7 @@ async function AddContactUsQuery(req, res) {
 
 module.exports = {
   bookCourtRoom,
+  adminBookCourtRoom,
   getBookedData,
   loginToCourtRoom,
   newcase,

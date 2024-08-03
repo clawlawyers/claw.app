@@ -1,10 +1,11 @@
 const { StatusCodes } = require("http-status-codes");
 const AppError = require("../utils/errors/app-error");
 const BookingOrder = require("../models/bookingOrder");
+const TrailBookingOrder = require("../models/trailBookingOrder");
 
 async function createOrder(data) {
   try {
-    const order = await BookingOrder.create(data);
+    const order = await TrailBookingOrder.create(data);
     return order;
   } catch (error) {
     console.log(error);
@@ -13,7 +14,7 @@ async function createOrder(data) {
 }
 async function updateOrder(id, data) {
   try {
-    const updatedOrder = await BookingOrder.findByIdAndUpdate(id, data, {
+    const updatedOrder = await TrailBookingOrder.findByIdAndUpdate(id, data, {
       new: true,
     });
     if (!updatedOrder) {
@@ -28,7 +29,7 @@ async function updateOrder(id, data) {
 
 async function fetchOrderById(orderId) {
   try {
-    const order = await BookingOrder.getById(orderId);
+    const order = await TrailBookingOrder.getById(orderId);
     return order;
   } catch (error) {
     console.error(error);
