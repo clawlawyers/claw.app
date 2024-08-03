@@ -197,8 +197,8 @@ async function courtRoomBook(
     // Check if the booking date and hour fall within the allowed slots
     const trailBooking = await TrailBooking.findOne({
       date: bookingDate,
-      startSlot: { $lte: hour },
-      endSlot: { $gte: hour },
+      StartHour: { $lte: hour },
+      EndHour: { $gte: hour },
       phoneNumber: phoneNumber,
       email: email,
     });
