@@ -6,6 +6,9 @@ const Tracking = require("../models/tracking");
 const moment = require("moment");
 const CourtRoomBooking = require("../models/courtRoomBooking");
 const CourtroomUser = require("../models/CourtroomUser");
+const TrailBooking = require("../models/trailBookingAllow");
+const TrailCourtRoomBooking = require("../models/trailCourtRoomBooking");
+const TrailCourtroomUser = require("../models/trailCourtRoomUser");
 
 async function updateUserTiming(req, res) {
   try {
@@ -1004,6 +1007,270 @@ async function useryearlyvisit(req, res) {
   res.json(yearlyData);
 }
 
+async function allAllowedBooking(req, res) {
+  try {
+    const allAllowedBookings = await TrailBooking.find({});
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ ...allAllowedBookings }));
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while removing user plan" });
+  }
+}
+
+async function deleteAllowBooking(req, res) {
+  try {
+    const { id } = req.params;
+    const allAllowedBookings = await TrailBooking.findByIdAndDelete(id);
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ data: "deleted successfully " }));
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while removing user plan" });
+  }
+}
+
+async function updateAllowedBooking(req, res) {
+  try {
+    const { id } = req.params;
+    const updatedData = req.body;
+
+    console.log(req.body);
+
+    // Directly pass the updatedData object to the update operation
+    const updatedUserPlan = await TrailBooking.findByIdAndUpdate(
+      id,
+      updatedData, // Pass updatedData directly
+      { new: true } // Option to return the updated document
+    );
+
+    // Check if the update was successful
+    if (!updatedUserPlan) {
+      return res.status(404).json({ error: "User plan not found" });
+    }
+
+    return res.status(200).json({ data: updatedUserPlan });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ error: "An error occurred while updating user plan" });
+  }
+}
+
+async function allowedLogin(req, res) {
+  try {
+    // Fetch all bookings sorted by date and hour
+    const bookings = await TrailCourtRoomBooking.find({})
+      .populate("courtroomBookings")
+      .sort({ date: 1, hour: 1 });
+
+    // Format dates in the response
+    const formattedBookings = bookings.map((booking) => ({
+      ...booking.toObject(),
+      date: moment(booking.date).format("YYYY-MM-DD"), // Format to YYYY-MM-DD
+    }));
+
+    return res.status(StatusCodes.OK).json(SuccessResponse(formattedBookings));
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function deleteAllowedLogin(req, res) {
+  try {
+    const { bookingId, userId } = req.params;
+
+    // Find the booking document by ID
+    const booking = await TrailCourtRoomBooking.findById(bookingId).populate(
+      "courtroomBookings"
+    );
+
+    if (!booking) {
+      return res.status(404).send("Booking not found.");
+    }
+
+    // Find and remove the user from the courtroomBookings array
+    const initialLength = booking.courtroomBookings.length;
+    booking.courtroomBookings = booking.courtroomBookings.filter(
+      (booking) => booking._id.toString() !== userId
+    );
+
+    // Check if a user was actually removed
+    if (booking.courtroomBookings.length === initialLength) {
+      return res.status(404).send("User not found in this booking.");
+    }
+
+    // Save the updated booking document
+    await booking.save();
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        SuccessResponse({ response: "User successfully removed from booking." })
+      );
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function UpdateUserDetailsAllowedLogin(req, res) {
+  try {
+    const { userId } = req.params;
+    const { name, phoneNumber, email, recording } = req.body;
+
+    console.log(req.body);
+
+    // Validate input
+    if (!name && !phoneNumber && !email && !recording) {
+      return res.status(400).send("No fields to update.");
+    }
+
+    // Find the user document by ID
+    const user = await TrailCourtroomUser.findById(userId);
+
+    if (!user) {
+      return res.status(404).send("User not found.");
+    }
+
+    // Update the user data
+    if (name) user.name = name;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (email) user.email = email;
+    if (recording) user.recording = recording;
+
+    // Save the updated user document
+    await user.save();
+
+    res.status(200).send("User data successfully updated.");
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function UpdateUserTimingAllowedLogin(req, res) {
+  try {
+    const { bookingId, userId } = req.params;
+    const { newDate, newHour } = req.body;
+
+    // Validate input
+    if (!newDate || newHour === undefined) {
+      return res.status(400).send("Missing new date or new hour.");
+    }
+
+    // Convert newDate to a Date object
+    const newBookingDate = new Date(newDate);
+
+    // Find the booking document by ID
+    const booking = await TrailCourtRoomBooking.findById(bookingId).populate(
+      "courtroomBookings"
+    );
+
+    if (!booking) {
+      return res.status(404).send("Booking not found.");
+    }
+
+    // Find the user within the courtroomBookings array
+    const userIndex = booking.courtroomBookings.findIndex(
+      (booking) => booking._id.toString() === userId
+    );
+
+    if (userIndex === -1) {
+      return res.status(404).send("User not found in this booking.");
+    }
+
+    // console.log(booking.courtroomBookings[userIndex]);
+
+    const existingUser = booking.courtroomBookings[userIndex];
+
+    console.log(existingUser);
+
+    // Remove the user from the current slot
+    booking.courtroomBookings.splice(userIndex, 1);
+
+    // console.log(booking);
+
+    // Check if the new slot exists for the new date and hour
+    let newBooking = await TrailCourtRoomBooking.findOne({
+      date: newBookingDate,
+      hour: newHour,
+    }).populate("courtroomBookings");
+
+    if (!newBooking) {
+      // Create a new booking if it doesn't exist
+      newBooking = new TrailCourtRoomBooking({
+        date: newBookingDate,
+        hour: newHour,
+        courtroomBookings: [],
+      });
+    }
+
+    console.log(newBooking);
+
+    // Check if the total bookings exceed the limit in the new slot
+    if (newBooking.courtroomBookings.length >= 4) {
+      console.log(
+        `Maximum of 4 courtrooms can be booked at ${newHour}:00 on ${newBookingDate.toDateString()}.`
+      );
+      return res
+        .status(400)
+        .send(
+          `Maximum of 4 courtrooms can be booked at ${newHour}:00 on ${newBookingDate.toDateString()}.`
+        );
+    }
+
+    // Create a new courtroom user
+    const newCourtroomUser = new TrailCourtRoomBooking({
+      name: existingUser.name,
+      phoneNumber: existingUser.phoneNumber,
+      email: existingUser.email,
+      password: existingUser.password,
+      recording: existingUser.recording, // Assuming recording is required and set to true
+      caseOverview: existingUser.recording,
+    });
+
+    console.log(newCourtroomUser);
+
+    // Save the new courtroom user
+    const savedCourtroomUser = await newCourtroomUser.save();
+
+    console.log(savedCourtroomUser);
+
+    // Add the new booking
+    newBooking.courtroomBookings.push(savedCourtroomUser._id);
+
+    // Save the booking
+    await newCourtroomUser.save();
+
+    // Save the new booking
+    await newBooking.save();
+
+    // Save the updated booking document
+    await booking.save();
+
+    res.status(200).send("User slot timing successfully updated.");
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
 module.exports = {
   getReferralCodes,
   getPlans,
@@ -1035,4 +1302,11 @@ module.exports = {
   deleteBooking,
   updateUserDetails,
   updateUserTiming,
+  allAllowedBooking,
+  deleteAllowBooking,
+  updateAllowedBooking,
+  allowedLogin,
+  deleteAllowedLogin,
+  UpdateUserDetailsAllowedLogin,
+  UpdateUserTimingAllowedLogin,
 };
