@@ -9,7 +9,105 @@ const {
   sendAdminContactUsNotification,
 } = require("../utils/coutroom/sendEmail");
 const { trusted } = require("mongoose");
+const TrailCourtRoomBooking = require("../models/trailCourtRoomBooking");
+const TrailCourtroomUser = require("../models/trailCourtRoomUser");
 const { COURTROOM_API_ENDPOINT } = process.env;
+
+async function adminCourtRoomBook(
+  name,
+  phoneNumber,
+  email,
+  hashedPassword,
+  bookingDate,
+  hour,
+  recording,
+  caseOverview
+) {
+  console.log("Here is caseOverview", caseOverview);
+  try {
+    // // Check if the booking date and hour fall within the allowed slots
+    // const trailBooking = await TrailBooking.findOne({
+    //   date: bookingDate,
+    //   startSlot: { $lte: hour },
+    //   endSlot: { $gte: hour },
+    //   phoneNumber: phoneNumber,
+    //   email: email,
+    // });
+
+    // if (!trailBooking) {
+    //   console.log(
+    //     `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
+    //   );
+    //   return `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    // }
+
+    // Find existing booking for the same date and hour
+    let booking = await TrailCourtRoomBooking.findOne({
+      date: bookingDate,
+      hour: hour,
+    }).populate("courtroomBookings");
+
+    if (!booking) {
+      // Create a new booking if it doesn't exist
+      booking = new TrailCourtRoomBooking({
+        date: bookingDate,
+        hour: hour,
+        courtroomBookings: [],
+      });
+    }
+
+    // Check if the total bookings exceed the limit
+    if (booking.courtroomBookings.length >= 4) {
+      console.log(
+        `Maximum of 4 courtrooms can be booked at ${hour}:00 on ${bookingDate.toDateString()}.`
+      );
+      return `Maximum of 4 courtrooms can be booked at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    }
+
+    // Check if the user with the same mobile number or email already booked a slot at the same hour
+    const existingBooking = booking.courtroomBookings.find(
+      (courtroomBooking) =>
+        courtroomBooking.phoneNumber == phoneNumber ||
+        courtroomBooking.email == email
+    );
+
+    console.log(existingBooking);
+
+    if (existingBooking) {
+      console.log(
+        `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`
+      );
+      return `User with phone number ${phoneNumber} or email ${email} has already booked a courtroom at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    }
+
+    // Create a new courtroom user
+    const newCourtroomUser = new TrailCourtroomUser({
+      name,
+      phoneNumber,
+      email,
+      password: hashedPassword,
+      recording: recording, // Assuming recording is required and set to true
+      caseOverview: "NA",
+    });
+
+    console.log(newCourtroomUser);
+
+    // Save the new courtroom user
+    const savedCourtroomUser = await newCourtroomUser.save();
+
+    console.log(savedCourtroomUser);
+
+    // Add the new booking
+    booking.courtroomBookings.push(savedCourtroomUser._id);
+
+    // Save the booking
+    await booking.save();
+    console.log("Booking saved.");
+  } catch (error) {
+    console.error(error);
+    throw new Error("Internal server error.");
+  }
+}
 
 async function addContactUsQuery(
   firstName,
