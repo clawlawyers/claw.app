@@ -644,4 +644,5 @@ module.exports = {
   courtRoomBookValidation,
   getSessionCaseHistory,
   addContactUsQuery,
+  adminCourtRoomBook,
 };
