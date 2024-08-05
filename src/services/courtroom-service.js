@@ -203,7 +203,7 @@ async function courtRoomBook(
       email: email,
     });
 
-    if (!trailBooking) {
+    if (!trailBooking || trailBooking?.totalSlots > trailBooking?.bookedSlots) {
       console.log(
         `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
       );
@@ -258,6 +258,12 @@ async function courtRoomBook(
       recording: recording, // Assuming recording is required and set to true
       caseOverview: "NA",
     });
+
+    trailBooking.bookedSlots = trailBooking.bookedSlots + 1;
+
+    console.log(trailBooking);
+
+    await trailBooking.save();
 
     console.log(newCourtroomUser);
 
