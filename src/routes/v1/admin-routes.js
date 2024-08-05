@@ -77,18 +77,18 @@ router.delete("/bookings/:bookingId/users/:userId", deleteBooking);
 router.put("/update/users/:userId", updateUserDetails);
 router.put("/bookings/:bookingId/users/:userId/slot", updateUserTiming);
 
-// allow booking booking
-router.get("/allAllowedBooking", allAllowedBooking);
-router.delete("/AllowedBooking/:id", deleteAllowBooking);
-router.patch("/AllowedBooking/:id", updateAllowedBooking);
+// // allow booking booking
+// router.get("/allAllowedBooking", allAllowedBooking);
+// router.delete("/AllowedBooking/:id", deleteAllowBooking);
+// router.patch("/AllowedBooking/:id", updateAllowedBooking);
 
-// allow login
+// // allow login
 
-router.get("/getAllallowedLogin", allowedLogin);
-router.delete("/allowedLogin/:bookingId/users/:userId", deleteAllowedLogin);
-router.put("/allowedLogin/users/:userId", UpdateUserDetailsAllowedLogin);
-router.put(
-  "/allowedLogin/:bookingId/users/:userId/slot",
-  UpdateUserTimingAllowedLogin
-);
+// router.get("/getAllallowedLogin", allowedLogin);
+// router.delete("/allowedLogin/:bookingId/users/:userId", deleteAllowedLogin);
+// router.put("/allowedLogin/users/:userId", UpdateUserDetailsAllowedLogin);
+// router.put(
+//   "/allowedLogin/:bookingId/users/:userId/slot",
+//   UpdateUserTimingAllowedLogin
+// );
 module.exports = router;
