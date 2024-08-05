@@ -31,8 +31,17 @@ const {
   deleteBooking,
   updateUserDetails,
   updateUserTiming,
+  allAllowedBooking,
+  deleteAllowBooking,
+  updateAllowedBooking,
+  allowedLogin,
+  deleteAllowedLogin,
+  UpdateUserDetailsAllowedLogin,
+  UpdateUserTimingAllowedLogin,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
+const { CourtroomController } = require("../../controllers");
+const TrailBooking = require("../../models/trailBookingAllow");
 // const { updateUserPlan } = require("../../services/gpt-service");
 
 router.get("/referralcode", getReferralCodes);
@@ -69,5 +78,58 @@ router.get("/allCourtRoomData", getAllCourtRoomData);
 router.delete("/bookings/:bookingId/users/:userId", deleteBooking);
 router.put("/update/users/:userId", updateUserDetails);
 router.put("/bookings/:bookingId/users/:userId/slot", updateUserTiming);
+
+// allow booking booking
+// API to insert data into TrailBooking
+router.post("/api/trail-bookings", async (req, res) => {
+  try {
+    const {
+      date,
+      StartHour,
+      EndHour,
+      phoneNumber,
+      email,
+      totalSlots,
+      bookedSlots,
+    } = req.body;
+
+    // Create a new booking document
+    const newBooking = new TrailBooking({
+      date,
+      StartHour,
+      EndHour,
+      phoneNumber,
+      email,
+      totalSlots,
+      bookedSlots,
+    });
+
+    // Save the booking to the database
+    const savedBooking = await newBooking.save();
+    res.status(201).json({
+      message: "Trail booking created successfully",
+      data: savedBooking,
+    });
+  } catch (err) {
+    res.status(400).json({
+      message: "Error creating trail booking",
+      error: err.message,
+    });
+  }
+});
+
+router.get("/allAllowedBooking", allAllowedBooking);
+router.delete("/AllowedBooking/:id", deleteAllowBooking);
+router.patch("/AllowedBooking/:id", updateAllowedBooking);
+
+// allow login
+router.post("/admin/book-courtroom", CourtroomController.adminBookCourtRoom);
+router.get("/getAllallowedLogin", allowedLogin);
+router.delete("/allowedLogin/:bookingId/users/:userId", deleteAllowedLogin);
+router.put("/allowedLogin/users/:userId", UpdateUserDetailsAllowedLogin);
+router.put(
+  "/allowedLogin/:bookingId/users/:userId/slot",
+  UpdateUserTimingAllowedLogin
+);
 
 module.exports = router;
