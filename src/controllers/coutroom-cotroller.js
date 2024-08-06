@@ -10,6 +10,7 @@ const FormData = require("form-data");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const TrailCourtroomUser = require("../models/trailCourtRoomUser");
+const TrailBooking = require("../models/trailBookingAllow");
 
 async function adminBookCourtRoom(req, res) {
   try {
@@ -152,6 +153,34 @@ async function bookCourtRoomValidation(req, res) {
 
     const hashedPassword = await hashPassword(password);
     const caseOverview = "";
+
+    // Check if the booking date and hour fall within the allowed slots
+    const trailBooking = await TrailBooking.findOne({
+      date: bookingDate,
+      StartHour: { $lte: hour },
+      EndHour: { $gt: hour },
+      phoneNumber: phoneNumber,
+      email: email,
+    });
+
+    console.log(trailBooking);
+
+    if (!trailBooking) {
+      console.log(
+        `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
+      );
+      return `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`;
+    }
+
+    if (
+      trailBooking?.totalSlots - trailBooking?.bookedSlots < slots.length ||
+      trailBooking?.totalSlots <= trailBooking?.bookedSlots
+    ) {
+      console.log(
+        `User with phone number ${phoneNumber} or email ${email} cannot have enough number of allowed slot.`
+      );
+      return `User with phone number ${phoneNumber} or email ${email} cannot have enough number of allowed slot.`;
+    }
 
     for (const slot of slots) {
       const { date, hour } = slot;

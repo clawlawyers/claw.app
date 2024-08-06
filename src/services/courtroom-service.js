@@ -316,10 +316,7 @@ async function courtRoomBookValidation(
 
     console.log(trailBooking);
 
-    if (
-      !trailBooking ||
-      trailBooking?.totalSlots <= trailBooking?.bookedSlots
-    ) {
+    if (!trailBooking) {
       console.log(
         `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
       );
