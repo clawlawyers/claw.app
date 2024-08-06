@@ -198,7 +198,7 @@ async function courtRoomBook(
     const trailBooking = await TrailBooking.findOne({
       date: bookingDate,
       StartHour: { $lte: hour },
-      EndHour: { $gte: hour },
+      EndHour: { $gt: hour },
       phoneNumber: phoneNumber,
       email: email,
     });
