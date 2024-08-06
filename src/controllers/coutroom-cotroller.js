@@ -168,8 +168,8 @@ async function bookCourtRoomValidation(req, res) {
       const trailBooking = await TrailBooking.findOne({
         StartDate: { $lte: bookingDate },
         EndDate: { $gte: bookingDate },
-        StartHour: { $lte: hour },
-        EndHour: { $gt: hour },
+        // StartHour: { $lte: hour },
+        // EndHour: { $gt: hour },
         phoneNumber: phoneNumber,
         email: email,
       });
