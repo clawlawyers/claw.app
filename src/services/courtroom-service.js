@@ -203,7 +203,10 @@ async function courtRoomBook(
       email: email,
     });
 
-    if (!trailBooking || trailBooking?.totalSlots < trailBooking?.bookedSlots) {
+    if (
+      !trailBooking ||
+      trailBooking?.totalSlots <= trailBooking?.bookedSlots
+    ) {
       console.log(
         `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
       );
@@ -306,14 +309,17 @@ async function courtRoomBookValidation(
     const trailBooking = await TrailBooking.findOne({
       date: bookingDate,
       StartHour: { $lte: hour },
-      EndHour: { $gte: hour },
+      EndHour: { $gt: hour },
       phoneNumber: phoneNumber,
       email: email,
     });
 
     console.log(trailBooking);
 
-    if (!trailBooking) {
+    if (
+      !trailBooking ||
+      trailBooking?.totalSlots <= trailBooking?.bookedSlots
+    ) {
       console.log(
         `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
       );
