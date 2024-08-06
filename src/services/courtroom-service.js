@@ -203,7 +203,7 @@ async function courtRoomBook(
       email: email,
     });
 
-    if (!trailBooking || trailBooking?.totalSlots > trailBooking?.bookedSlots) {
+    if (!trailBooking || trailBooking?.totalSlots < trailBooking?.bookedSlots) {
       console.log(
         `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
       );
