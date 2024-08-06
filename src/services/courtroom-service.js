@@ -194,15 +194,18 @@ async function courtRoomBook(
 ) {
   console.log("Here is caseOverview", caseOverview);
   try {
+    console.log(bookingDate);
     // Find a TrailBooking that matches the date and hour for the user
     const trailBooking = await TrailBooking.findOne({
       StartDate: { $lte: bookingDate },
       EndDate: { $gte: bookingDate },
-      StartHour: { $lte: hour },
-      EndHour: { $gt: hour },
+      // StartHour: { $lte: hour },
+      // EndHour: { $gt: hour },
       phoneNumber: phoneNumber,
       email: email,
     });
+
+    console.log(trailBooking);
 
     if (
       !trailBooking ||
