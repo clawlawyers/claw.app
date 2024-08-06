@@ -154,34 +154,7 @@ async function bookCourtRoomValidation(req, res) {
     const hashedPassword = await hashPassword(password);
     const caseOverview = "";
 
-    // Find a TrailBooking that matches the date and hour for the user
-    const trailBooking = await TrailBooking.findOne({
-      StartDate: { $lte: bookingDate },
-      EndDate: { $gte: bookingDate },
-      StartHour: { $lte: hour },
-      EndHour: { $gt: hour },
-      phoneNumber: phoneNumber,
-      email: email,
-    });
-
-    console.log(trailBooking);
-
-    if (!trailBooking) {
-      console.log(
-        `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
-      );
-      return `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`;
-    }
-
-    if (
-      trailBooking?.totalSlots - trailBooking?.bookedSlots < slots.length ||
-      trailBooking?.totalSlots <= trailBooking?.bookedSlots
-    ) {
-      console.log(
-        `User with phone number ${phoneNumber} or email ${email} cannot have enough number of allowed slot.`
-      );
-      return `User with phone number ${phoneNumber} or email ${email} cannot have enough number of allowed slot.`;
-    }
+    console.log(req.body);
 
     for (const slot of slots) {
       const { date, hour } = slot;
@@ -190,6 +163,44 @@ async function bookCourtRoomValidation(req, res) {
       }
 
       const bookingDate = new Date(date);
+
+      // Find a TrailBooking that matches the date and hour for the user
+      const trailBooking = await TrailBooking.findOne({
+        StartDate: { $lte: bookingDate },
+        EndDate: { $gte: bookingDate },
+        StartHour: { $lte: hour },
+        EndHour: { $gt: hour },
+        phoneNumber: phoneNumber,
+        email: email,
+      });
+
+      console.log(trailBooking);
+
+      if (!trailBooking) {
+        console.log(
+          `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`
+        );
+
+        return res.status(StatusCodes.OK).json(
+          SuccessResponse({
+            data: `User with phone number ${phoneNumber} or email ${email} cannot book a slot at ${hour}:00 on ${bookingDate.toDateString()}.`,
+          })
+        );
+      }
+
+      if (
+        trailBooking?.totalSlots - trailBooking?.bookedSlots < slots.length ||
+        trailBooking?.totalSlots <= trailBooking?.bookedSlots
+      ) {
+        console.log(
+          `User with phone number ${phoneNumber} or email ${email} cannot have enough number of allowed slot.`
+        );
+        return res.status(StatusCodes.OK).json(
+          SuccessResponse({
+            data: `User with phone number ${phoneNumber} or email ${email} cannot have enough number of allowed slot.`,
+          })
+        );
+      }
 
       const resp = await CourtroomService.courtRoomBookValidation(
         name,
