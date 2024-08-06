@@ -154,9 +154,10 @@ async function bookCourtRoomValidation(req, res) {
     const hashedPassword = await hashPassword(password);
     const caseOverview = "";
 
-    // Check if the booking date and hour fall within the allowed slots
+    // Find a TrailBooking that matches the date and hour for the user
     const trailBooking = await TrailBooking.findOne({
-      date: bookingDate,
+      StartDate: { $lte: bookingDate },
+      EndDate: { $gte: bookingDate },
       StartHour: { $lte: hour },
       EndHour: { $gt: hour },
       phoneNumber: phoneNumber,

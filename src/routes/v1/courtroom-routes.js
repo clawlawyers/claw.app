@@ -11,7 +11,7 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 router.post("/book-courtroom", CourtroomController.bookCourtRoom);
-router.post("/admin/book-courtroom", CourtroomController.adminBookCourtRoom);
+router.post("/admin/book-courtroom", CourtroomController.adminBookCourtRoom); // no use api
 router.post(
   "/book-courtroom-validation",
   CourtroomController.bookCourtRoomValidation
