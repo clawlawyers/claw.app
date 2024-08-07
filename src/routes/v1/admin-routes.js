@@ -110,11 +110,9 @@ router.post("/api/trail-bookings", async (req, res) => {
     });
 
     if (existingBooking) {
-      return res
-        .status(400)
-        .json({
-          message: "Booking already exists for the provided date and time.",
-        });
+      return res.status(400).json({
+        message: "Booking already exists for the provided date and time.",
+      });
     }
 
     // Create and save new booking

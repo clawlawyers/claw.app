@@ -546,17 +546,35 @@ async function getClientByPhoneNumber(phoneNumber) {
 async function getClientByUserid(userid) {
   try {
     // Get the current date and hour
-    const currentDate = new Date();
-    const formattedDate = new Date(
-      Date.UTC(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        currentDate.getDate()
-      )
-    );
-    const currentHour = currentDate.getHours();
+    let currentDate, currentHour;
 
-    console.log(formattedDate, currentHour);
+    if (process.env.NODE_ENV === "production") {
+      // Get current date and time in UTC
+      const now = new Date();
+
+      // Convert to milliseconds
+      const utcTime = now.getTime() + now.getTimezoneOffset() * 60000;
+
+      // IST offset is +5:30
+      const istOffset = 5.5 * 60 * 60000;
+
+      // Create new date object for IST
+      const istTime = new Date(utcTime + istOffset);
+
+      currentDate = new Date(
+        Date.UTC(istTime.getFullYear(), istTime.getMonth(), istTime.getDate())
+      );
+      currentHour = istTime.getHours();
+    } else {
+      // Get the current date and hour in local time (for development)
+      const now = new Date();
+      currentDate = new Date(
+        Date.UTC(now.getFullYear(), now.getMonth(), now.getDate())
+      );
+      currentHour = now.getHours();
+    }
+
+    console.log(currentDate, currentHour);
 
     // Manual Override for Testing
     // const formattedDate = new Date("2024-07-23T00:00:00.000Z");
@@ -564,7 +582,7 @@ async function getClientByUserid(userid) {
 
     // Find existing booking for the current date and hour
     const booking = await CourtRoomBooking.findOne({
-      date: formattedDate,
+      date: currentDate,
       hour: currentHour,
     }).populate("courtroomBookings");
 
@@ -580,7 +598,7 @@ async function getClientByUserid(userid) {
       return courtroomBooking.userId == userid;
     });
 
-    // console.log(userBooking);
+    console.log(userBooking);
 
     return { User_id: userBooking._id, Booking_id: booking };
   } catch (error) {

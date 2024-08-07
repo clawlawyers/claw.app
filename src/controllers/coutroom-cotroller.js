@@ -696,7 +696,7 @@ async function CaseHistory(req, res) {
       user_id
     );
 
-    // console.log(User_id, Booking_id);
+    console.log(User_id, Booking_id);
 
     await CourtroomService.storeCaseHistory(User_id, Booking_id, caseHistory);
 
