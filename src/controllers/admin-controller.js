@@ -1233,28 +1233,30 @@ async function UpdateUserTimingAllowedLogin(req, res) {
         );
     }
 
-    // Create a new courtroom user
-    const newCourtroomUser = new TrailCourtRoomBooking({
-      name: existingUser.name,
-      phoneNumber: existingUser.phoneNumber,
-      email: existingUser.email,
-      password: existingUser.password,
-      recording: existingUser.recording, // Assuming recording is required and set to true
-      caseOverview: existingUser.recording,
-    });
+    // // Create a new courtroom user
+    // const newCourtroomUser = new TrailCourtRoomBooking({
+    //   name: existingUser.name,
+    //   phoneNumber: existingUser.phoneNumber,
+    //   email: existingUser.email,
+    //   password: existingUser.password,
+    //   recording: existingUser.recording, // Assuming recording is required and set to true
+    //   caseOverview: existingUser.recording,
+    // });
 
-    console.log(newCourtroomUser);
+    // console.log(newCourtroomUser);
 
-    // Save the new courtroom user
-    const savedCourtroomUser = await newCourtroomUser.save();
+    // // Save the new courtroom user
+    // const savedCourtroomUser = await newCourtroomUser.save();
 
-    console.log(savedCourtroomUser);
+    // console.log(savedCourtroomUser);
 
     // Add the new booking
-    newBooking.courtroomBookings.push(savedCourtroomUser._id);
+    newBooking.courtroomBookings.push(existingUser._id);
 
-    // Save the booking
-    await newCourtroomUser.save();
+    console.log(newBooking);
+
+    // // Save the booking
+    // await newCourtroomUser.save();
 
     // Save the new booking
     await newBooking.save();
