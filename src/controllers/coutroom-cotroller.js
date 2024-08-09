@@ -312,7 +312,7 @@ async function newcase(req, res) {
     return res.status(400).json({ error: "No file uploaded" });
   }
 
-  const { userId } = req.body;
+  const { userId } = req.body?.courtroomClient?.userBooking;
 
   console.log(userId);
 
@@ -396,7 +396,9 @@ async function getOverview({ file }) {
 }
 
 async function edit_case(req, res) {
-  const { user_id, case_overview } = req.body;
+  const { case_overview } = req.body;
+
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
 
   // console.log(req.body, " this is body");
   try {
@@ -444,7 +446,7 @@ async function FetchEdit_Case(body) {
 }
 
 async function getCaseOverview(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
 
   console.log(user_id);
   try {
@@ -475,7 +477,9 @@ async function getCaseOverview(req, res) {
 }
 
 async function user_arguemnt(req, res) {
-  const { user_id, argument, argument_index } = req.body;
+  const { argument, argument_index } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+
   try {
     const argumentIndex = await Fetch_argument_index({
       user_id,
@@ -505,7 +509,9 @@ async function Fetch_argument_index(body) {
 }
 
 async function lawyer_arguemnt(req, res) {
-  const { user_id, argument_index, action } = req.body;
+  const { argument_index, action } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+
   try {
     const lawyerArguemnt = await FetchLawyer_arguemnt({
       user_id,
@@ -535,7 +541,9 @@ async function FetchLawyer_arguemnt(body) {
 }
 
 async function judge_arguemnt(req, res) {
-  const { user_id, argument_index, action } = req.body;
+  const { argument_index, action } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+
   try {
     const judgeArguemnt = await FetchJudge_arguemnt({
       user_id,
@@ -565,7 +573,7 @@ async function FetchJudge_arguemnt(body) {
 }
 
 async function getDraft(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const draft = await FetchGetDraft({ user_id });
     return res.status(StatusCodes.OK).json(SuccessResponse({ draft }));
@@ -591,7 +599,7 @@ async function FetchGetDraft(body) {
 }
 
 async function changeState(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const changeState = await FetchChangeState({ user_id });
     return res.status(StatusCodes.OK).json(SuccessResponse({ changeState }));
@@ -634,7 +642,7 @@ async function FetchChangeState(body) {
 }
 
 async function restCase(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const restDetail = await FetchRestCase({ user_id });
     return res.status(StatusCodes.OK).json(SuccessResponse({ restDetail }));
@@ -660,7 +668,7 @@ async function FetchRestCase(body) {
 }
 
 async function endCase(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const endCase = await FetchEndCase({ user_id });
 
@@ -695,7 +703,7 @@ async function FetchEndCase(body) {
 }
 
 async function hallucination_questions(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const hallucinationQuestions = await FetchHallucinationQuestions({
       user_id,
@@ -729,7 +737,7 @@ async function FetchHallucinationQuestions(body) {
 }
 
 async function CaseHistory(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const caseHistory = await FetchCaseHistory({ user_id });
 
@@ -783,7 +791,7 @@ async function FetchCaseHistory(body) {
 }
 
 async function downloadCaseHistory(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const caseHistory = await FetchCaseHistory({ user_id });
 
@@ -866,7 +874,7 @@ async function downloadCaseHistory(req, res) {
 }
 
 async function downloadSessionCaseHistory(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
 
   console.log(user_id);
   try {
@@ -978,7 +986,7 @@ async function downloadSessionCaseHistory(req, res) {
 }
 
 async function downloadFirtDraft(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const draft = await FetchGetDraft({ user_id });
 
@@ -1047,7 +1055,9 @@ async function downloadFirtDraft(req, res) {
 }
 
 async function download(req, res) {
-  const { data, user_id, type } = req.body;
+  const { data, type } = req.body;
+
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
 
   try {
     //   const draft = await FetchGetDraft({ user_id });
@@ -1114,7 +1124,7 @@ async function download(req, res) {
 }
 
 async function getHistory(req, res) {
-  const { user_id } = req.params;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const caseHistory = await FetchCaseHistory({ user_id });
 
