@@ -320,26 +320,26 @@ async function newcase(req, res) {
 
     console.log(case_overview);
 
-    // Find the CourtroomUser document by userId
-    const courtroomUser = await CourtroomUser.findOne({ userId });
+    // // Find the CourtroomUser document by userId
+    // const courtroomUser = await CourtroomUser.findOne({ userId });
 
-    if (!courtroomUser) {
-      return res
-        .status(StatusCodes.NOT_FOUND)
-        .json({ error: "User not found" });
-    }
+    // if (!courtroomUser) {
+    //   return res
+    //     .status(StatusCodes.NOT_FOUND)
+    //     .json({ error: "User not found" });
+    // }
 
-    console.log(courtroomUser);
+    // console.log(courtroomUser);
 
-    // Append the case overview to the user's caseOverview array
-    courtroomUser.caseOverview = case_overview.case_overview;
+    // // Append the case overview to the user's caseOverview array
+    // courtroomUser.caseOverview = case_overview.case_overview;
 
-    console.log(courtroomUser);
+    // console.log(courtroomUser);
 
-    // Save the updated CourtroomUser document
-    await courtroomUser.save();
+    // // Save the updated CourtroomUser document
+    // await courtroomUser.save();
 
-    console.log(courtroomUser);
+    // console.log(courtroomUser);
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ case_overview }));
   } catch (error) {
