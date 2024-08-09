@@ -20,13 +20,20 @@ router.post(
   "/getCourtroomUser",
   authMiddleware.checkCourtroomAuth,
   CourtroomController.getUserDetails
-); // use letter
+);
+
 router.post(
   "/newcase",
-  upload.single("file"),
+  upload.fields([
+    { name: "file" },
+    { name: "file1" },
+    { name: "file2" },
+    { name: "file3" },
+  ]),
   authMiddleware.checkCourtroomAuth,
   CourtroomController.newcase
 );
+
 router.post(
   "/edit_case",
   authMiddleware.checkCourtroomAuth,
