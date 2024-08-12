@@ -13,4 +13,5 @@ module.exports = {
   StripeController: require("./stripe-controller"),
   CashfreeController: require("./Cashfree-controller"),
   RazorpayController: require("./razorpay-controller"),
+  AiDrafter: require("./aiDrafter-controller"),
 };
