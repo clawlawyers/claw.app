@@ -744,12 +744,12 @@ async function endCase(req, res) {
   const user_id = req.body?.courtroomClient?.userBooking?.userId;
   const { userId } = req.body;
   try {
-    const endCase = await FetchEndCase({ user_id });
+    const endCase = await FetchEndCase({ userId });
 
     // save into database
 
     const { User_id, Booking_id } = await CourtroomService.getClientByUserid(
-      user_id
+      userId
     );
 
     await CourtroomService.storeCaseHistory(User_id, Booking_id, endCase);
