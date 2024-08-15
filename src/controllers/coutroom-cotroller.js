@@ -265,72 +265,96 @@ async function getUserDetails(req, res) {
 }
 
 async function newcase(req, res) {
-  const file = req.file;
-  if (!file) {
-    return res.status(400).json({ error: "No file uploaded" });
+  const files = req.files; // This will be an array of file objects
+  if (!files || files.length === 0) {
+    return res.status(400).json({ error: "No files uploaded" });
   }
 
-  const { userId } = req.body;
+  // console.log(files);
 
+  const { userId } = req.body?.courtroomClient?.userBooking;
+  // const userId = "f497c76b-2894-4636-8d2b-6391bc6bccdc";
   console.log(userId);
 
-  console.log(file);
-
-  const extension = path.extname(file.originalname); // Extract the file extension
-  const newFilename = `${userId}${extension}`; // Preserve the extension in the new filename
-
-  // Create a renamed file object with buffer data
-  const renamedFile = {
-    ...file,
-    originalname: newFilename,
-  };
-
-  console.log(renamedFile);
-
   try {
-    const case_overview = await getOverview({ file: renamedFile });
+    // Rename only the first file and prepare the data object for getOverview
+    const formData = new FormData();
+
+    console.log(formData);
+
+    // const fileBody = {};
+
+    // Rename the first file to `file`
+    const fileKeys = Object.keys(files);
+    fileKeys.forEach((key, index) => {
+      const file = files[key][0]; // Get the first file from each key
+
+      if (index === 0) {
+        console.log(file.originalname);
+        const extension = path.extname(file.originalname);
+        const newFilename = `${userId}${extension}`; // Rename the first file
+
+        // Create a renamed file object with buffer data
+        const renamedFile = {
+          ...file,
+          originalname: newFilename,
+        };
+
+        formData.append("file", file.buffer, {
+          filename: renamedFile.originalname,
+          contentType: renamedFile.mimetype,
+        });
+        // fileBody.file = renamedFile;
+      } else {
+        formData.append(index === 0 ? "file" : `file${index}`, file.buffer, {
+          filename: file.originalname,
+          contentType: file.mimetype,
+        });
+        // fileBody[`file${index + 1}`] = file;
+      }
+    });
+
+    console.log(formData);
+
+    const case_overview = await getOverview(formData);
 
     console.log(case_overview);
 
-    // Find the CourtroomUser document by userId
-    const courtroomUser = await CourtroomUser.findOne({ userId });
+    // // Find the CourtroomUser document by userId
+    // const courtroomUser = await CourtroomUser.findOne({ userId });
 
-    if (!courtroomUser) {
-      return res
-        .status(StatusCodes.NOT_FOUND)
-        .json({ error: "User not found" });
-    }
+    // if (!courtroomUser) {
+    //   return res
+    //     .status(StatusCodes.NOT_FOUND)
+    //     .json({ error: "User not found" });
+    // }
 
-    console.log(courtroomUser);
+    // console.log(courtroomUser);
 
-    // Append the case overview to the user's caseOverview array
-    courtroomUser.caseOverview = case_overview.case_overview;
+    // // Append the case overview to the user's caseOverview array
+    // courtroomUser.caseOverview = case_overview.case_overview;
 
-    console.log(courtroomUser);
+    // console.log(courtroomUser);
 
-    // Save the updated CourtroomUser document
-    await courtroomUser.save();
+    // // Save the updated CourtroomUser document
+    // await courtroomUser.save();
 
-    console.log(courtroomUser);
+    // console.log(courtroomUser);
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ case_overview }));
   } catch (error) {
+    console.log(error);
     const errorResponse = ErrorResponse({}, error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(errorResponse);
   }
 }
-async function getOverview({ file }) {
+
+async function getOverview(formData) {
   try {
     // Dynamically import node-fetch
     const fetch = (await import("node-fetch")).default;
-
-    const formData = new FormData();
-    formData.append("file", file.buffer, {
-      filename: file.originalname,
-      contentType: file.mimetype,
-    });
 
     const response = await fetch(`${COURTROOM_API_ENDPOINT}/new_case`, {
       method: "POST",
@@ -349,12 +373,104 @@ async function getOverview({ file }) {
     return responseData;
   } catch (error) {
     console.error("Error in getOverview:", error);
+    // console.error("Error in getOverview:");
     throw error;
   }
 }
 
+// async function newcase(req, res) {
+//   const file = req.file;
+//   if (!file) {
+//     return res.status(400).json({ error: "No file uploaded" });
+//   }
+
+//   const { userId } = req.body?.courtroomClient?.userBooking;
+
+//   console.log(userId);
+
+//   console.log(file);
+
+//   const extension = path.extname(file.originalname); // Extract the file extension
+//   const newFilename = `${userId}${extension}`; // Preserve the extension in the new filename
+
+//   // Create a renamed file object with buffer data
+//   const renamedFile = {
+//     ...file,
+//     originalname: newFilename,
+//   };
+
+//   console.log(renamedFile);
+
+//   try {
+//     const case_overview = await getOverview({ file: renamedFile });
+
+//     console.log(case_overview);
+
+//     // Find the CourtroomUser document by userId
+//     const courtroomUser = await CourtroomUser.findOne({ userId });
+
+//     if (!courtroomUser) {
+//       return res
+//         .status(StatusCodes.NOT_FOUND)
+//         .json({ error: "User not found" });
+//     }
+
+//     console.log(courtroomUser);
+
+//     // Append the case overview to the user's caseOverview array
+//     courtroomUser.caseOverview = case_overview.case_overview;
+
+//     console.log(courtroomUser);
+
+//     // Save the updated CourtroomUser document
+//     await courtroomUser.save();
+
+//     console.log(courtroomUser);
+
+//     return res.status(StatusCodes.OK).json(SuccessResponse({ case_overview }));
+//   } catch (error) {
+//     const errorResponse = ErrorResponse({}, error);
+//     return res
+//       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+//       .json(errorResponse);
+//   }
+// }
+// async function getOverview({ file }) {
+//   try {
+//     // Dynamically import node-fetch
+//     const fetch = (await import("node-fetch")).default;
+
+//     const formData = new FormData();
+//     formData.append("file", file.buffer, {
+//       filename: file.originalname,
+//       contentType: file.mimetype,
+//     });
+
+//     const response = await fetch(`${COURTROOM_API_ENDPOINT}/new_case`, {
+//       method: "POST",
+//       body: formData,
+//       headers: formData.getHeaders(), // Ensure correct headers are set
+//     });
+
+//     if (!response.ok) {
+//       const errorText = await response.text(); // Get the error message from the response
+//       throw new Error(
+//         `HTTP error! status: ${response.status}, message: ${errorText}`
+//       );
+//     }
+
+//     const responseData = await response.json();
+//     return responseData;
+//   } catch (error) {
+//     console.error("Error in getOverview:", error);
+//     throw error;
+//   }
+// }
+
 async function edit_case(req, res) {
-  const { user_id, case_overview } = req.body;
+  const { case_overview } = req.body;
+
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
 
   // console.log(req.body, " this is body");
   try {
@@ -402,7 +518,7 @@ async function FetchEdit_Case(body) {
 }
 
 async function getCaseOverview(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
 
   console.log(user_id);
   try {
@@ -433,7 +549,9 @@ async function getCaseOverview(req, res) {
 }
 
 async function user_arguemnt(req, res) {
-  const { user_id, argument, argument_index } = req.body;
+  const { argument, argument_index } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+
   try {
     const argumentIndex = await Fetch_argument_index({
       user_id,
@@ -463,7 +581,9 @@ async function Fetch_argument_index(body) {
 }
 
 async function lawyer_arguemnt(req, res) {
-  const { user_id, argument_index, action } = req.body;
+  const { argument_index, action } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+
   try {
     const lawyerArguemnt = await FetchLawyer_arguemnt({
       user_id,
@@ -493,7 +613,9 @@ async function FetchLawyer_arguemnt(body) {
 }
 
 async function judge_arguemnt(req, res) {
-  const { user_id, argument_index, action } = req.body;
+  const { argument_index, action } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+
   try {
     const judgeArguemnt = await FetchJudge_arguemnt({
       user_id,
@@ -523,7 +645,7 @@ async function FetchJudge_arguemnt(body) {
 }
 
 async function getDraft(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const draft = await FetchGetDraft({ user_id });
     return res.status(StatusCodes.OK).json(SuccessResponse({ draft }));
@@ -549,7 +671,8 @@ async function FetchGetDraft(body) {
 }
 
 async function changeState(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+
   try {
     const changeState = await FetchChangeState({ user_id });
     return res.status(StatusCodes.OK).json(SuccessResponse({ changeState }));
@@ -592,7 +715,7 @@ async function FetchChangeState(body) {
 }
 
 async function restCase(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const restDetail = await FetchRestCase({ user_id });
     return res.status(StatusCodes.OK).json(SuccessResponse({ restDetail }));
@@ -618,14 +741,15 @@ async function FetchRestCase(body) {
 }
 
 async function endCase(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const { userId } = req.body;
   try {
-    const endCase = await FetchEndCase({ user_id });
+    const endCase = await FetchEndCase({ userId });
 
     // save into database
 
     const { User_id, Booking_id } = await CourtroomService.getClientByUserid(
-      user_id
+      userId
     );
 
     await CourtroomService.storeCaseHistory(User_id, Booking_id, endCase);
@@ -653,7 +777,7 @@ async function FetchEndCase(body) {
 }
 
 async function hallucination_questions(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const hallucinationQuestions = await FetchHallucinationQuestions({
       user_id,
@@ -687,7 +811,7 @@ async function FetchHallucinationQuestions(body) {
 }
 
 async function CaseHistory(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const caseHistory = await FetchCaseHistory({ user_id });
 
@@ -696,7 +820,7 @@ async function CaseHistory(req, res) {
       user_id
     );
 
-    // console.log(User_id, Booking_id);
+    console.log(User_id, Booking_id);
 
     await CourtroomService.storeCaseHistory(User_id, Booking_id, caseHistory);
 
@@ -726,6 +850,7 @@ async function FetchCaseHistory(body) {
 
     if (!response.ok) {
       const errorText = await response.text(); // Capture error text
+      console.log(errorText);
       throw new Error(
         `HTTP error! status: ${response.status}, message: ${errorText}`
       );
@@ -741,7 +866,7 @@ async function FetchCaseHistory(body) {
 }
 
 async function downloadCaseHistory(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const caseHistory = await FetchCaseHistory({ user_id });
 
@@ -824,7 +949,7 @@ async function downloadCaseHistory(req, res) {
 }
 
 async function downloadSessionCaseHistory(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
 
   console.log(user_id);
   try {
@@ -936,7 +1061,7 @@ async function downloadSessionCaseHistory(req, res) {
 }
 
 async function downloadFirtDraft(req, res) {
-  const { user_id } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const draft = await FetchGetDraft({ user_id });
 
@@ -1005,7 +1130,8 @@ async function downloadFirtDraft(req, res) {
 }
 
 async function download(req, res) {
-  const { data, user_id, type } = req.body;
+  const { data, type } = req.body;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
 
   try {
     //   const draft = await FetchGetDraft({ user_id });
@@ -1072,7 +1198,7 @@ async function download(req, res) {
 }
 
 async function getHistory(req, res) {
-  const { user_id } = req.params;
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
   try {
     const caseHistory = await FetchCaseHistory({ user_id });
 

@@ -20,34 +20,101 @@ router.post(
   "/getCourtroomUser",
   authMiddleware.checkCourtroomAuth,
   CourtroomController.getUserDetails
-); // use letter
-router.post("/newcase", upload.single("file"), CourtroomController.newcase);
-router.post("/edit_case", CourtroomController.edit_case);
-router.post("/getCaseOverview", CourtroomController.getCaseOverview);
-router.post("/user_arguemnt", CourtroomController.user_arguemnt);
-router.post("/api/lawyer", CourtroomController.lawyer_arguemnt);
-router.post("/api/judge", CourtroomController.judge_arguemnt);
-router.post("/api/draft", CourtroomController.getDraft);
-router.post("/api/change_states", CourtroomController.changeState);
-router.post("/api/rest", CourtroomController.restCase);
-router.post("/api/end", CourtroomController.endCase);
+);
+
+router.post(
+  "/newcase",
+  upload.fields([
+    { name: "file" },
+    { name: "file1" },
+    { name: "file2" },
+    { name: "file3" },
+  ]),
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.newcase
+);
+
+router.post(
+  "/edit_case",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.edit_case
+);
+router.post(
+  "/getCaseOverview",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.getCaseOverview
+);
+router.post(
+  "/user_arguemnt",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.user_arguemnt
+);
+router.post(
+  "/api/lawyer",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.lawyer_arguemnt
+);
+router.post(
+  "/api/judge",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.judge_arguemnt
+);
+router.post(
+  "/api/draft",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.getDraft
+);
+router.post(
+  "/api/change_states",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.changeState
+);
+router.post(
+  "/api/rest",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.restCase
+);
+router.post(
+  "/api/end",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.endCase
+);
 router.post(
   "/api/hallucination_questions",
+  authMiddleware.checkCourtroomAuth,
   CourtroomController.hallucination_questions
 );
-router.post("/api/history", CourtroomController.CaseHistory);
+router.post(
+  "/api/history",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.CaseHistory
+);
 router.post(
   "/api/downloadCaseHistory",
+  authMiddleware.checkCourtroomAuth,
   CourtroomController.downloadCaseHistory
 );
 router.post(
   "/api/downloadSessionCaseHistory",
+  authMiddleware.checkCourtroomAuth,
   CourtroomController.downloadSessionCaseHistory
 );
 
-router.post("/api/downloadFirtDraft", CourtroomController.downloadFirtDraft);
-router.post("/api/download", CourtroomController.download);
-router.get("/:user_id/getHistory", CourtroomController.getHistory);
+router.post(
+  "/api/downloadFirtDraft",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.downloadFirtDraft
+);
+router.post(
+  "/api/download",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.download
+);
+router.get(
+  "/getHistory",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.getHistory
+);
 
 // AddContactUsQuery Route
 

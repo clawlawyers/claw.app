@@ -84,24 +84,46 @@ router.put("/bookings/:bookingId/users/:userId/slot", updateUserTiming);
 router.post("/api/trail-bookings", async (req, res) => {
   try {
     const {
-      date,
+      StartDate,
+      EndDate,
       StartHour,
       EndHour,
       phoneNumber,
       email,
       totalSlots,
-      bookedSlots,
     } = req.body;
 
-    // Create a new booking document
+    // Validate hour range
+    if (StartHour < 0 || StartHour > 23 || EndHour < 0 || EndHour > 23) {
+      return res
+        .status(400)
+        .json({ message: "Hours must be between 0 and 23." });
+    }
+
+    // Check if booking already exists
+    const existingBooking = await TrailBooking.findOne({
+      StartDate,
+      EndDate,
+      StartHour: { $lte: EndHour },
+      EndHour: { $gte: StartHour },
+      $or: [{ phoneNumber }, { email }],
+    });
+
+    if (existingBooking) {
+      return res.status(400).json({
+        message: "Booking already exists for the provided date and time.",
+      });
+    }
+
+    // Create and save new booking
     const newBooking = new TrailBooking({
-      date,
+      StartDate,
+      EndDate,
       StartHour,
       EndHour,
       phoneNumber,
       email,
       totalSlots,
-      bookedSlots,
     });
 
     // Save the booking to the database
