@@ -17,8 +17,19 @@ const comparePassword = async (password, hashedPassword) => {
 
 // Function to generate JWT token
 const generateToken = (payload) => {
-  // Get the current time
-  const now = new Date();
+  let now;
+  const utcDate = new Date(); // Get the current UTC time
+  const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30 in milliseconds
+  now = new Date(utcDate.getTime() + istOffset);
+
+  if (process.env.NODE_ENV === "production") {
+    const utcDate = new Date(); // Get the current UTC time
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30 in milliseconds
+    now = new Date(utcDate.getTime() + istOffset);
+  } else {
+    // Get the current date and hour in local time (for development)
+    now = new Date();
+  }
 
   // Calculate the remaining time in seconds until the next hour
   const minutes = now.getMinutes();
