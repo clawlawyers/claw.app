@@ -415,7 +415,7 @@ async function fetchSummarize({ doc_id }) {
 async function editDocument(req, res) {
   try {
     const { doc_id, edit_query } = req.body;
-    const fetchedData = await fetchGetDocumentFromPrompt({
+    const fetchedData = await fetchEditDocument({
       doc_id,
       edit_query,
     });
@@ -429,11 +429,11 @@ async function editDocument(req, res) {
   }
 }
 
-async function fetchGetDocumentFromPrompt({ doc_id, edit_query }) {
+async function fetchEditDocument({ doc_id, edit_query }) {
   try {
     // Dynamically import node-fetch
     const fetch = (await import("node-fetch")).default;
-    const response = await fetch(`${AL_DRAFTER_API}/get_document_from_prompt`, {
+    const response = await fetch(`${AL_DRAFTER_API}/edit_document`, {
       method: "POST",
       body: JSON.stringify({ doc_id, edit_query }),
       headers: {
