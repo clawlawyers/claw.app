@@ -334,6 +334,48 @@ async function fetchBreakout({ doc_id }) {
   }
 }
 
+async function generateDatabase(req, res) {
+  try {
+    const { doc_id } = req.body;
+
+    console.log(doc_id);
+    const fetchedData = await fetchGenerateDatabase({ doc_id });
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
+  } catch (error) {
+    console.log(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function fetchGenerateDatabase({ doc_id }) {
+  try {
+    console.log(doc_id);
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/db_generate`, {
+      method: "POST",
+      body: JSON.stringify({ doc_id }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 async function askQuestion(req, res) {
   try {
     const { doc_id, query } = req.body;
@@ -466,4 +508,5 @@ module.exports = {
   askQuestion,
   summarize,
   editDocument,
+  generateDatabase,
 };

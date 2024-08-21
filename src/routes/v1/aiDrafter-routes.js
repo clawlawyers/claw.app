@@ -21,6 +21,7 @@ router.post("/upload_optional_parameters", AiDrafter.uploadOptionalParameters);
 router.post("/get_requirements", AiDrafter.getRequirements);
 router.post("/generate_document", AiDrafter.generateDocument);
 router.post("/breakout", AiDrafter.breakout);
+router.post("/generate_db", AiDrafter.generateDatabase);
 router.post("/ask_question", AiDrafter.askQuestion);
 router.post("/summarize", AiDrafter.summarize);
 router.post("/edit_document", AiDrafter.editDocument);
