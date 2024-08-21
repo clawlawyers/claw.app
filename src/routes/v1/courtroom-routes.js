@@ -101,6 +101,12 @@ router.post(
 );
 
 router.post(
+  "/api/getSessionCaseHistory",
+  authMiddleware.checkCourtroomAuth,
+  CourtroomController.getSessionCaseHistory
+);
+
+router.post(
   "/api/downloadFirtDraft",
   authMiddleware.checkCourtroomAuth,
   CourtroomController.downloadFirtDraft

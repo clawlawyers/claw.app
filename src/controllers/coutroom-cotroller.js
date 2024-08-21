@@ -1243,6 +1243,37 @@ async function AddContactUsQuery(req, res) {
   }
 }
 
+async function getSessionCaseHistory(req, res) {
+  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  try {
+    const caseHistory = await FetchCaseHistory({ user_id });
+
+    // save into database or update database with new data if case history is already present in the database
+    const { User_id, Booking_id } = await CourtroomService.getClientByUserid(
+      user_id
+    );
+
+    console.log(User_id, Booking_id);
+
+    await CourtroomService.storeCaseHistory(User_id, Booking_id, caseHistory);
+
+    const FetchedCaseHistorys = await CourtroomService.getSessionCaseHistory(
+      User_id
+    );
+    console.log(FetchedCaseHistorys);
+
+    const caseHistorys = FetchedCaseHistorys.history;
+
+    res.status(StatusCodes.OK).json(SuccessResponse({ caseHistorys }));
+  } catch (error) {
+    console.error(error.message);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
 module.exports = {
   bookCourtRoom,
   getBookedData,
@@ -1268,4 +1299,5 @@ module.exports = {
   downloadFirtDraft,
   download,
   adminBookCourtRoom,
+  getSessionCaseHistory,
 };
