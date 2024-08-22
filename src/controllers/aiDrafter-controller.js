@@ -295,6 +295,48 @@ async function fetchGenerateDocument({ doc_id }) {
   }
 }
 
+async function generateDocumentForType(req, res) {
+  try {
+    const { doc_id } = req.body;
+    const fetchedData = await fetchGenerateDocumentForType({ doc_id });
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
+  } catch (error) {
+    console.log(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function fetchGenerateDocumentForType({ doc_id }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(
+      `${AL_DRAFTER_API}/generate_document_for_type`,
+      {
+        method: "POST",
+        body: JSON.stringify({ doc_id }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 async function breakout(req, res) {
   try {
     const { doc_id } = req.body;
@@ -672,4 +714,5 @@ module.exports = {
   favor,
   neutralize,
   counterFavor,
+  generateDocumentForType,
 };

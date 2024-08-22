@@ -20,6 +20,7 @@ router.post("/upload_prerequisites", AiDrafter.uploadPrerequisites);
 router.post("/upload_optional_parameters", AiDrafter.uploadOptionalParameters);
 router.post("/get_requirements", AiDrafter.getRequirements);
 router.post("/generate_document", AiDrafter.generateDocument);
+router.post("/generate_document_for_type", AiDrafter.generateDocumentForType);
 router.post("/breakout", AiDrafter.breakout);
 router.post("/generate_db", AiDrafter.generateDatabase);
 router.post("/ask_question", AiDrafter.askQuestion);
