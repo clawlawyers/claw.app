@@ -2,6 +2,7 @@ const express = require("express");
 const UserRoutes = require("./user-routes");
 const ClientRoutes = require("./client-routes");
 const courtroomRoutes = require("./courtroom-routes");
+const specificLawyerCourtroomRoutes = require("./specificLawyerCourtroom-routes");
 const PostRoutes = require("./post-routes");
 const GigRoutes = require("./gig-routes");
 const GptRoutes = require("./gpt-routes");
@@ -36,6 +37,7 @@ router.use("/admin", AdminRoute);
 router.use("/cron", CronRoutes);
 router.use("/salesman", Salesman);
 router.use("/courtroom", courtroomRoutes);
+router.use("/specificLawyerCourtroom", specificLawyerCourtroomRoutes);
 router.use("/ai-drafter", AiDrafter);
 
 module.exports = router;

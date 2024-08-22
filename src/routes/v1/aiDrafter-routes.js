@@ -25,5 +25,8 @@ router.post("/generate_db", AiDrafter.generateDatabase);
 router.post("/ask_question", AiDrafter.askQuestion);
 router.post("/summarize", AiDrafter.summarize);
 router.post("/edit_document", AiDrafter.editDocument);
+router.post("/summary_headings", AiDrafter.summaryHeadings);
+router.post("/favor", AiDrafter.favor);
+router.post("/neutralize", AiDrafter.neutralize);
 
 module.exports = router;

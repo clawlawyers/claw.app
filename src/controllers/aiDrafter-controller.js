@@ -496,6 +496,165 @@ async function fetchEditDocument({ doc_id, edit_query }) {
   }
 }
 
+async function summaryHeadings(req, res) {
+  try {
+    const { doc_id, headpoint_to_find } = req.body;
+    const fetchedData = await fetchSummaryHeadings({
+      doc_id,
+      headpoint_to_find,
+    });
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
+  } catch (error) {
+    console.log(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function fetchSummaryHeadings({ doc_id, headpoint_to_find }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/summary_headings`, {
+      method: "POST",
+      body: JSON.stringify({ doc_id, headpoint_to_find }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+async function favor(req, res) {
+  try {
+    const { doc_id, headpoint_to_find } = req.body;
+    const fetchedData = await fetchFavor({ doc_id, headpoint_to_find });
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
+  } catch (error) {
+    console.error(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function fetchFavor({ doc_id, headpoint_to_find }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/favor`, {
+      method: "POST",
+      body: JSON.stringify({ doc_id, headpoint_to_find }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+async function neutralize(req, res) {
+  try {
+    const { doc_id, headpoint_to_find } = req.body;
+    const fetchedData = await fetchNeutralize({ doc_id, headpoint_to_find });
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
+  } catch (error) {
+    console.error(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function fetchNeutralize({ doc_id, headpoint_to_find }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/neutralize`, {
+      method: "POST",
+      body: JSON.stringify({ doc_id, headpoint_to_find }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+async function counterFavor(req, res) {
+  try {
+    const { doc_id, headpoint_to_find } = req.body;
+    const fetchedData = await fetchCounterFavor({ doc_id, headpoint_to_find });
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
+  } catch (error) {
+    console.error(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function fetchCounterFavor({ doc_id, headpoint_to_find }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/counter_favor`, {
+      method: "POST",
+      body: JSON.stringify({ doc_id, headpoint_to_find }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 module.exports = {
   uploadDocument,
   createDocument,
@@ -509,4 +668,8 @@ module.exports = {
   summarize,
   editDocument,
   generateDatabase,
+  summaryHeadings,
+  favor,
+  neutralize,
+  counterFavor,
 };
