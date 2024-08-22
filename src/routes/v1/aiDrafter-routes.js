@@ -28,5 +28,6 @@ router.post("/edit_document", AiDrafter.editDocument);
 router.post("/summary_headings", AiDrafter.summaryHeadings);
 router.post("/favor", AiDrafter.favor);
 router.post("/neutralize", AiDrafter.neutralize);
+router.post("/counter_favor", AiDrafter.counterFavor);
 
 module.exports = router;
