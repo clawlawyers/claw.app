@@ -22,7 +22,7 @@ router.post("/login", SpecificLawyerCourtroomController.loginToCourtRoom);
 
 router.post(
   "/getCourtroomUser",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.getUserDetails
 );
 
@@ -34,95 +34,95 @@ router.post(
     { name: "file2" },
     { name: "file3" },
   ]),
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.newcase
 );
 
 router.post(
   "/edit_case",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.edit_case
 );
 router.post(
   "/getCaseOverview",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.getCaseOverview
 );
 router.post(
   "/user_arguemnt",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.user_arguemnt
 );
 router.post(
   "/api/lawyer",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.lawyer_arguemnt
 );
 router.post(
   "/api/judge",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.judge_arguemnt
 );
 router.post(
   "/api/draft",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.getDraft
 );
 router.post(
   "/api/change_states",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.changeState
 );
 router.post(
   "/api/rest",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.restCase
 );
 router.post(
   "/api/end",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.endCase
 );
 router.post(
   "/api/hallucination_questions",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.hallucination_questions
 );
 router.post(
   "/api/history",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.CaseHistory
 );
 router.post(
   "/api/downloadCaseHistory",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.downloadCaseHistory
 );
 router.post(
   "/api/downloadSessionCaseHistory",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.downloadSessionCaseHistory
 );
 
 router.post(
   "/api/getSessionCaseHistory",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.getSessionCaseHistory
 );
 
 router.post(
   "/api/downloadFirtDraft",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.downloadFirtDraft
 );
 router.post(
   "/api/download",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.download
 );
 router.get(
   "/getHistory",
-  authMiddleware.checkCourtroomAuth,
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
   SpecificLawyerCourtroomController.getHistory
 );
 
@@ -131,6 +131,14 @@ router.get(
 router.post(
   "/add/ContactUsQuery",
   SpecificLawyerCourtroomController.AddContactUsQuery
+);
+
+//time storing
+
+router.post(
+  "/api/storeTime",
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
+  SpecificLawyerCourtroomController.storeTime
 );
 
 module.exports = router;

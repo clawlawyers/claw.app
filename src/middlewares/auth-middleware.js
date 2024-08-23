@@ -1,4 +1,9 @@
-const { ClientService, UserService, CourtroomService } = require("../services");
+const {
+  ClientService,
+  UserService,
+  CourtroomService,
+  SpecificLawyerCourtroomService,
+} = require("../services");
 const { ErrorResponse } = require("../utils/common/");
 const { StatusCodes } = require("http-status-codes");
 const { verifyToken } = require("../utils/common/auth");
@@ -69,6 +74,30 @@ async function checkCourtroomAuth(req, res, next) {
   }
 }
 
+async function checkSpecificLawyerCourtroomAuth(req, res, next) {
+  try {
+    const token = req.headers["authorization"].split(" ")[1];
+    // console.log(token);
+    if (!token) {
+      throw new AppError("Missing jwt token", StatusCodes.BAD_REQUEST);
+    }
+    const response = verifyTokenCR(token);
+    // console.log(response);
+    const client = await SpecificLawyerCourtroomService.getClientByPhoneNumber(
+      response.phoneNumber
+    );
+    if (!client) {
+      throw new AppError("No user found", StatusCodes.NOT_FOUND);
+    }
+    // console.log(client);
+    req.body.courtroomClient = client;
+    next();
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res.status(StatusCodes.UNAUTHORIZED).json(errorResponse);
+  }
+}
+
 async function checkVerifiedLawyer(req, res, next) {
   try {
     const lawyer = await UserService.getUserByPhoneNumber(req.body.phoneNumber);
@@ -113,4 +142,5 @@ module.exports = {
   checkRegisteredLawyer,
   checkAmabassador,
   checkCourtroomAuth,
+  checkSpecificLawyerCourtroomAuth,
 };

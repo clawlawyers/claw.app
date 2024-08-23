@@ -15,11 +15,16 @@ const SpecificLawyerCourtroomHistorySchema = new Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CourtroomUser",
+      ref: "SpecificLawyerCourtroomUser",
       required: true,
     },
     history: [SpecificLawyerCaseHistorySchema],
     latestCaseHistory: SpecificLawyerCaseHistorySchema,
+    otherDetails: {
+      type: mongoose.Schema.Types.ObjectId, // this can be extended as per requirements
+      required: true,
+      ref: "SpecificLawCourtroomFeature",
+    },
   },
   { timestamps: true }
 );

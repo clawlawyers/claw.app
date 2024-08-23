@@ -14,8 +14,8 @@ const SpecificLawyerCourtroomUserSchema = new Schema({
     required: true,
     default: "",
   },
-  totalHours: { type: String, required: true },
-  totalUsedHours: { type: String, required: true, default: 0 },
+  totalHours: { type: Number, required: true },
+  totalUsedHours: { type: Number, required: true, default: 0 },
 });
 
 const SpecificLawyerCourtroomUser = mongoose.model(

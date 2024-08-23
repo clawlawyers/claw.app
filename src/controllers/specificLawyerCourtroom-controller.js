@@ -1,4 +1,3 @@
-const { hashPassword, generateToken } = require("../utils/coutroom/auth");
 const { sendConfirmationEmail } = require("../utils/coutroom/sendEmail");
 const { SpecificLawyerCourtroomService } = require("../services");
 const { ErrorResponse, SuccessResponse } = require("../utils/common");
@@ -9,6 +8,11 @@ const SpecificLawyerCourtroomUser = require("../models/SpecificLawyerCourtroomUs
 const FormData = require("form-data");
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
+const { default: mongoose } = require("mongoose");
+const {
+  hashPasswordSpecial,
+  generateTokenSpecial,
+} = require("../utils/SpecificCourtroom/auth");
 
 async function bookCourtRoom(req, res) {
   try {
@@ -20,7 +24,7 @@ async function bookCourtRoom(req, res) {
       return res.status(400).send("Missing required fields.");
     }
 
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPasswordSpecial(password);
     const caseOverview = "";
 
     const respo = await SpecificLawyerCourtroomService.courtRoomBook(
@@ -54,67 +58,6 @@ async function bookCourtRoom(req, res) {
   }
 }
 
-async function adminBookCourtRoom(req, res) {
-  try {
-    const { name, phoneNumber, email, password, slots, recording } = req.body;
-
-    // Check if required fields are provided
-    if (
-      !name ||
-      !phoneNumber ||
-      !email ||
-      !password ||
-      !slots ||
-      !Array.isArray(slots) ||
-      slots.length === 0
-    ) {
-      return res.status(400).send("Missing required fields.");
-    }
-
-    const hashedPassword = await hashPassword(password);
-    const caseOverview = "";
-
-    for (const slot of slots) {
-      const { date, hour } = slot;
-      if (!date || hour === undefined) {
-        return res.status(400).send("Missing required fields in slot.");
-      }
-
-      const bookingDate = new Date(date);
-
-      const respo = await SpecificLawyerCourtroomService.adminCourtRoomBook(
-        name,
-        phoneNumber,
-        email,
-        hashedPassword,
-        bookingDate,
-        hour,
-        recording,
-        caseOverview
-      );
-
-      if (respo) {
-        return res.status(400).send(respo);
-      }
-    }
-    await sendConfirmationEmail(
-      email,
-      name,
-      phoneNumber,
-      password,
-      slots,
-      (amount = slots.length * 100)
-    );
-
-    res.status(201).send("Courtroom slots booked successfully.");
-  } catch (error) {
-    const errorResponse = ErrorResponse({}, error);
-    return res
-      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(errorResponse);
-  }
-}
-
 async function bookCourtRoomValidation(req, res) {
   try {
     const { name, phoneNumber, email, password, slots, recording } = req.body;
@@ -132,7 +75,7 @@ async function bookCourtRoomValidation(req, res) {
       return res.status(400).send("Missing required fields.");
     }
 
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPasswordSpecial(password);
     const caseOverview = "";
 
     for (const slot of slots) {
@@ -216,23 +159,12 @@ async function loginToCourtRoom(req, res) {
 async function getUserDetails(req, res) {
   const { courtroomClient } = req.body;
   try {
-    console.log(courtroomClient);
+    // console.log(courtroomClient);
     // Generate a JWT token
-    const token = generateToken({
+    const token = generateTokenSpecial({
       userId: courtroomClient._id,
       phoneNumber: courtroomClient.phoneNumber,
     });
-    console.log(courtroomClient);
-
-    // console.log(token, courtroomClient);
-
-    // console.log({
-    //   ...token,
-    //   userId: courtroomClient.userId,
-    //   phoneNumber: courtroomClient.phoneNumber,
-    // });
-
-    console.log("here");
 
     return res.status(StatusCodes.OK).json(
       SuccessResponse({
@@ -257,7 +189,7 @@ async function newcase(req, res) {
 
   // console.log(files);
 
-  const { userId } = req.body?.courtroomClient?.userBooking;
+  const { userId } = req.body?.courtroomClient;
   // const userId = "f497c76b-2894-4636-8d2b-6391bc6bccdc";
   console.log(userId);
 
@@ -455,7 +387,7 @@ async function getOverview(formData) {
 async function edit_case(req, res) {
   const { case_overview } = req.body;
 
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
 
   // console.log(req.body, " this is body");
   try {
@@ -504,7 +436,7 @@ async function FetchEdit_Case(body) {
 }
 
 async function getCaseOverview(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
 
   console.log(user_id);
   try {
@@ -569,7 +501,7 @@ async function Fetch_argument_index(body) {
 
 async function lawyer_arguemnt(req, res) {
   const { argument_index, action } = req.body;
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
 
   try {
     const lawyerArguemnt = await FetchLawyer_arguemnt({
@@ -601,7 +533,7 @@ async function FetchLawyer_arguemnt(body) {
 
 async function judge_arguemnt(req, res) {
   const { argument_index, action } = req.body;
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
 
   try {
     const judgeArguemnt = await FetchJudge_arguemnt({
@@ -632,7 +564,7 @@ async function FetchJudge_arguemnt(body) {
 }
 
 async function getDraft(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
   try {
     const draft = await FetchGetDraft({ user_id });
     return res.status(StatusCodes.OK).json(SuccessResponse({ draft }));
@@ -658,7 +590,7 @@ async function FetchGetDraft(body) {
 }
 
 async function changeState(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
 
   try {
     const changeState = await FetchChangeState({ user_id });
@@ -702,7 +634,7 @@ async function FetchChangeState(body) {
 }
 
 async function restCase(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
   try {
     const restDetail = await FetchRestCase({ user_id });
     return res.status(StatusCodes.OK).json(SuccessResponse({ restDetail }));
@@ -728,21 +660,18 @@ async function FetchRestCase(body) {
 }
 
 async function endCase(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
   const { userId } = req.body;
   try {
     const endCase = await FetchEndCase({ userId });
 
     // save into database
 
-    const { User_id, Booking_id } =
-      await SpecificLawyerCourtroomService.getClientByUserid(userId);
-
-    await SpecificLawyerCourtroomService.storeCaseHistory(
-      User_id,
-      Booking_id,
-      endCase
+    const { User_id } = await SpecificLawyerCourtroomService.getClientByUserid(
+      userId
     );
+
+    await SpecificLawyerCourtroomService.storeCaseHistory(User_id, endCase);
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ endCase }));
   } catch (error) {
@@ -767,7 +696,7 @@ async function FetchEndCase(body) {
 }
 
 async function hallucination_questions(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
   try {
     const hallucinationQuestions = await FetchHallucinationQuestions({
       user_id,
@@ -801,21 +730,18 @@ async function FetchHallucinationQuestions(body) {
 }
 
 async function CaseHistory(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
   try {
     const caseHistory = await FetchCaseHistory({ user_id });
 
     // save into database or update database with new data if case history is already present in the database
-    const { User_id, Booking_id } =
-      await SpecificLawyerCourtroomService.getClientByUserid(user_id);
-
-    console.log(User_id, Booking_id);
-
-    await SpecificLawyerCourtroomService.storeCaseHistory(
-      User_id,
-      Booking_id,
-      caseHistory
+    const { User_id } = await SpecificLawyerCourtroomService.getClientByUserid(
+      user_id
     );
+
+    console.log(User_id);
+
+    await SpecificLawyerCourtroomService.storeCaseHistory(User_id, caseHistory);
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ caseHistory }));
   } catch (error) {
@@ -859,7 +785,7 @@ async function FetchCaseHistory(body) {
 }
 
 async function downloadCaseHistory(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
   try {
     const caseHistory = await FetchCaseHistory({ user_id });
 
@@ -942,7 +868,7 @@ async function downloadCaseHistory(req, res) {
 }
 
 async function downloadSessionCaseHistory(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
 
   console.log(user_id);
   try {
@@ -1055,7 +981,7 @@ async function downloadSessionCaseHistory(req, res) {
 }
 
 async function downloadFirtDraft(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
   try {
     const draft = await FetchGetDraft({ user_id });
 
@@ -1125,7 +1051,7 @@ async function downloadFirtDraft(req, res) {
 
 async function download(req, res) {
   const { data, type } = req.body;
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
 
   try {
     //   const draft = await FetchGetDraft({ user_id });
@@ -1192,7 +1118,7 @@ async function download(req, res) {
 }
 
 async function getHistory(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
   try {
     const caseHistory = await FetchCaseHistory({ user_id });
 
@@ -1239,21 +1165,18 @@ async function AddContactUsQuery(req, res) {
 }
 
 async function getSessionCaseHistory(req, res) {
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
   try {
     const caseHistory = await FetchCaseHistory({ user_id });
 
     // save into database or update database with new data if case history is already present in the database
-    const { User_id, Booking_id } =
-      await SpecificLawyerCourtroomService.getClientByUserid(user_id);
-
-    console.log(User_id, Booking_id);
-
-    await SpecificLawyerCourtroomService.storeCaseHistory(
-      User_id,
-      Booking_id,
-      caseHistory
+    const { User_id } = await SpecificLawyerCourtroomService.getClientByUserid(
+      user_id
     );
+
+    console.log(User_id);
+
+    await SpecificLawyerCourtroomService.storeCaseHistory(User_id, caseHistory);
 
     const FetchedCaseHistorys =
       await SpecificLawyerCourtroomService.getSessionCaseHistory(User_id);
@@ -1270,6 +1193,96 @@ async function getSessionCaseHistory(req, res) {
       .json(errorResponse);
   }
 }
+
+// storing time =>
+
+let inMemoryEngagementData = {};
+
+const flushInMemoryDataToDatabase = async () => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    for (const phoneNumber in inMemoryEngagementData) {
+      const userEngagement = inMemoryEngagementData[phoneNumber];
+
+      // Find the user by phone number
+      const user =
+        await SpecificLawyerCourtroomService.getClientByPhoneNumberWithSession(
+          phoneNumber,
+          session
+        );
+
+      //   console.log(user);
+
+      // if (user) {
+      //   if (!user.engagementTime) {
+      //     user.engagementTime = {
+      //       total: 0,
+      //     };
+      //   }
+
+      // console.log(user.engagementTime);
+
+      if (user) {
+        const totalEngagementTime = userEngagement.total / 3600; // Convert seconds to hours
+
+        await SpecificLawyerCourtroomService.updateClientByPhoneNumberWithSession(
+          phoneNumber,
+          {
+            $inc: {
+              totalUsedHours: totalEngagementTime,
+            },
+          },
+          session
+        );
+      } else {
+        console.log(`User not found for phone number: ${phoneNumber}`);
+      }
+    }
+
+    await session.commitTransaction();
+    inMemoryEngagementData = {}; // Clear in-memory data after successful write
+    console.log("Flushing in-memory");
+  } catch (error) {
+    console.log(error);
+    await session.abortTransaction();
+    console.error("Error flushing engagement data to database:", error);
+  } finally {
+    console.log("Finally block executed");
+    session.endSession();
+  }
+};
+
+async function storeTime(req, res) {
+  const engagementData = req.body;
+
+  engagementData?.forEach(({ phoneNumber, engagementTime, timestamp }) => {
+    const date = new Date(timestamp); // Convert seconds to milliseconds
+    const day = date.toISOString().slice(0, 10);
+    // const month = date.toISOString().slice(0, 7);
+    // const year = date.getFullYear();
+
+    if (!inMemoryEngagementData[phoneNumber]) {
+      inMemoryEngagementData[phoneNumber] = {
+        daily: {},
+        // monthly: {},
+        // yearly: {},
+        total: 0,
+      };
+    }
+
+    inMemoryEngagementData[phoneNumber].daily[day] =
+      (inMemoryEngagementData[phoneNumber].daily[day] || 0) + engagementTime;
+    inMemoryEngagementData[phoneNumber].total += engagementTime; // Add to total engagement time
+  });
+
+  await flushInMemoryDataToDatabase();
+
+  res.status(200).json({ message: "Engagement data received" });
+}
+
+// setInterval(flushInMemoryDataToDatabase, 60000); // Flush to database every minute
 
 module.exports = {
   bookCourtRoom,
@@ -1295,6 +1308,6 @@ module.exports = {
   AddContactUsQuery,
   downloadFirtDraft,
   download,
-  adminBookCourtRoom,
   getSessionCaseHistory,
+  storeTime,
 };
