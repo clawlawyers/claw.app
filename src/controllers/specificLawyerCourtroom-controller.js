@@ -178,6 +178,8 @@ async function getUserDetails(req, res) {
         courtroomFeatures: courtroomClient.features,
         userId: courtroomClient.userId,
         phoneNumber: courtroomClient.phoneNumber,
+        totalHours: courtroomClient.totalHours,
+        totalUsedHours: courtroomClient.totalUsedHours,
       })
     );
   } catch (error) {
