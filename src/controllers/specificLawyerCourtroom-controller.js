@@ -156,13 +156,27 @@ async function loginToCourtRoom(req, res) {
 async function getUserDetails(req, res) {
   const { courtroomClient } = req.body;
   try {
-    console.log(courtroomClient);
+    // console.log(courtroomClient);
+
+    let userId;
+
+    if (!courtroomClient.userId) {
+      const userId1 = await registerNewCourtRoomUser();
+      const updateUser = await SpecificLawyerCourtroomUser.findByIdAndUpdate(
+        courtroomClient._id,
+        { userId: userId1 },
+        { new: true }
+      );
+      userId = updateUser.userId;
+    } else {
+      userId = userBooking.userId;
+    }
 
     return res.status(StatusCodes.OK).json(
       SuccessResponse({
         username: courtroomClient.name,
         courtroomFeatures: courtroomClient.features,
-        userId: courtroomClient._id,
+        userId: courtroomClient.userId,
         phoneNumber: courtroomClient.phoneNumber,
       })
     );
@@ -171,6 +185,30 @@ async function getUserDetails(req, res) {
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(errorResponse);
+  }
+}
+
+async function registerNewCourtRoomUser(body) {
+  try {
+    console.log(body);
+    const response = await fetch(`${COURTROOM_API_ENDPOINT}/user_id`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch user ID: ${response.statusText}`);
+    }
+
+    console.log(response);
+
+    return response.json();
+  } catch (error) {
+    console.error("Error fetching user ID", error);
+    throw error;
   }
 }
 
