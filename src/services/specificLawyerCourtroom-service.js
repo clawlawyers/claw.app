@@ -189,8 +189,8 @@ async function getClientByDomainName(Domain) {
   try {
     // Find existing booking for the current date and hour
     const userBooking = await SpecificLawyerCourtroomUser.findOne({
-      // Domain: "shubham.courtroom.clawlaw.in",
-      Domain: Domain,
+      Domain: "shubham.courtroom.clawlaw.in",
+      // Domain: Domain,
     });
 
     // console.log(userBooking);
@@ -223,12 +223,11 @@ async function getClientByUserid(userid) {
   }
 }
 
-async function storeCaseHistory(userId,  caseHistoryDetails) {
+async function storeCaseHistory(userId, caseHistoryDetails) {
   try {
     // Find the courtroom history by userId and slotId
     let courtroomHistory = await SpecificLawyerCourtroomHistory.findOne({
       userId: userId,
-      
     });
 
     if (!courtroomHistory) {
