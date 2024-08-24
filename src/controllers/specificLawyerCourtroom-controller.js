@@ -164,7 +164,7 @@ async function getUserDetails(req, res) {
       const userId1 = await registerNewCourtRoomUser();
       const updateUser = await SpecificLawyerCourtroomUser.findByIdAndUpdate(
         courtroomClient._id,
-        { userId: userId1 },
+        { userId: userId1.user_id },
         { new: true }
       );
       userId = updateUser.userId;

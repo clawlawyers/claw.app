@@ -193,7 +193,7 @@ async function getClientByDomainName(Domain) {
       // Domain: Domain,
     });
 
-    console.log(userBooking);
+    // console.log(userBooking);
     if (!userBooking) {
       return "No bookings found for the current time slot.";
     }
