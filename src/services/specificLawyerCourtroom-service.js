@@ -228,7 +228,7 @@ async function storeCaseHistory(userId, slotId, caseHistoryDetails) {
     // Find the courtroom history by userId and slotId
     let courtroomHistory = await SpecificLawyerCourtroomHistory.findOne({
       userId: userId,
-      slot: slotId,
+      
     });
 
     if (!courtroomHistory) {
