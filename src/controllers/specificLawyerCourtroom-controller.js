@@ -192,6 +192,27 @@ async function getUserDetails(req, res) {
   }
 }
 
+async function getusername(req, res) {
+  const { courtroomClient } = req.body;
+  try {
+    console.log(courtroomClient);
+
+    let userId;
+
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        username: courtroomClient.name,
+      })
+    );
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
 async function registerNewCourtRoomUser(body) {
   try {
     console.log(body);
@@ -429,8 +450,9 @@ async function edit_case(req, res) {
     const editedArgument = await FetchEdit_Case({ user_id, case_overview });
 
     // Find the SpecificLawyerCourtroomUser document by userId
-    const fetchedUser =
-      await SpecificLawyerCourtroomUser.findOne({ userId: user_id });
+    const fetchedUser = await SpecificLawyerCourtroomUser.findOne({
+      userId: user_id,
+    });
 
     if (!fetchedUser) {
       return res
@@ -1348,4 +1370,5 @@ module.exports = {
   download,
   getSessionCaseHistory,
   storeTime,
+  getusername,
 };

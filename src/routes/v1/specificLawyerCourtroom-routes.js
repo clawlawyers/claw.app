@@ -28,6 +28,12 @@ router.post(
 );
 
 router.post(
+  "/getusername",
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
+  SpecificLawyerCourtroomController.getusername
+);
+
+router.post(
   "/newcase",
   upload.fields([
     { name: "file" },
