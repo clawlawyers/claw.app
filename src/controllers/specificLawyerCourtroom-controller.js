@@ -427,27 +427,28 @@ async function edit_case(req, res) {
     const editedArgument = await FetchEdit_Case({ user_id, case_overview });
 
     // Find the SpecificLawyerCourtroomUser document by userId
-    const SpecificLawyerCourtroomUser =
+    const fetchedUser =
       await SpecificLawyerCourtroomUser.findOne({ userId: user_id });
 
-    if (!SpecificLawyerCourtroomUser) {
+    if (!fetchedUser) {
       return res
         .status(StatusCodes.NOT_FOUND)
         .json({ error: "User not found" });
     }
 
     // Append the case overview to the user's caseOverview array
-    SpecificLawyerCourtroomUser.caseOverview = editedArgument.case_overview;
+    fetchedUser.caseOverview = editedArgument.case_overview;
 
     // console.log(SpecificLawyerCourtroomUser);
 
     // Save the updated SpecificLawyerCourtroomUser document
-    await SpecificLawyerCourtroomUser.save();
+    await fetchedUser.save();
 
     // console.log(SpecificLawyerCourtroomUser);
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ editedArgument }));
   } catch (error) {
+    console.log(error);
     const errorResponse = ErrorResponse({}, error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
@@ -504,7 +505,7 @@ async function getCaseOverview(req, res) {
 
 async function user_arguemnt(req, res) {
   const { argument, argument_index } = req.body;
-  const user_id = req.body?.courtroomClient?.userBooking?.userId;
+  const user_id = req.body?.courtroomClient?.userId;
 
   try {
     const argumentIndex = await Fetch_argument_index({
@@ -768,7 +769,7 @@ async function CaseHistory(req, res) {
   const user_id = req.body?.courtroomClient?.userId;
   try {
     const caseHistory = await FetchCaseHistory({ user_id });
-
+    console.log(caseHistory);
     // save into database or update database with new data if case history is already present in the database
     const { User_id } = await SpecificLawyerCourtroomService.getClientByUserid(
       user_id
