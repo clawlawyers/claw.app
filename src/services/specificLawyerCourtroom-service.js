@@ -189,8 +189,8 @@ async function getClientByDomainName(Domain) {
   try {
     // Find existing booking for the current date and hour
     const userBooking = await SpecificLawyerCourtroomUser.findOne({
-      // Domain: "shubham.courtroom.clawlaw.in",
-      Domain: Domain,
+      Domain: "shubham.courtroom.clawlaw.in",
+      // Domain: Domain,
     });
 
     // console.log(userBooking);
