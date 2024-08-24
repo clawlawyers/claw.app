@@ -76,21 +76,25 @@ async function checkCourtroomAuth(req, res, next) {
 
 async function checkSpecificLawyerCourtroomAuth(req, res, next) {
   try {
-    const token = req.headers["authorization"].split(" ")[1];
-    // console.log(token);
-    if (!token) {
-      throw new AppError("Missing jwt token", StatusCodes.BAD_REQUEST);
-    }
-    const response = verifyTokenCR(token);
-    // console.log(response);
-    const client = await SpecificLawyerCourtroomService.getClientByPhoneNumber(
-      response.phoneNumber
+    const clientIp =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const origin = req.headers.origin || req.headers.referer;
+
+    // console.log("Client IP:", clientIp);
+    // console.log("Origin:", origin);
+    // console.log("Origin:", origin?.toString()?.substring(8));
+    const domain = origin?.toString()?.substring(8);
+    req.domain = domain;
+    req.ip = clientIp;
+
+    const client = await SpecificLawyerCourtroomService.getClientByDomainName(
+      domain
     );
     if (!client) {
       throw new AppError("No user found", StatusCodes.NOT_FOUND);
     }
     // console.log(client);
-    req.body.courtroomClient = client;
+    req.body.courtroomClient = client?.userBooking;
     next();
   } catch (error) {
     const errorResponse = ErrorResponse({}, error);

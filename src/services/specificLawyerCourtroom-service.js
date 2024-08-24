@@ -62,10 +62,13 @@ async function courtRoomBook(
   name,
   phoneNumber,
   email,
-  hashedPassword,
-  totalHours,
+  Domain,
+  startDate,
+  endDate,
   recording,
-  caseOverview
+  caseOverview,
+  totalHours,
+  features
 ) {
   console.log("Here is caseOverview", caseOverview);
   try {
@@ -92,10 +95,13 @@ async function courtRoomBook(
       name,
       phoneNumber,
       email,
-      password: hashedPassword,
-      recording: recording, // Assuming recording is required and set to true
+      Domain,
+      startDate,
+      endDate,
+      recording,
+      totalHours,
+      features, // Assuming recording is required and set to true
       caseOverview: "NA",
-      totalHours: totalHours,
     });
 
     console.log(newCourtroomUser);
@@ -179,12 +185,15 @@ async function registerNewCourtRoomUser(body) {
   return response.json();
 }
 
-async function getClientByPhoneNumber(phoneNumber) {
+async function getClientByDomainName(Domain) {
   try {
     // Find existing booking for the current date and hour
     const userBooking = await SpecificLawyerCourtroomUser.findOne({
-      phoneNumber: phoneNumber,
+      Domain: "shubhamcourtroom.clawlaw.in",
+      // Domain: Domain,
     });
+
+    console.log(userBooking);
     if (!userBooking) {
       return "No bookings found for the current time slot.";
     }
@@ -296,7 +305,7 @@ async function updateClientByPhoneNumberWithSession(
 module.exports = {
   courtRoomBook,
   loginToCourtRoom,
-  getClientByPhoneNumber,
+  getClientByDomainName,
   getClientByUserid,
   storeCaseHistory,
   getSessionCaseHistory,

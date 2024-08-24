@@ -47,3 +47,5 @@ const CourtroomFeatures = mongoose.model(
   "CourtroomFeatures",
   courtroomFeaturesSchema
 );
+
+module.exports = CourtroomFeatures;

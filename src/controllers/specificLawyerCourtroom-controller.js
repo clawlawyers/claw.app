@@ -16,25 +16,46 @@ const {
 
 async function bookCourtRoom(req, res) {
   try {
-    const { name, phoneNumber, email, password, totalHours, recording } =
-      req.body;
+    const {
+      name,
+      phoneNumber,
+      email,
+      Domain,
+      startDate,
+      endDate,
+      recording,
+      totalHours,
+      features,
+    } = req.body;
 
-    // Check if required fields are provided
-    if (!name || !phoneNumber || !email || !password || !totalHours) {
-      return res.status(400).send("Missing required fields.");
+    // Input validation (basic example, can be extended as per requirements)
+    if (
+      !name ||
+      !phoneNumber ||
+      !email ||
+      !Domain ||
+      !startDate ||
+      !endDate ||
+      !recording ||
+      !totalHours ||
+      !features
+    ) {
+      return res.status(400).json({ error: "All fields are required." });
     }
 
-    const hashedPassword = await hashPasswordSpecial(password);
     const caseOverview = "";
 
     const respo = await SpecificLawyerCourtroomService.courtRoomBook(
       name,
       phoneNumber,
       email,
-      hashedPassword,
-      totalHours,
+      Domain,
+      startDate,
+      endDate,
       recording,
-      caseOverview
+      caseOverview,
+      totalHours,
+      features
     );
 
     if (respo) {
@@ -60,57 +81,33 @@ async function bookCourtRoom(req, res) {
 
 async function bookCourtRoomValidation(req, res) {
   try {
-    const { name, phoneNumber, email, password, slots, recording } = req.body;
+    const { phoneNumber } = req.body;
+
+    console.log("body is here ", req.body);
 
     // Check if required fields are provided
-    if (
-      !name ||
-      !phoneNumber ||
-      !email ||
-      !password ||
-      !slots ||
-      !Array.isArray(slots) ||
-      slots.length === 0
-    ) {
+    if (!phoneNumber) {
       return res.status(400).send("Missing required fields.");
     }
 
-    const hashedPassword = await hashPasswordSpecial(password);
-    const caseOverview = "";
+    const domain = req.domain;
 
-    for (const slot of slots) {
-      const { date, hour } = slot;
-      if (!date || hour === undefined) {
-        return res.status(400).send("Missing required fields in slot.");
-      }
+    const resp = await SpecificLawyerCourtroomUser.findOne({
+      phoneNumber: phoneNumber,
+      // Domain: domain,
+    });
 
-      const bookingDate = new Date(date);
+    console.log(resp);
 
-      const resp = await SpecificLawyerCourtroomService.courtRoomBookValidation(
-        name,
-        phoneNumber,
-        email,
-        hashedPassword,
-        bookingDate,
-        hour,
-        recording,
-        caseOverview
-      );
-
-      console.log(resp);
-
-      if (resp) {
-        return res.status(StatusCodes.OK).json(SuccessResponse({ data: resp }));
-      }
+    if (resp) {
+      return res
+        .status(StatusCodes.OK)
+        .json(SuccessResponse({ data: "Can enter" }));
+    } else {
+      throw new Error("Number is not registred");
     }
-
-    console.log("slot can be book");
-
-    return res
-      .status(StatusCodes.OK)
-      .json(SuccessResponse({ data: "Slot can be book" }));
   } catch (error) {
-    const errorResponse = ErrorResponse({}, error);
+    const errorResponse = ErrorResponse({}, error.message);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(errorResponse);
@@ -159,16 +156,12 @@ async function loginToCourtRoom(req, res) {
 async function getUserDetails(req, res) {
   const { courtroomClient } = req.body;
   try {
-    // console.log(courtroomClient);
-    // Generate a JWT token
-    const token = generateTokenSpecial({
-      userId: courtroomClient._id,
-      phoneNumber: courtroomClient.phoneNumber,
-    });
+    console.log(courtroomClient);
 
     return res.status(StatusCodes.OK).json(
       SuccessResponse({
-        ...token,
+        username: courtroomClient.name,
+        courtroomFeatures: courtroomClient.features,
         userId: courtroomClient._id,
         phoneNumber: courtroomClient.phoneNumber,
       })

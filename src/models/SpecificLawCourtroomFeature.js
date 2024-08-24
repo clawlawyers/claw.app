@@ -6,10 +6,6 @@ const SpecificLawCourtroomFeatureSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  user_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "SpecificLawyerCourtroomUser",
-  },
   startDate: {
     type: Date,
     required: true,

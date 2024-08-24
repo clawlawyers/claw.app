@@ -11,10 +11,11 @@ const upload = multer({ storage: storage });
 
 router.post("/book-courtroom", SpecificLawyerCourtroomController.bookCourtRoom);
 
-// router.post(
-//   "/book-courtroom-validation",
-//   SpecificLawyerCourtroomController.bookCourtRoomValidation
-// );
+router.post(
+  "/book-courtroom-validation",
+  authMiddleware.checkSpecificLawyerCourtroomAuth,
+  SpecificLawyerCourtroomController.bookCourtRoomValidation
+);
 
 // router.get("/book-courtroom", SpecificLawyerCourtroomController.getBookedData);
 
