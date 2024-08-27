@@ -9,6 +9,55 @@ const CourtroomUser = require("../models/CourtroomUser");
 const TrailBooking = require("../models/trailBookingAllow");
 const TrailCourtRoomBooking = require("../models/trailCourtRoomBooking");
 const TrailCourtroomUser = require("../models/trailCourtRoomUser");
+const SpecificLawyerCourtroomUser = require("../models/SpecificLawyerCourtroomUser");
+
+async function deleteClientCourtroomBookings(req, res) {
+  try {
+    const { _id } = req.body;
+    await SpecificLawyerCourtroomUser.findByIdAndDelete(_id);
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse("Client courtroom bookings deleted successfully"));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function getClientCourtroomBookings(req, res) {
+  try {
+    const clientUsers = await SpecificLawyerCourtroomUser.find({});
+    return res.status(StatusCodes.OK).json(SuccessResponse(clientUsers));
+  } catch (error) {
+    console.log(error);
+    res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).j;
+  }
+}
+
+async function updateClientCourtroomBooking(req, res) {
+  try {
+    const { updatedData } = req.body;
+    const clientUser = await SpecificLawyerCourtroomUser.findOneAndUpdate(
+      {
+        Domain: updatedData.Domain,
+      },
+      {
+        ...updatedData,
+      },
+      {
+        new: true,
+      }
+    );
+    return res.status(StatusCodes.OK).json(SuccessResponse(clientUser));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
 
 async function updateUserTiming(req, res) {
   try {
@@ -1311,4 +1360,7 @@ module.exports = {
   deleteAllowedLogin,
   UpdateUserDetailsAllowedLogin,
   UpdateUserTimingAllowedLogin,
+  updateClientCourtroomBooking,
+  getClientCourtroomBookings,
+  deleteClientCourtroomBookings,
 };
