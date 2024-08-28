@@ -23,65 +23,52 @@ const handlebars = require("handlebars");
 const htmlTemplate = `
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Welcome to Courtroom Slot Booking</title>
-    <style>
-      body {
-        font-family: "Arial", sans-serif;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-      }
-      .top-container {
-      }
-      .text-container {
-        padding-left: 15px;
-        text-align: left;
-        color: #333;
-      }
-      .text-container > p {
-        margin: 0;
-        color: gray;
-      }
-      .text-container > h3 {
-        margin: 5px 0px;
-      }
-      .bottom-container {
-      }
-    </style>
-  </head>
-  <body>
-    <div class="top-container">
-      <img src="https://claw-gpt-dev.netlify.app/header.png" alt="header.png" />
-    </div>
-    <div class="text-container">
-      <p>Dear {{name}},</p>
-      <p>
-        Thank you for booking slots with us. We are excited to have you on
-        board!
-      </p>
-      <p>Your booking details are as follows:</p>
-      <h3><strong>Name:</strong> {{name}}</h3>
-      <h3><strong>Phone Number:</strong> {{phoneNumber}}</h3>
-      <h3><strong>Password:</strong> {{password}}</h3>
-      <h3><strong>Slots Booked:</strong></h3>
-      <ul class="slot-list">
-        {{#each slots}}
-        <li>
-          <strong>Date: </strong>{{date}}, <strong>Hour: </strong>{{hour}}
-        </li>
-        {{/each}}
-      </ul>
-      <h3><strong>Total cost :</strong> {{amount}}</h3>
-    </div>
-    <div class="bottom-container">
-      <img src="https://claw-gpt-dev.netlify.app/footer.png" alt="footer.png" />
-    </div>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Courtroom Slot Booking</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .welcome-header {
+      color: #3498db;
+    }
+    .slot-list {
+      list-style-type: none;
+      padding: 0;
+    }
+    .slot-list li {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 class="welcome-header">Welcome to Courtroom Slot Booking!</h2>
+    <p>Dear {{name}},</p>
+    <p>Thank you for booking slots with us. We are excited to have you on board!</p>
+    <p>Your booking details are as follows:</p>
+    <p><strong>Name:</strong> {{name}}</p>
+    <p><strong>Phone Number:</strong> {{phoneNumber}}</p>
+    <p><strong>Password:</strong> {{password}}</p>
+    <p><strong>Slots Booked:</strong></p>
+    <ul class="slot-list">
+      {{#each slots}}
+      <li>Date: {{date}}, Hour: {{hour}}</li>
+      {{/each}}
+    </ul>
+    <p><strong>Total cost :</strong> {{amount}}</p>
+    <p>If you have any questions or need assistance, feel free to reach out to us.</p>
+    <p>Best regards,<br>The Claw Team</p>
+  </div>
+</body>
 </html>
-
 `;
 
 const template = handlebars.compile(htmlTemplate);

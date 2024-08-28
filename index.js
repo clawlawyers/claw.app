@@ -34,6 +34,18 @@ app.use((req, res, next) => {
   next();
 });
 
+// app.use((req, res, next) => {
+//   const clientIp =
+//     req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+//   const origin = req.headers.origin || req.headers.referer;
+
+//   console.log("Client IP:", clientIp);
+//   console.log("Origin:", origin);
+//   console.log("Origin:", origin?.toString()?.substring(8));
+
+//   next();
+// });
+
 app.use("/api", apiRoutes);
 
 app.use("/verify", (req, res) => {

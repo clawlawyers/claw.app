@@ -1,4 +1,9 @@
-const { ClientService, UserService, CourtroomService } = require("../services");
+const {
+  ClientService,
+  UserService,
+  CourtroomService,
+  SpecificLawyerCourtroomService,
+} = require("../services");
 const { ErrorResponse } = require("../utils/common/");
 const { StatusCodes } = require("http-status-codes");
 const { verifyToken } = require("../utils/common/auth");
@@ -48,7 +53,7 @@ async function checkClientAuth(req, res, next) {
 async function checkCourtroomAuth(req, res, next) {
   try {
     const token = req.headers["authorization"].split(" ")[1];
-    console.log(token);
+    // console.log(token);
     if (!token) {
       throw new AppError("Missing jwt token", StatusCodes.BAD_REQUEST);
     }
@@ -60,8 +65,36 @@ async function checkCourtroomAuth(req, res, next) {
     if (!client) {
       throw new AppError("No user found", StatusCodes.NOT_FOUND);
     }
-    // console.log(client);
+    console.log(client);
     req.body.courtroomClient = client;
+    next();
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res.status(StatusCodes.UNAUTHORIZED).json(errorResponse);
+  }
+}
+
+async function checkSpecificLawyerCourtroomAuth(req, res, next) {
+  try {
+    const clientIp =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const origin = req.headers.origin || req.headers.referer;
+
+    // console.log("Client IP:", clientIp);
+    // console.log("Origin:", origin);
+    // console.log("Origin:", origin?.toString()?.substring(8));
+    const domain = origin?.toString()?.substring(8);
+    req.domain = domain;
+    req.ip = clientIp;
+
+    const client = await SpecificLawyerCourtroomService.getClientByDomainName(
+      domain
+    );
+    if (!client) {
+      throw new AppError("No user found", StatusCodes.NOT_FOUND);
+    }
+    // console.log(client);
+    req.body.courtroomClient = client?.userBooking;
     next();
   } catch (error) {
     const errorResponse = ErrorResponse({}, error);
@@ -113,4 +146,5 @@ module.exports = {
   checkRegisteredLawyer,
   checkAmabassador,
   checkCourtroomAuth,
+  checkSpecificLawyerCourtroomAuth,
 };

@@ -38,9 +38,15 @@ const {
   deleteAllowedLogin,
   UpdateUserDetailsAllowedLogin,
   UpdateUserTimingAllowedLogin,
+  updateClientCourtroomBooking,
+  getClientCourtroomBookings,
+  deleteClientCourtroomBookings,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
-const { CourtroomController } = require("../../controllers");
+const {
+  CourtroomController,
+  SpecificLawyerCourtroomController,
+} = require("../../controllers");
 const TrailBooking = require("../../models/trailBookingAllow");
 // const { updateUserPlan } = require("../../services/gpt-service");
 
@@ -153,5 +159,15 @@ router.put(
   "/allowedLogin/:bookingId/users/:userId/slot",
   UpdateUserTimingAllowedLogin
 );
+
+// Client-courtroom
+
+router.post(
+  "/client/book-courtroom",
+  SpecificLawyerCourtroomController.bookCourtRoom
+);
+router.patch("/client/book-courtroom", updateClientCourtroomBooking);
+router.get("/client/book-courtroom", getClientCourtroomBookings);
+router.delete("/client/book-courtroom", deleteClientCourtroomBookings);
 
 module.exports = router;
