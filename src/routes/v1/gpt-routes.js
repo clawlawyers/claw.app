@@ -14,9 +14,13 @@ const router = express.Router();
 // routes to create/manage sessions
 router.use(authMiddleware.checkClientAuth);
 router.get("/user", GptController.fetchGptUser);
-router.get("/case/related/:sessionId", GptController.getRelatedCases);
+router.post("/case/related/:sessionId", GptController.getRelatedCases);
 router.get("/case/:folderId/:caseId", GptController.fetchCaseDetails);
-
+router.post("/case/summeryDetails", GptController.getSummaryDetails);
+router.post(
+  "/case/legalgptSummeryDetails",
+  GptController.getLegalgptSummaryDetails
+);
 router.post("/case/search", GptController.queryCase);
 router.get("/session/:sessionId", GptController.getSessionMessages);
 router.get("/sessions/:model", GptController.getUserSessions);
@@ -37,6 +41,11 @@ router.post("/referralCode/redeem", GptController.redeemReferralCode);
 // router.post('/conversation', GptController.generateGptResponse);
 router.post("/session", GptController.startSession);
 router.post("/session/prompt", GptController.appendMessage);
+router.post("/session/judgement", GptController.judgement);
+router.post("/session/relevantAct", GptController.relevantAct);
+// router.post("/dummy", GptController.caseSearchOn);
+// router.post("/dummyCheckbox", GptController.caseSearchOnCheck);
+// router.post("/funny", GptController.funPlan);
 
 // router.delete('/session/sessionId');
 

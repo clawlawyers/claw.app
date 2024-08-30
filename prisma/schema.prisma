@@ -1,114 +1,124 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("SUPABASE_DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("SUPABASE_DATABASE_URL")
   directUrl = env("SUPABASE_DIRECT_URL")
 }
 
-
-model ReferralCode{
-  id String @id @default(cuid())
-
-  redeemed Boolean @default(false)
-
-  redeemedBy User[] @relation("RedeemedByUser")
-
-  generatedById String @unique
-  generatedBy User @relation("GeneratedByUser",fields: [generatedById],references: [mongoId])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model ReferralCode {
+  id            String   @default(cuid())
+  referralCode  String   @unique @id
+  redeemed      Boolean  @default(false)
+  generatedById String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  generatedBy   User     @relation("GeneratedByUser", fields: [generatedById], references: [mongoId])
+  redeemedBy    User[]   @relation("RedeemedByUser")
 }
 
 model Plan {
-  name String @id @unique
-  session Int @default(1)
-  token Int
-  users User[]
-
+  name      String   @id @unique
+  token     Float
+  gptToken  Int      @default(0)
+  caseSearchToken  Int  @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  session   Int      @default(1)
+  duration String    @default("monthly")
+  users     User[]
+  planUsers           UserPlan[]
+
+}
+
+model Admin{
+    id         String  @id @default(cuid())
+    users      User[]       @relation("AdminUsers")
 
 }
 
 model User {
-  mongoId String @id
-  phoneNumber String @unique @db.VarChar(10)
-
-  planName String @default("free")
-  plan Plan @relation(fields:[planName],references: [name])
-  
+  mongoId                 String        @id
+  phoneNumber             String        @unique @db.VarChar(10)
+  planName                String        @default("free")
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  tokenUsed               Float         @default(0.0)
+  gptTokenUsed            Int           @default(0)
+  caseSearchTokenUsed     Int           @default(0)
+  totalTokenUsed          Float         @default(0.0)
+  totalGptTokens          Int           @default(0)
+  totalCaseSearchTokens   Int           @default(0)
+  duration                Int           @default(0)
+  StateLocation           String        @default("")
   generatedReferralCodeId String?
-  generatedReferralCode ReferralCode? @relation("GeneratedByUser")
-  
-  redeemedReferralCodeId String?
-  redeemedReferralCode ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [id])
+  redeemedReferralCodeId  String?
+  adminUserId  String?
+  generatedReferralCode   ReferralCode? @relation("GeneratedByUser")
+  sessions                Session[]
+  numberOfSessions        Int           @default(1)
+  plan                    Plan          @relation(fields: [planName], references: [name])
+  plans                   UserPlan[]
 
-  tokenUsed Int @default(0)
-  sessions Session[]
+  redeemedReferralCode    ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [referralCode])
+  adminUser                Admin?        @relation("AdminUsers", fields: [adminUserId], references: [id])
+  isCasesearch  Boolean  @default(true)  
+ }
 
+model UserPlan {
+  userId   String
+  planName String
+  user     User @relation(fields: [userId], references: [mongoId], onDelete: Cascade)
+  plan     Plan @relation(fields: [planName], references: [name], onDelete: Cascade)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now())
+ 
+  expiresAt DateTime? 
 
+  @@id([userId, planName])
 }
 
 model Model {
-  name String @id
-  version Float
-  sessions Session[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  name      String    @id
+  version   Float
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  sessions  Session[]
 }
 
 model Session {
-  id String @id @default(uuid())
-  name String
-  userId String
-  user User @relation(fields: [userId], references: [mongoId], onDelete: Cascade)
-  messages Message[]
-
+  id        String    @id @default(uuid())
+  name      String
+  userId    String
   modelName String
-  model Model @relation(fields: [modelName], references: [name])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+  model     Model     @relation(fields: [modelName], references: [name])
+  user      User      @relation(fields: [userId], references: [mongoId], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model Message {
-  id String @id @default(uuid())
-  text String 
-  isUser Boolean
-  
-  feedback Feedback?
-
+  id        String    @id @default(uuid())
+  text      String
+  isUser    Boolean
   sessionId String
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  feedback  Feedback?
+  session   Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
 }
 
 model Feedback {
-  id String @id @default(uuid())
-  rating Int
-
-  messageId String @unique
-  message Message @relation(fields: [messageId], references: [id])
-
+  id        String   @id @default(uuid())
+  rating    Int
+  messageId String   @unique
   createdAt DateTime @default(now())
+  message   Message  @relation(fields: [messageId], references: [id])
 }

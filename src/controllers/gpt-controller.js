@@ -2,11 +2,15 @@ const { GptServices } = require("../services");
 const { ErrorResponse, SuccessResponse } = require("../utils/common");
 const { StatusCodes } = require("http-status-codes");
 const AppError = require("../utils/errors/app-error");
-const { consumeToken } = require("../services/gpt-service");
+const {
+  consumeTokenGpt,
+  consumeTokenCaseSearch,
+} = require("../services/gpt-service");
 
 const { FLASK_API_ENDPOINT } = process.env;
 
 async function fetchGptApi(body) {
+  console.log(body);
   const response = await fetch(`${FLASK_API_ENDPOINT}/gpt/generate`, {
     method: "POST",
     headers: {
@@ -15,6 +19,8 @@ async function fetchGptApi(body) {
     body: JSON.stringify(body),
   });
 
+  console.log(response);
+
   return response.json();
 }
 
@@ -22,6 +28,7 @@ async function generateGptResponse(req, res) {
   try {
     const { prompt } = req.body;
     const gptApiResponse = await fetchGptApi({ prompt, context: "" });
+
     return res.status(StatusCodes.OK).json(
       SuccessResponse({
         gptResponse: { message: gptApiResponse.gptResponse },
@@ -61,6 +68,88 @@ async function startSession(req, res) {
   } catch (error) {
     console.log(error);
     res.status(error.statusCode).json(ErrorResponse({}, error));
+  }
+}
+
+async function funPlan(req, res) {
+  try {
+    const { userId, newPlan } = req.body;
+    console.log(newPlan);
+    const recievedResponse = await GptServices.updateUserPlan(userId, newPlan);
+    // const plans = await prisma.userPlan.findMany({
+    //   where: {
+    //     userId: userId,
+    //   },
+    // });
+    // const plansData = await Promise.all(
+    //   plans.map(async (plan) => {
+    //     const Pdata = await prisma.plan.findUnique({
+    //       where: { name: plan.planName },
+    //     });
+
+    //     return Pdata;
+    //   })
+    // );
+
+    const Pdata = await prisma.plan.findUnique({
+      where: { name: newPlan },
+    });
+
+    // console.log(plansData);
+    let totalGptTokens = Pdata.gptToken;
+    let totalCaseSearchTokens = Pdata.caseSearchToken;
+
+    console.log(totalGptTokens, totalCaseSearchTokens);
+
+    const updatedUser = await prisma.user.update({
+      where: {
+        mongoId: userId,
+      },
+      data: {
+        totalGptTokens: {
+          increment: totalGptTokens, // or any other value you want to increment by
+        },
+        totalCaseSearchTokens: {
+          increment: totalCaseSearchTokens, // or any other value you want to increment by
+        },
+      },
+    });
+
+    console.log(updatedUser);
+    return res.status(StatusCodes.OK).json(SuccessResponse(recievedResponse));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function caseSearchOnCheck(req, res) {
+  try {
+    let { phoneNumber } = req.body;
+    phoneNumber = phoneNumber.substring(3);
+    const response = await GptServices.caseSearchOnCheck(phoneNumber);
+    return res.status(StatusCodes.OK).json(SuccessResponse(response));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function caseSearchOn(req, res) {
+  try {
+    let { phoneNumber } = req.body;
+    phoneNumber = phoneNumber.substring(3);
+    const response = await GptServices.caseSearchOn(phoneNumber);
+    return res.status(StatusCodes.OK).json(SuccessResponse(response));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
   }
 }
 
@@ -107,7 +196,73 @@ async function appendMessage(req, res) {
   }
 }
 
-async function fetchGptRelatedCases(context) {
+async function judgement(req, res) {
+  try {
+    const { sessionId } = req.body;
+
+    // Fetch Context
+    const context = await GptServices.fetchContext(sessionId);
+    const fetchedJudgement = await fetchSupremeCourtRoomJudgement({
+      context,
+    });
+    return res.status(StatusCodes.OK).json(SuccessResponse(fetchedJudgement));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function fetchSupremeCourtRoomJudgement(body) {
+  console.log(body);
+  const response = await fetch(`${FLASK_API_ENDPOINT}/gpt/judgement`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  console.log(response);
+
+  return response.json();
+}
+
+async function relevantAct(req, res) {
+  try {
+    const { sessionId } = req.body;
+
+    // Fetch Context
+    const context = await GptServices.fetchContext(sessionId);
+    const fetchedRelevantAct = await fetchRelevantAct({
+      context,
+    });
+    return res.status(StatusCodes.OK).json(SuccessResponse(fetchedRelevantAct));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function fetchRelevantAct(body) {
+  console.log(body);
+  const response = await fetch(`${FLASK_API_ENDPOINT}/gpt/reference`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  console.log(response);
+
+  return response.json();
+}
+
+async function fetchGptRelatedCases(context, courtName) {
   console.log(context);
   try {
     const response = await fetch(`${FLASK_API_ENDPOINT}/search/relatedCases`, {
@@ -115,7 +270,7 @@ async function fetchGptRelatedCases(context) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ context }),
+      body: JSON.stringify({ context, courtName }),
     });
 
     if (!response.ok) {
@@ -144,8 +299,9 @@ async function getRelatedCases(req, res) {
       (acc, curr) => (acc = acc + " " + curr.text),
       ""
     );
+    const { courtName } = req.body;
 
-    const relatedCases = await fetchGptRelatedCases(context);
+    const relatedCases = await fetchGptRelatedCases(context, courtName);
 
     return res
       .status(StatusCodes.OK)
@@ -219,11 +375,42 @@ async function createGptPlan(req, res) {
 
 async function createReferralCode(req, res) {
   try {
-    const { _id } = req.body.client;
-    const referralCode = await GptServices.createReferralCode(_id);
-    return res
-      .status(StatusCodes.OK)
-      .json(SuccessResponse({ referralCode, redeemCount: 0 }));
+    const { _id, firstName, lastName, collegeName } = req.body.client;
+    const checkCodeAlreadyExist = async (rCode) => {
+      await GptServices.CheckReferralCodeExist(rCode);
+    };
+
+    const rCode = () => {
+      return firstName?.substr(0, 4) + Math.floor(1000 + Math.random() * 9000);
+    };
+
+    if (checkCodeAlreadyExist(rCode)) {
+      const referralCode = await GptServices.createReferralCode(_id, rCode);
+      return res.status(StatusCodes.OK).json(
+        SuccessResponse({
+          referralCode,
+          redeemCount: 0,
+          client: {
+            firstName,
+            lastName,
+            collegeName,
+          },
+        })
+      );
+    }
+
+    const referralCode = await GptServices.createReferralCode(_id, rCode);
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        referralCode,
+        redeemCount: 0,
+        client: {
+          firstName,
+          lastName,
+          collegeName,
+        },
+      })
+    );
   } catch (error) {
     console.log(error);
     return res
@@ -236,8 +423,15 @@ async function redeemReferralCode(req, res) {
   try {
     const { _id } = req.body.client;
     const { referralCode } = req.body;
+    console.log(req.body);
+    const rCode = () => {
+      return referralCode;
+    };
+    // const existCode = await GptServices.CheckReferralCodeExist(rCode);
     const response = await GptServices.redeemReferralCode(referralCode, _id);
-    return res.status(StatusCodes.OK).json(SuccessResponse(response));
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ message: existCode ? true : false }));
   } catch (error) {
     console.log(error);
     return res
@@ -247,6 +441,7 @@ async function redeemReferralCode(req, res) {
 }
 async function fetchAmbassadorDetails(req, res) {
   try {
+    console.log(req.body);
     const { _id, firstName, lastName, collegeName } = req.body.client;
     const response = await GptServices.fetchReferralDetails(_id);
     return res.status(StatusCodes.OK).json(
@@ -273,6 +468,13 @@ async function fetchGptUser(req, res) {
           ErrorResponse({}, { message: "Missing jwt for user authorization" })
         );
     const gptUser = await GptServices.fetchGptUser(_id);
+
+    // if (gptUser) {
+    //   // Format the token values to one decimal place
+    //   gptUser.token.used = parseFloat(gptUser.token.used.toFixed(1));
+    //   // gptUser.token.total = parseFloat(gptUser.token.total.toFixed(1));
+    // }
+
     return res.status(StatusCodes.OK).json(SuccessResponse(gptUser));
   } catch (error) {
     console.log(error);
@@ -308,59 +510,73 @@ async function fetchGptCases(folderId, caseId) {
 }
 
 function formatCaseData(data) {
-  if (!data || typeof data !== 'object' || !data.content || typeof data.content !== 'string') {
-    throw new Error('Invalid data format');
+  if (
+    !data ||
+    typeof data !== "object" ||
+    !data.content ||
+    typeof data.content !== "string"
+  ) {
+    throw new Error("Invalid data format");
   }
 
   // Unescape the content string
   const unescapedContent = data.content
-    .replace(/\\n/g, '\n')
-    .replace(/\n(?!\s|And|&)/g, ' ') // Replace escaped newlines with actual newlines
-    .replace(/\\"/g, '"')    // Remove unnecessary backslashes before double quotes
+    .replace(/\\n/g, "\n")
+    .replace(/\t/g, " ")
+    .replace(/(\\t)+/g, (match) => "\t".repeat(match.length / 2))
+    .replace(/\\f/g, "\f")
+    .replace(/\n(?!\s|And|&)/g, " ")
+    .replace(/\\"/g, '"')
     .replace(/\\'/g, "'")
-    .replace(/\n\s{4,}/g, ' ')
-    .replace(/\n\s{4,}(?=\w{5,}\n|And\n|&\n)/g, ' ')
-    .replace(/\s+(and|&)\s+/g, ' $1 ')
-    .replace(/\n\s*\/\s*/g, '/')
-    .replace(/\n{4,}/g, '\n')
-    .replace(/(\d+)\)\s*,\s*/g, '$1),\n')
-    .replace(/([^.)\n])(\\n)/g, '$1 '); // Do not put a newline if there is no full stop before it
+    .replace(/\n\s{4,}/g, " ")
+    .replace(/\n\s{4,}(?=\w{5,}\n|And\n|&\n)/g, " ")
+    .replace(/\s+(and|&)\s+/g, " $1 ")
+    .replace(/\n\s*\/\s*/g, "/")
+    .replace(/\n{4,}/g, "\n")
+    .replace(/(\d+)\)\s*,\s*/g, "$1),\n")
+    .replace(/([^.)\n])(\\n)/g, "$1 ");
 
   // Split the unescaped content into sections
-  const sections = unescapedContent.split('\n\n\n');
+  const sections = unescapedContent.split("\n\n\n");
   if (sections.length < 1) {
-    throw new Error('Invalid data format');
+    throw new Error("Invalid data format");
   }
 
   const formattedData = {
-    court: sections[0]?.trim() || '',
-    details: sections[1]?.trim() || '',
-    author: sections[2]?.trim() || '',
-    bench: sections[3]?.trim() || '',
-    caseNumber: sections[4]?.trim() || '',
-    judge: sections[5]?.trim() || '',
-    advocates: sections[6]?.trim() || '',
-    summary: sections.slice(7).join('\n\n').trim(),
+    court: sections[0]?.trim() || "",
+    details: sections[1]?.trim() || "",
+    author: sections[2]?.trim() || "",
+    bench: sections[3]?.trim() || "",
+    caseNumber: sections[4]?.trim() || "",
+    judge: sections[5]?.trim() || "",
+    advocates: sections[6]?.trim() || "",
+    summary: sections.slice(7).join("\n\n").trim(),
   };
 
   return formattedData;
 }
 
-
-
 async function fetchCaseDetails(req, res) {
   try {
+    const { _id } = req.body.client;
     const { folderId, caseId } = req.params;
     const data = await fetchGptCases(folderId, caseId);
+    const updatedTokenVault = await consumeTokenCaseSearch(_id, 1);
+    console.log(updatedTokenVault);
+    const respo = formatCaseData(data);
+
     // Assuming SuccessResponse and ErrorResponse are functions that return the appropriate response formats
-    return res.status(StatusCodes.OK).json(SuccessResponse(formatCaseData(data)));
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ fetchedData: respo, ...updatedTokenVault }));
   } catch (error) {
     console.log(error);
     // Assuming ErrorResponse is a function that returns the appropriate error response format
-    res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).json(ErrorResponse({}, error));
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
   }
 }
-
 
 async function fetchGptCaseQuery(body) {
   try {
@@ -390,16 +606,19 @@ async function queryCase(req, res) {
       startDate = "18-sep-01",
       endDate = "19-sep-20",
       query = "",
-      courtName = "Supreme Court of India",
+      courtName = "",
     } = req.body;
+
     if (!query) throw new AppError("Invalid query", StatusCodes.BAD_REQUEST);
-    const updatedTokenVault = await consumeToken(_id, 1);
+    const updatedTokenVault = await consumeTokenCaseSearch(_id, 1);
+    console.log(updatedTokenVault);
     const response = await fetchGptCaseQuery({
       startDate,
       endDate,
       query,
       courtName,
     });
+    console.log(updatedTokenVault);
     return res
       .status(StatusCodes.OK)
       .json(SuccessResponse({ ...response, ...updatedTokenVault }));
@@ -408,6 +627,91 @@ async function queryCase(req, res) {
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
+  }
+}
+
+//scrape data
+async function fetchCaseSummery(folderId, caseId, query) {
+  try {
+    console.log(folderId, caseId, query);
+    const response = await fetch(
+      `${FLASK_API_ENDPOINT}/overview/case/view_overview`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          folder_id: folderId,
+          case_id: caseId,
+          search_query: query,
+        }),
+      }
+    );
+    const parsed = await response.json();
+    return parsed;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Failed to make api request to gpt.claw",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+//get summery details
+async function getSummaryDetails(req, res) {
+  try {
+    const { folderId, caseId, query } = req.body;
+    const data = await fetchCaseSummery(folderId, caseId, query);
+
+    return res.json(data);
+  } catch (error) {
+    console.error("Error in getSummaryDetails:", error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+//scrape date for legalgpt
+async function fetchlegalgptCaseSummery(folderId, caseId) {
+  try {
+    console.log(folderId, caseId);
+    const response = await fetch(
+      `${FLASK_API_ENDPOINT}/overview/case/view_overview_gpt`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          folder_id: folderId,
+          case_id: caseId,
+        }),
+      }
+    );
+    const parsed = await response.json();
+
+    return parsed;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Failed to make api request to gpt.claw",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+//get legalgpt summery  details
+
+async function getLegalgptSummaryDetails(req, res) {
+  try {
+    const { folderId, caseId } = req.body;
+    let data = await fetchlegalgptCaseSummery(folderId, caseId);
+
+    return res.json(data);
+  } catch (error) {
+    console.error("Error in getSummaryDetails:", error);
+    return res.status(500).json({ error: error.message });
   }
 }
 
@@ -442,4 +746,13 @@ module.exports = {
   queryCase,
   getRelatedCases,
   deleteUserSessions,
+  fetchCaseSummery,
+  getSummaryDetails,
+  fetchlegalgptCaseSummery,
+  getLegalgptSummaryDetails,
+  caseSearchOn,
+  caseSearchOnCheck,
+  funPlan,
+  judgement,
+  relevantAct,
 };
