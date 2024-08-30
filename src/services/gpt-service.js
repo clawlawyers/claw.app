@@ -43,6 +43,8 @@ async function createGptUser(phoneNumber, mongoId) {
       },
     });
 
+    // This free plan only for some occasionally
+
     const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
 
     // const newPlan = await prisma.userPlan.create({
@@ -54,8 +56,10 @@ async function createGptUser(phoneNumber, mongoId) {
     // });
 
     // console.log(newPlan);
-
-    const newPlan = await updateUserPlan(mongoId, "free", expiresAt); // it will be open in few ocations
+    let newPlan;
+    if (Date.now() < expiresAt) {
+      newPlan = await updateUserPlan(mongoId, "free", expiresAt); // it will be open in few ocations
+    }
 
     console.log(newPlan);
 
@@ -394,11 +398,32 @@ async function fetchGptUser(mongoId) {
 
     console.log(user);
 
-    const plans = await prisma.userPlan.findMany({
+    let plans = await prisma.userPlan.findMany({
       where: {
         userId: mongoId,
       },
     });
+
+    // This free plan only for some occasionally
+
+    if (plans.length === 0) {
+      console.log("user do not have any plan. plan will be creating");
+
+      const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
+      console.log(new Date());
+
+      if (Date.now() < expiresAt) {
+        await updateUserPlan(mongoId, "free", expiresAt);
+      }
+
+      console.log("plan created");
+      plans = await prisma.userPlan.findMany({
+        where: {
+          userId: mongoId,
+        },
+      });
+    }
+
     const plansData = await Promise.all(
       plans.map(async (plan) => {
         const Pdata = await prisma.plan.findUnique({
