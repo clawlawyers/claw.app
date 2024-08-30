@@ -697,6 +697,38 @@ async function fetchCounterFavor({ doc_id, headpoint_to_find }) {
   }
 }
 
+async function apiGetTypes(req, res) {
+  try {
+    const fetchedData = await fetchTypes();
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
+  } catch (error) {
+    console.error(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function fetchTypes() {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/api/get_types`);
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 module.exports = {
   uploadDocument,
   createDocument,
@@ -715,4 +747,5 @@ module.exports = {
   neutralize,
   counterFavor,
   generateDocumentForType,
+  apiGetTypes,
 };

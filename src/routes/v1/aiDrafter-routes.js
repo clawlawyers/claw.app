@@ -30,5 +30,6 @@ router.post("/summary_headings", AiDrafter.summaryHeadings);
 router.post("/favor", AiDrafter.favor);
 router.post("/neutralize", AiDrafter.neutralize);
 router.post("/counter_favor", AiDrafter.counterFavor);
+router.post("/api/get_types", AiDrafter.apiGetTypes);
 
 module.exports = router;
