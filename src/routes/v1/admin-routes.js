@@ -41,6 +41,10 @@ const {
   updateClientCourtroomBooking,
   getClientCourtroomBookings,
   deleteClientCourtroomBookings,
+  addNewAdmin,
+  adminLogin,
+  verifyAdminUser,
+  getAllAdminNumbers,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -169,5 +173,12 @@ router.post(
 router.patch("/client/book-courtroom", updateClientCourtroomBooking);
 router.get("/client/book-courtroom", getClientCourtroomBookings);
 router.delete("/client/book-courtroom", deleteClientCourtroomBookings);
+
+// admin login
+
+router.post("/add-new-admin", addNewAdmin);
+router.post("/login", adminLogin);
+router.post("/verify", verifyAdminUser);
+router.get("/getAllUsers", getAllAdminNumbers);
 
 module.exports = router;

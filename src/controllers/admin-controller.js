@@ -10,6 +10,86 @@ const TrailBooking = require("../models/trailBookingAllow");
 const TrailCourtRoomBooking = require("../models/trailCourtRoomBooking");
 const TrailCourtroomUser = require("../models/trailCourtRoomUser");
 const SpecificLawyerCourtroomUser = require("../models/SpecificLawyerCourtroomUser");
+const AdminUser = require("../models/adminUser");
+const { createToken, verifyToken } = require("../utils/common/auth");
+
+async function getAllAdminNumbers(req, res) {
+  try {
+    const users = await AdminUser.find({});
+    const adminNumbers = users.map((user) => user.phoneNumber);
+    console.log(adminNumbers);
+    return res.status(200).json(SuccessResponse({ adminNumbers }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function addNewAdmin(req, res) {
+  const { name, phoneNumber } = req.body;
+  try {
+    const newAdmin = new AdminUser({ name, phoneNumber });
+    await newAdmin.save();
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse("Admin added successfully"));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function verifyAdminUser(req, res) {
+  try {
+    const token = req.headers["authorization"].split(" ")[1];
+    const data = verifyToken(token);
+    console.log(data);
+    const phoneNumber = data.phoneNumber;
+    const admin = await AdminUser.findOne({ phoneNumber });
+    if (!admin) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(ErrorResponse("Admin not found"));
+    }
+    const newtoken = createToken({ phoneNumber });
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ admin, ...newtoken }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
+async function adminLogin(req, res) {
+  try {
+    const { phoneNumber } = req.body;
+    const admin = await AdminUser.findOne({ phoneNumber });
+    if (!admin) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(ErrorResponse("Admin not found"));
+    }
+    console.log(admin);
+
+    const token = createToken({ phoneNumber });
+
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ admin, ...token }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({ ...error.message }, error));
+  }
+}
 
 async function deleteClientCourtroomBookings(req, res) {
   try {
@@ -1363,4 +1443,8 @@ module.exports = {
   updateClientCourtroomBooking,
   getClientCourtroomBookings,
   deleteClientCourtroomBookings,
+  addNewAdmin,
+  adminLogin,
+  verifyAdminUser,
+  getAllAdminNumbers,
 };
