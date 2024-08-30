@@ -105,13 +105,17 @@ async function verify(req, res) {
     console.log(plan.length);
     console.log(new Date());
 
+    // This free plan only for some occasionally
+
     if (plan.length === 0) {
       console.log("user do not have any plan. plan will be creating");
 
       const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
       console.log(new Date());
 
-      await GptServices.updateUserPlan(existing.id, "free", expiresAt);
+      if (Date.now() < expiresAt) {
+        await GptServices.updateUserPlan(existing.id, "free", expiresAt);
+      }
 
       console.log("plan created");
     }
