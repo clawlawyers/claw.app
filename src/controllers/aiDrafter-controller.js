@@ -729,6 +729,45 @@ async function fetchTypes() {
   }
 }
 
+async function apiAddClause(req, res) {
+  try {
+    const { doc_id, clause_query } = req.body;
+    const fetchedData = await fetchAddClause({ doc_id, clause_query });
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
+  } catch (error) {
+    console.error(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function fetchAddClause({ doc_id, clause_query }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/api/add_clause`, {
+      method: "POST",
+      body: JSON.stringify({ doc_id, clause_query }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 module.exports = {
   uploadDocument,
   createDocument,
@@ -748,4 +787,5 @@ module.exports = {
   counterFavor,
   generateDocumentForType,
   apiGetTypes,
+  apiAddClause,
 };
