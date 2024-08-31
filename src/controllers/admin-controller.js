@@ -10,6 +10,86 @@ const TrailBooking = require("../models/trailBookingAllow");
 const TrailCourtRoomBooking = require("../models/trailCourtRoomBooking");
 const TrailCourtroomUser = require("../models/trailCourtRoomUser");
 const SpecificLawyerCourtroomUser = require("../models/SpecificLawyerCourtroomUser");
+const AdminUser = require("../models/adminUser");
+const { createToken, verifyToken } = require("../utils/common/auth");
+
+async function getAllAdminNumbers(req, res) {
+  try {
+    const users = await AdminUser.find({});
+    const adminNumbers = users.map((user) => user.phoneNumber);
+    console.log(adminNumbers);
+    return res.status(200).json(SuccessResponse({ adminNumbers }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function addNewAdmin(req, res) {
+  const { name, phoneNumber } = req.body;
+  try {
+    const newAdmin = new AdminUser({ name, phoneNumber });
+    await newAdmin.save();
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse("Admin added successfully"));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function verifyAdminUser(req, res) {
+  try {
+    const token = req.headers["authorization"].split(" ")[1];
+    const data = verifyToken(token);
+    console.log(data);
+    const phoneNumber = data.phoneNumber;
+    const admin = await AdminUser.findOne({ phoneNumber });
+    if (!admin) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(ErrorResponse("Admin not found"));
+    }
+    const newtoken = createToken({ phoneNumber });
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ admin, ...newtoken }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
+async function adminLogin(req, res) {
+  try {
+    const { phoneNumber } = req.body;
+    const admin = await AdminUser.findOne({ phoneNumber });
+    if (!admin) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(ErrorResponse("Admin not found"));
+    }
+    console.log(admin);
+
+    const token = createToken({ phoneNumber });
+
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ admin, ...token }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({ ...error.message }, error));
+  }
+}
 
 async function deleteClientCourtroomBookings(req, res) {
   try {
@@ -603,6 +683,7 @@ async function getPlans(req, res) {
 
 async function getUsers(req, res) {
   try {
+    // Fetch all users from Prisma
     const users = await prisma.user.findMany({});
 
     // Filter users on the server side
@@ -613,8 +694,6 @@ async function getUsers(req, res) {
       return startsWithValidDigit && !allDigitsSame;
     });
 
-    // console.log(filteredUsers.length);
-
     const MongoUser = await ClientService.getAllClientsDetails();
 
     const filteredUsersMongo = MongoUser.filter((Muser) => {
@@ -624,34 +703,29 @@ async function getUsers(req, res) {
       return startsWithValidDigit && !allDigitsSame;
     });
 
-    // console.log(filteredUsersMongo.length);
+    // Fetch all user plans in one call and map them by user ID
+    const userPlans = await prisma.userPlan.findMany({
+      include: { plan: true },
+    });
 
-    // Merge the filtered users from both MongoDB and Supabase
-    const mergedUsers = await Promise.all(
-      filteredUsers.map(async (Muser) => {
+    const userPlansMap = userPlans.reduce((acc, userPlan) => {
+      if (!acc[userPlan.userId]) {
+        acc[userPlan.userId] = [];
+      }
+      acc[userPlan.userId].push(userPlan.plan.name);
+      return acc;
+    }, {});
+
+    // Merge the filtered users from both MongoDB and Prisma
+    const mergedUsers = filteredUsers
+      .map((Muser) => {
         const user = filteredUsersMongo.find(
           (user) => user.phoneNumber === Muser.phoneNumber
         );
-        // console.log({
-        //   mongoId: Muser.mongoId,
-        //   phoneNumber: Muser.phoneNumber,
-        //   createdAt: Muser.createdAt,
-        //   updatedAt: Muser.updatedAt,
-        //   totalTokenUsed: Muser.totalTokenUsed,
-        //   StateLocation: Muser.StateLocation,
-        //   numberOfSessions: Muser.numberOfSessions,
-        //   planName: Muser.planName,
-        //   ambassador: user.ambassador,
-        //   engagementTime: user.engagementTime,
-        //   firstName: user.firstName,
-        //   lastName: user.lastName,
-        //   collegeName: user.collegeName,
-        // });
 
         if (user) {
-          const planNames = await GptServices.getPlansByUserId(Muser.mongoId);
-
-          // console.log(planNames);
+          // Fetch the plan names from the userPlansMap
+          const planNames = userPlansMap[Muser.mongoId] || [];
 
           // Format engagement time
           const engagementTime = user?.engagementTime
@@ -677,8 +751,7 @@ async function getUsers(req, res) {
             totalTokenUsed: Muser.totalTokenUsed,
             StateLocation: Muser.StateLocation,
             numberOfSessions: Muser.numberOfSessions,
-            // planName: Muser.planName,
-            planNames,
+            planNames, // Use the fetched plan names here
             ambassador: user.ambassador,
             engagementTime: engagementTime,
             firstName: user.firstName,
@@ -689,9 +762,7 @@ async function getUsers(req, res) {
           };
         }
       })
-    );
-
-    // console.log(mergedUsers);
+      .filter(Boolean); // Remove undefined entries
 
     // Send the filtered users as response
     res.json(mergedUsers);
@@ -1363,4 +1434,8 @@ module.exports = {
   updateClientCourtroomBooking,
   getClientCourtroomBookings,
   deleteClientCourtroomBookings,
+  addNewAdmin,
+  adminLogin,
+  verifyAdminUser,
+  getAllAdminNumbers,
 };
