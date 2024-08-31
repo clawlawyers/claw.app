@@ -747,7 +747,7 @@ async function fetchAddClause({ doc_id, clause_query }) {
   try {
     // Dynamically import node-fetch
     const fetch = (await import("node-fetch")).default;
-    const response = await fetch(`${AL_DRAFTER_API}/api/add_clause`, {
+    const response = await fetch(`${AL_DRAFTER_API}/api_add_clause`, {
       method: "POST",
       body: JSON.stringify({ doc_id, clause_query }),
       headers: {
