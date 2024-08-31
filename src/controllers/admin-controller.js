@@ -683,6 +683,7 @@ async function getPlans(req, res) {
 
 async function getUsers(req, res) {
   try {
+    // Fetch all users from Prisma
     const users = await prisma.user.findMany({});
 
     // Filter users on the server side
@@ -693,8 +694,6 @@ async function getUsers(req, res) {
       return startsWithValidDigit && !allDigitsSame;
     });
 
-    // console.log(filteredUsers.length);
-
     const MongoUser = await ClientService.getAllClientsDetails();
 
     const filteredUsersMongo = MongoUser.filter((Muser) => {
@@ -704,34 +703,29 @@ async function getUsers(req, res) {
       return startsWithValidDigit && !allDigitsSame;
     });
 
-    // console.log(filteredUsersMongo.length);
+    // Fetch all user plans in one call and map them by user ID
+    const userPlans = await prisma.userPlan.findMany({
+      include: { plan: true },
+    });
 
-    // Merge the filtered users from both MongoDB and Supabase
-    const mergedUsers = await Promise.all(
-      filteredUsers.map(async (Muser) => {
+    const userPlansMap = userPlans.reduce((acc, userPlan) => {
+      if (!acc[userPlan.userId]) {
+        acc[userPlan.userId] = [];
+      }
+      acc[userPlan.userId].push(userPlan.plan.name);
+      return acc;
+    }, {});
+
+    // Merge the filtered users from both MongoDB and Prisma
+    const mergedUsers = filteredUsers
+      .map((Muser) => {
         const user = filteredUsersMongo.find(
           (user) => user.phoneNumber === Muser.phoneNumber
         );
-        // console.log({
-        //   mongoId: Muser.mongoId,
-        //   phoneNumber: Muser.phoneNumber,
-        //   createdAt: Muser.createdAt,
-        //   updatedAt: Muser.updatedAt,
-        //   totalTokenUsed: Muser.totalTokenUsed,
-        //   StateLocation: Muser.StateLocation,
-        //   numberOfSessions: Muser.numberOfSessions,
-        //   planName: Muser.planName,
-        //   ambassador: user.ambassador,
-        //   engagementTime: user.engagementTime,
-        //   firstName: user.firstName,
-        //   lastName: user.lastName,
-        //   collegeName: user.collegeName,
-        // });
 
         if (user) {
-          const planNames = await GptServices.getPlansByUserId(Muser.mongoId);
-
-          // console.log(planNames);
+          // Fetch the plan names from the userPlansMap
+          const planNames = userPlansMap[Muser.mongoId] || [];
 
           // Format engagement time
           const engagementTime = user?.engagementTime
@@ -757,8 +751,7 @@ async function getUsers(req, res) {
             totalTokenUsed: Muser.totalTokenUsed,
             StateLocation: Muser.StateLocation,
             numberOfSessions: Muser.numberOfSessions,
-            // planName: Muser.planName,
-            planNames,
+            planNames, // Use the fetched plan names here
             ambassador: user.ambassador,
             engagementTime: engagementTime,
             firstName: user.firstName,
@@ -769,9 +762,7 @@ async function getUsers(req, res) {
           };
         }
       })
-    );
-
-    // console.log(mergedUsers);
+      .filter(Boolean); // Remove undefined entries
 
     // Send the filtered users as response
     res.json(mergedUsers);

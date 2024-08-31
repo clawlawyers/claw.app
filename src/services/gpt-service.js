@@ -295,26 +295,18 @@ async function createMessage(sessionId, prompt, isUser, mongoId) {
 
 async function getPlansByUserId(mongoId) {
   try {
-    const plans = await prisma.userPlan.findMany({
+    // Fetch user plans with related plan data using `include`
+    const userPlans = await prisma.userPlan.findMany({
       where: {
         userId: mongoId,
       },
+      include: {
+        plan: true, // Assuming there's a `plan` relation defined in the Prisma schema
+      },
     });
 
-    const plansData = await Promise.all(
-      plans.map(async (plan) => {
-        const Pdata = await prisma.plan.findUnique({
-          where: { name: plan.planName },
-        });
-        return Pdata;
-      })
-    );
-
-    // console.log(plansData);
-
-    const planNames = plansData.map((plan) => {
-      return plan.name;
-    });
+    // Extract the plan names from the included plan data
+    const planNames = userPlans.map((userPlan) => userPlan.plan.name);
 
     return planNames;
   } catch (e) {
