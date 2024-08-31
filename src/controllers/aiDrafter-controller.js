@@ -68,7 +68,7 @@ async function createDocument(req, res) {
     const errorResponse = ErrorResponse({}, error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(errorResponse);
+      .json(errorResponse); 
   }
 }
 
