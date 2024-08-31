@@ -9,9 +9,9 @@ const TimeBasedBooking = require("../models/timeBasedBooking");
 
 async function getBookingInfo(req, res) {
   try {
-    const client = req.client;
+    const { _id } = req.client;
 
-    const info = await TimeBasedBooking.findOne({ client: client });
+    const info = await TimeBasedBooking.findOne({ client: _id });
     if (!info) {
       return res.status(400).json({ error: "No booking found" });
     }
@@ -27,20 +27,20 @@ async function getBookingInfo(req, res) {
 
 async function createNewBooking(req, res) {
   try {
-    const client = req.client;
+    const { _id } = req.client;
     const endDate = new Date(req.endDate);
     if (endDate < Date.now()) {
       return res.status(400).json({ error: "cant book a previous day" });
     }
 
-    const info = await TimeBasedBooking.findOne({ client: client });
+    const info = await TimeBasedBooking.findOne({ client: _id });
 
     if (info) {
       return res.status(400).json({ error: "Booking already exists" });
     }
 
     const data = {
-      client: id,
+      client: _id,
       endDate: endDate,
     };
     const booking = await TimeBasedBooking.create(data);
@@ -56,10 +56,10 @@ async function createNewBooking(req, res) {
 
 async function updateBooking(req, res) {
   try {
-    const client = req.client;
+    const { _id } = req.client;
     const endDate = new Date(req.endDate);
 
-    const info = await TimeBasedBooking.findOne({ client: client });
+    const info = await TimeBasedBooking.findOne({ client: _id });
 
     if (!info) {
       return res.status(400).json({ error: "no Booking exists" });
