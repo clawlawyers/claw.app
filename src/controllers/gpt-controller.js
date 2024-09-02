@@ -21,7 +21,9 @@ async function fetchGptApi(body) {
 
   console.log(response);
 
-  return response.json();
+  const res = response.json();
+
+  return res;
 }
 
 async function generateGptResponse(req, res) {
