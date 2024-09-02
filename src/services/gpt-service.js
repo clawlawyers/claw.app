@@ -24,6 +24,8 @@ async function fetchContext(sessionId) {
 
     console.log("context: " + context);
 
+    console.log("context ended");
+
     return context;
   } catch (error) {
     console.log(error);
