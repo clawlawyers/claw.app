@@ -45,6 +45,9 @@ const {
   adminLogin,
   verifyAdminUser,
   getAllAdminNumbers,
+  getTrialCoupon,
+  createTrialCoupon,
+  deleteTrialCoupon,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -180,5 +183,11 @@ router.post("/add-new-admin", addNewAdmin);
 router.post("/login", adminLogin);
 router.post("/verify", verifyAdminUser);
 router.get("/getAllUsers", getAllAdminNumbers);
+
+// trial courtroom coupon routes
+
+router.get("/trial-coupon", getTrialCoupon);
+router.post("/trial-coupon", createTrialCoupon);
+router.delete("/trial-coupon", deleteTrialCoupon);
 
 module.exports = router;
