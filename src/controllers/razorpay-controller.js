@@ -19,7 +19,6 @@ async function createPayment(req, res) {
     receipt,
     plan,
     billingCycle,
-    request,
     session,
     phoneNumber,
   } = req.body;
@@ -32,7 +31,6 @@ async function createPayment(req, res) {
 
   const order = await OrderService.createOrder({
     plan,
-    request,
     session,
     billingCycle,
     user: fetchUser._id,

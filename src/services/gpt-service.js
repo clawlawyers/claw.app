@@ -392,61 +392,64 @@ async function fetchGptUser(mongoId) {
 
     console.log(user);
 
-    let plans = await prisma.userPlan.findMany({
+    let plans = await prisma.newUserPlan.findMany({
       where: {
         userId: mongoId,
+      },
+      include: {
+        plan: true,
       },
     });
 
     // This free plan only for some occasionally
 
-    if (plans.length === 0) {
-      console.log("user do not have any plan. plan will be creating");
+    // if (plans.length === 0) {
+    //   console.log("user do not have any plan. plan will be creating");
 
-      const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
-      console.log(new Date());
+    //   const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
+    //   console.log(new Date());
 
-      if (Date.now() < expiresAt) {
-        await updateUserPlan(mongoId, "free", expiresAt);
-      }
+    //   if (Date.now() < expiresAt) {
+    //     await updateUserPlan(mongoId, "free", expiresAt);
+    //   }
 
-      console.log("plan created");
-      plans = await prisma.userPlan.findMany({
-        where: {
-          userId: mongoId,
-        },
-      });
-    }
+    //   console.log("plan created");
+    //   plans = await prisma.userPlan.findMany({
+    //     where: {
+    //       userId: mongoId,
+    //     },
+    //   });
+    // }
 
-    const plansData = await Promise.all(
-      plans.map(async (plan) => {
-        const Pdata = await prisma.plan.findUnique({
-          where: { name: plan.planName },
-        });
+    // const plansData = await Promise.all(
+    //   plans.map(async (plan) => {
+    //     const Pdata = await prisma.plan.findUnique({
+    //       where: { name: plan.planName },
+    //     });
 
-        return Pdata;
-      })
-    );
+    //     return Pdata;
+    //   })
+    // );
 
-    const planNames = plansData.map((plan) => {
-      return plan.name;
-    });
+    // const planNames = plansData.map((plan) => {
+    //   return plan.name;
+    // });
 
     if (!user) return null;
     return {
       createdAt: user.createdAt,
       phoneNumber: user.phoneNumber,
-      plan: planNames,
-      token: {
-        used: {
-          gptTokenUsed: user.gptTokenUsed,
-          caseSearchTokenUsed: user.caseSearchTokenUsed,
-        },
-        total: {
-          totalGptTokens: user.totalGptTokens,
-          totalCaseSearchTokens: user.totalCaseSearchTokens,
-        },
-      },
+      plan: plans,
+      // token: {
+      //   used: {
+      //     gptTokenUsed: user.gptTokenUsed,
+      //     caseSearchTokenUsed: user.caseSearchTokenUsed,
+      //   },
+      //   total: {
+      //     totalGptTokens: user.totalGptTokens,
+      //     totalCaseSearchTokens: user.totalCaseSearchTokens,
+      //   },
+      // },
     };
   } catch (error) {
     console.log(error);
@@ -897,8 +900,9 @@ async function addFirstAdminUser(userId) {
 async function updateUserPlan(mongoId, newPlan, expiresAt) {
   console.log(mongoId, newPlan);
   try {
+    let updatedUserPlan;
     if (expiresAt) {
-      const updatedUserPlan = await prisma.userPlan.create({
+      updatedUserPlan = await prisma.newUserPlan.create({
         data: {
           userId: mongoId,
           planName: newPlan,
@@ -906,43 +910,16 @@ async function updateUserPlan(mongoId, newPlan, expiresAt) {
         },
       });
     } else {
-      const updatedUserPlan = await prisma.userPlan.create({
+      updatedUserPlan = await prisma.newUserPlan.create({
         data: {
           userId: mongoId,
           planName: newPlan,
         },
       });
     }
-
-    const Pdata = await prisma.plan.findUnique({
-      where: { name: newPlan },
-    });
-
-    // console.log(plansData);
-    let totalGptTokens = Pdata.gptToken;
-    let totalCaseSearchTokens = Pdata.caseSearchToken;
-
-    console.log(totalGptTokens, totalCaseSearchTokens);
-
-    const updatedUser = await prisma.user.update({
-      where: {
-        mongoId: mongoId,
-      },
-      data: {
-        totalGptTokens: {
-          increment: totalGptTokens, // or any other value you want to increment by
-        },
-        totalCaseSearchTokens: {
-          increment: totalCaseSearchTokens, // or any other value you want to increment by
-        },
-      },
-    });
-
-    console.log(updatedUser);
-
     return {
-      user: updatedUser.mongoId,
-      plan: newPlan,
+      user: updatedUserPlan.mongoId,
+      plan: updatedUserPlan.planName,
     };
   } catch (error) {
     console.error(error);
@@ -952,6 +929,65 @@ async function updateUserPlan(mongoId, newPlan, expiresAt) {
     );
   }
 }
+
+// async function updateUserPlan(mongoId, newPlan, expiresAt) {
+//   console.log(mongoId, newPlan);
+//   try {
+//     if (expiresAt) {
+//       const updatedUserPlan = await prisma.userPlan.create({
+//         data: {
+//           userId: mongoId,
+//           planName: newPlan,
+//           expiresAt: expiresAt,
+//         },
+//       });
+//     } else {
+//       const updatedUserPlan = await prisma.userPlan.create({
+//         data: {
+//           userId: mongoId,
+//           planName: newPlan,
+//         },
+//       });
+//     }
+
+//     const Pdata = await prisma.plan.findUnique({
+//       where: { name: newPlan },
+//     });
+
+//     // console.log(plansData);
+//     let totalGptTokens = Pdata.gptToken;
+//     let totalCaseSearchTokens = Pdata.caseSearchToken;
+
+//     console.log(totalGptTokens, totalCaseSearchTokens);
+
+//     const updatedUser = await prisma.user.update({
+//       where: {
+//         mongoId: mongoId,
+//       },
+//       data: {
+//         totalGptTokens: {
+//           increment: totalGptTokens, // or any other value you want to increment by
+//         },
+//         totalCaseSearchTokens: {
+//           increment: totalCaseSearchTokens, // or any other value you want to increment by
+//         },
+//       },
+//     });
+
+//     console.log(updatedUser);
+
+//     return {
+//       user: updatedUser.mongoId,
+//       plan: newPlan,
+//     };
+//   } catch (error) {
+//     console.error(error);
+//     throw new AppError(
+//       "Error while updating user plan",
+//       StatusCodes.INTERNAL_SERVER_ERROR
+//     );
+//   }
+// }
 
 async function removeUserPlans(userId, planNames) {
   try {

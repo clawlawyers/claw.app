@@ -12,6 +12,56 @@ const TrailCourtroomUser = require("../models/trailCourtRoomUser");
 const SpecificLawyerCourtroomUser = require("../models/SpecificLawyerCourtroomUser");
 const AdminUser = require("../models/adminUser");
 const { createToken, verifyToken } = require("../utils/common/auth");
+const TrialCourtroomCoupon = require("../models/trialCourtroomCoupon");
+
+async function deleteTrialCoupon(req, res) {
+  try {
+    const coupon = data.coupon;
+    await TrialCourtroomCoupon.deleteOne(coupon);
+    return res
+      .status(201)
+      .json(SuccessResponse({ status: "coupon deleted sucessfully" }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
+async function createTrialCoupon(req, res) {
+  try {
+    const { CouponCode, StartDate, EndDate, totalSlots, bookedSlots } =
+      req.body;
+    const newCoupon = new TrialCourtroomCoupon({
+      CouponCode,
+      StartDate,
+      EndDate,
+      totalSlots,
+      bookedSlots,
+    });
+    await newCoupon.save();
+    return res.status(201).json(SuccessResponse({ coupon: newCoupon }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
+async function getTrialCoupon(req, res) {
+  try {
+    const coupons = await TrialCourtroomCoupon.find({});
+    console.log(coupons);
+    return res.status(200).json(SuccessResponse({ coupons }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
 
 async function getAllAdminNumbers(req, res) {
   try {
@@ -1438,4 +1488,7 @@ module.exports = {
   adminLogin,
   verifyAdminUser,
   getAllAdminNumbers,
+  getTrialCoupon,
+  createTrialCoupon,
+  deleteTrialCoupon,
 };

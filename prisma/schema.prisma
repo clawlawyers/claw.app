@@ -61,11 +61,13 @@ model User {
   numberOfSessions        Int           @default(1)
   plan                    Plan          @relation(fields: [planName], references: [name])
   plans                   UserPlan[]
-
+  newplans                NewUserPlan[]
   redeemedReferralCode    ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [referralCode])
   adminUser                Admin?        @relation("AdminUsers", fields: [adminUserId], references: [id])
   isCasesearch  Boolean  @default(true)  
- }
+ 
+  NewPlan NewPlan[]
+}
 
 model UserPlan {
   userId   String
@@ -79,6 +81,36 @@ model UserPlan {
 
   @@id([userId, planName])
 }
+
+
+
+model NewUserPlan {
+  userId   String
+  planName String
+  user     User    @relation(fields: [userId], references: [mongoId], onDelete: Cascade)
+  plan     NewPlan @relation(fields: [planName], references: [name], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  expiresAt DateTime?
+
+  @@id([userId, planName])
+}
+
+model NewPlan {
+  name      String   @id @unique
+  legalGptAccess  Boolean  @default(false)
+  AICaseSearchAccess  Boolean  @default(false)
+  AISummerizer  Boolean  @default(false)
+  AddOnAccess  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  session   Int      @default(1)
+  duration String    @default("monthly")
+  users     User[]
+  planUsers           NewUserPlan[]
+}
+
+
 
 model Model {
   name      String    @id
