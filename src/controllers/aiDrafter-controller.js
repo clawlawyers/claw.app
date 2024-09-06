@@ -768,6 +768,45 @@ async function fetchAddClause({ doc_id, clause_query }) {
   }
 }
 
+async function apiGetModifiedDoc(req, res) {
+  try {
+    const { doc_id } = req.body;
+    const fetchedData = await fetchGetModifiedDoc({ doc_id });
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
+  } catch (error) {
+    console.error(error);
+    const errorResponse = ErrorResponse({}, error, message);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function fetchGetModifiedDoc({ doc_id }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/api/get_modified_doc`, {
+      method: "POST",
+      body: JSON.stringify({ doc_id }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 module.exports = {
   uploadDocument,
   createDocument,
@@ -788,4 +827,5 @@ module.exports = {
   generateDocumentForType,
   apiGetTypes,
   apiAddClause,
+  apiGetModifiedDoc,
 };
