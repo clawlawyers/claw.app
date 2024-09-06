@@ -31,12 +31,12 @@ async function deleteTrialCoupon(req, res) {
 
 async function createTrialCoupon(req, res) {
   try {
-    const { couponCode, startDate, endDate, totalSlots, bookedSlots } =
+    const { CouponCode, StartDate, EndDate, totalSlots, bookedSlots } =
       req.body;
     const newCoupon = new TrialCourtroomCoupon({
-      couponCode,
-      startDate,
-      endDate,
+      CouponCode,
+      StartDate,
+      EndDate,
       totalSlots,
       bookedSlots,
     });

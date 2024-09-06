@@ -15,6 +15,13 @@ const trialCourtroomCouponSchema = new mongoose.Schema({
   },
   StartDate: { type: Date, required: true },
   EndDate: { type: Date, required: true },
+  courtroomBookings: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "TrailCourtroomUser2",
+      required: true,
+    },
+  ],
 });
 
 const TrialCourtroomCoupon = mongoose.model(
