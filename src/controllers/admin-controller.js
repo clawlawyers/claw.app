@@ -1064,6 +1064,72 @@ async function userdailyvisit(req, res) {
 
   res.json(dailyData);
 }
+async function userEveryDayData(req, res) {
+  var data = [];
+  for (var i = 0; i < 7; i++) {
+    const startOfDay = moment().subtract(i, "days").startOf("day").toDate();
+    const endOfDay = moment().subtract(i, "days").endOf("day").toDate();
+
+    const dailyData = await Tracking.aggregate([
+      { $match: { timestamp: { $gte: startOfDay, $lte: endOfDay } } },
+      {
+        $group: {
+          _id: {
+            path: "$path",
+            isUser: {
+              $cond: {
+                if: { $ne: ["$userId", null] },
+                then: true,
+                else: false,
+              },
+            },
+          },
+          totalVisits: { $sum: 1 },
+          totalDuration: { $sum: "$visitDuration" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          path: "$_id.path",
+          isUser: "$_id.isUser",
+          totalVisits: 1,
+          totalDuration: 1,
+        },
+      },
+      {
+        $group: {
+          _id: "$path",
+          visits: {
+            $push: {
+              isUser: "$isUser",
+              totalVisits: "$totalVisits",
+              totalDuration: "$totalDuration",
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          path: "$_id",
+          visits: 1,
+        },
+      },
+    ]);
+    data.push(dailyData);
+  }
+  const todayIndex = moment().day(); // For example, if today is Wednesday, todayIndex will be 3
+
+  // Shuffle the array so that today's day is at index 0
+  const shuffledData = [
+    ...data.slice(todayIndex - 1), // Slice from today's index to the end of the week
+    ...data.slice(0, todayIndex - 1), // Concatenate the beginning of the week to today's index
+  ];
+
+  console.log(todayIndex);
+  res.json(shuffledData);
+}
 
 // User Visit for monthly data
 async function usermonthlyvisit(req, res) {
@@ -1120,6 +1186,73 @@ async function usermonthlyvisit(req, res) {
 
   res.json(monthlyData);
 }
+async function userEveryMonthData(req, res) {
+  var data = [];
+  for (var i = 0; i < 12; i++) {
+    const startOfMonth = moment()
+      .subtract(i, "months")
+      .startOf("month")
+      .toDate();
+    const endOfMonth = moment().subtract(i, "months").endOf("month").toDate();
+
+    const monthlyData = await Tracking.aggregate([
+      { $match: { timestamp: { $gte: startOfMonth, $lte: endOfMonth } } },
+      {
+        $group: {
+          _id: {
+            path: "$path",
+            isUser: {
+              $cond: {
+                if: { $ne: ["$userId", null] },
+                then: true,
+                else: false,
+              },
+            },
+          },
+          totalVisits: { $sum: 1 },
+          totalDuration: { $sum: "$visitDuration" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          path: "$_id.path",
+          isUser: "$_id.isUser",
+          totalVisits: 1,
+          totalDuration: 1,
+        },
+      },
+      {
+        $group: {
+          _id: "$path",
+          visits: {
+            $push: {
+              isUser: "$isUser",
+              totalVisits: "$totalVisits",
+              totalDuration: "$totalDuration",
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          path: "$_id",
+          visits: 1,
+        },
+      },
+    ]);
+    data.push(monthlyData);
+  }
+  const currentMonthIndex = moment().month(); // For example, if today is September, currentMonthIndex will be 8
+
+  // Shuffle the array so that the current month is at index 0
+  const shuffledData = [
+    ...data.slice(currentMonthIndex - 1), // Slice from the current month to the end of the year
+    ...data.slice(0, currentMonthIndex - 1),
+  ];
+  res.json(shuffledData);
+}
 
 // User Visit  for yearly data
 async function useryearlyvisit(req, res) {
@@ -1175,6 +1308,64 @@ async function useryearlyvisit(req, res) {
   ]);
 
   res.json(yearlyData);
+}
+async function userEveryYearData(req, res) {
+  var data = [];
+  for (var i = 0; i < 1; i++) {
+    const startOfYear = moment().startOf("year").toDate();
+    const endOfYear = moment().endOf("year").toDate();
+
+    const yearlyData = await Tracking.aggregate([
+      { $match: { timestamp: { $gte: startOfYear, $lte: endOfYear } } },
+      {
+        $group: {
+          _id: {
+            path: "$path",
+            isUser: {
+              $cond: {
+                if: { $ne: ["$userId", null] },
+                then: true,
+                else: false,
+              },
+            },
+          },
+          totalVisits: { $sum: 1 },
+          totalDuration: { $sum: "$visitDuration" },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          path: "$_id.path",
+          isUser: "$_id.isUser",
+          totalVisits: 1,
+          totalDuration: 1,
+        },
+      },
+      {
+        $group: {
+          _id: "$path",
+          visits: {
+            $push: {
+              isUser: "$isUser",
+              totalVisits: "$totalVisits",
+              totalDuration: "$totalDuration",
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          path: "$_id",
+          visits: 1,
+        },
+      },
+    ]);
+    data.push(yearlyData);
+  }
+
+  res.json(data);
 }
 
 async function allAllowedBooking(req, res) {
@@ -1461,6 +1652,7 @@ module.exports = {
   allCoupon,
   usertracking,
   userdailyvisit,
+  userEveryYearData,
   usermonthlyvisit,
   useryearlyvisit,
   updateUserPlan,
@@ -1491,4 +1683,6 @@ module.exports = {
   getTrialCoupon,
   createTrialCoupon,
   deleteTrialCoupon,
+  userEveryDayData,
+  userEveryMonthData,
 };
