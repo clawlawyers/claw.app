@@ -48,6 +48,9 @@ const {
   getTrialCoupon,
   createTrialCoupon,
   deleteTrialCoupon,
+  userEveryDayData,
+  userEveryMonthData,
+  userEveryYearData,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -74,7 +77,10 @@ router.get("/allcoupons", allCoupon);
 router.patch("/generateReferralCode", generateReferralCode);
 router.post("/usertrack", usertracking);
 router.get("/dailyuserpagevisit", userdailyvisit);
+router.get("/everyDayData", userEveryDayData);
+router.get("/everyMonthData", userEveryMonthData);
 router.get("/monthlyuserpagevisit", usermonthlyvisit);
+router.get("/everyYearData", userEveryYearData);
 router.get("/yearlyuserpagevisit", useryearlyvisit);
 router.patch("/updateUserLocation", setLocation);
 router.patch("/updateUserPlans", updateUserPlan);
