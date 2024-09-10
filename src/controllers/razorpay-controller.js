@@ -92,8 +92,7 @@ async function verifyPayment(req, res) {
         placedOrder.user.toString(),
         placedOrder.plan,
         isUpgrade,
-        createdAt,
-        expiresAt
+        createdAt
       );
 
       console.log(rs);
