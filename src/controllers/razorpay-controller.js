@@ -12,6 +12,16 @@ const razorpay = new Razorpay({
   key_secret: RAZORPAY_SECRET_KEY,
 });
 
+// planNamesquence = ["BASIC_M", "ESSENTIAL_M", "BASIC_Y", "ESSENTIAL_Y"];
+planNamesquence = [
+  { name: "BASIC_M", price: 399, index: 0 },
+  { name: "BASIC_Y", price: 3999, index: 1 },
+  { name: "ESSENTIAL_M", price: 1199, index: 2 },
+  { name: "ESSENTIAL_Y", price: 11999, index: 3 },
+  { name: "PREMIUM_M", price: 1999, index: 4 },
+  { name: "PREMIUM_Y", price: 19999, index: 5 },
+];
+
 async function createPayment(req, res) {
   const {
     amount,
@@ -57,8 +67,14 @@ async function createPayment(req, res) {
 }
 
 async function verifyPayment(req, res) {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, _id } =
-    req.body;
+  const {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    _id,
+    isUpgrade,
+    createdAt,
+  } = req.body;
 
   const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
   hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
@@ -69,11 +85,15 @@ async function verifyPayment(req, res) {
       const placedOrder = await OrderService.updateOrder(_id, {
         paymentStatus: paymentStatus.SUCCESS,
       });
+
       // update the plan for user
       console.log(placedOrder.user.toString(), placedOrder.plan);
       const rs = await GptServices.updateUserPlan(
         placedOrder.user.toString(),
-        placedOrder.plan
+        placedOrder.plan,
+        isUpgrade,
+        createdAt,
+        expiresAt
       );
 
       console.log(rs);
@@ -86,7 +106,75 @@ async function verifyPayment(req, res) {
   }
 }
 
+async function finalPrice(req, res) {
+  try {
+    const { planName, userId } = req.body;
+
+    let plans = await prisma.newUserPlan.findMany({
+      where: {
+        userId: userId,
+      },
+      include: {
+        plan: true,
+      },
+    });
+
+    const existing = planNamesquence.find((p) => p.name === plans[0].plan.name);
+    const newOne = planNamesquence.find((p) => p.name === planName);
+
+    console.log(existing, newOne);
+
+    if (newOne.index > existing.index) {
+      console.log("new plan will added");
+      // const existingPrice = planNamesquence[existing.index].price;
+      const existingPrice = existing.price;
+      const newPrice = newOne.price;
+      const duration = plans[0].plan.duration;
+      const planCreateData = new Date(plans[0].createdAt);
+      const now = new Date();
+      const daysUsed = Math.floor(
+        (now - planCreateData) / (1000 * 60 * 60 * 24)
+      ); // Days used
+
+      console.log(planCreateData, now);
+
+      console.log(daysUsed);
+
+      const durationInDays = duration === "monthly" ? 30 : 360;
+
+      console.log(durationInDays);
+
+      const remainingDays = durationInDays - daysUsed;
+
+      console.log(remainingDays);
+
+      // Calculate the prorated remaining value of the current plan
+      const remainingValue = (remainingDays / durationInDays) * existingPrice;
+
+      // Final price for the upgraded plan
+      const finalPrice = newPrice - remainingValue;
+
+      console.log(finalPrice);
+
+      res
+        .status(201)
+        .json({ finalPrice: finalPrice.toFixed(2), isUpgrade: true });
+    } else {
+      res.status(200).json({ finalPrice: newOne.price, isUpgrade: false });
+    }
+
+    // console.log(plans);
+  } catch (error) {
+    console.error(error);
+    const errorResponse = ErrorResponse({}, error.message);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
 module.exports = {
   createPayment,
   verifyPayment,
+  finalPrice,
 };

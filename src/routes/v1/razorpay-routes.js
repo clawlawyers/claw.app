@@ -15,4 +15,6 @@ router.post(
   RazorpayController.verifyPayment
 );
 
+router.post("/finalPrice", RazorpayController.finalPrice);
+
 module.exports = router;

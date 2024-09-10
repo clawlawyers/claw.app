@@ -897,9 +897,18 @@ async function addFirstAdminUser(userId) {
   }
 }
 
-async function updateUserPlan(mongoId, newPlan, expiresAt) {
+async function updateUserPlan(
+  mongoId,
+  newPlan,
+  isUpgrade,
+  createdAt,
+  expiresAt
+) {
   console.log(mongoId, newPlan);
+
   try {
+    const createdAtDate = new Date(createdAt).setHours(0, 0, 0, 0); // Set time to 00:00:00
+    const today = new Date().setHours(0, 0, 0, 0); // Set today's date to 00:00:00
     let updatedUserPlan;
     if (expiresAt) {
       updatedUserPlan = await prisma.newUserPlan.create({
@@ -909,11 +918,32 @@ async function updateUserPlan(mongoId, newPlan, expiresAt) {
           expiresAt: expiresAt,
         },
       });
+    } else if (isUpgrade !== "") {
+      deletePlan = await prisma.newUserPlan.delete({
+        where: { userId: mongoId, isActive: true, planName: isUpgrade },
+      });
+
+      updatedUserPlan = await prisma.newUserPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          isActive: true,
+        },
+      });
+    } else if (createdAtDate === today) {
+      updatedUserPlan = await prisma.newUserPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          isActive: true,
+        },
+      });
     } else {
       updatedUserPlan = await prisma.newUserPlan.create({
         data: {
           userId: mongoId,
           planName: newPlan,
+          createdAt,
         },
       });
     }
