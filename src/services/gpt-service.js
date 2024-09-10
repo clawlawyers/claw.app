@@ -919,9 +919,26 @@ async function updateUserPlan(
         },
       });
     } else if (isUpgrade !== "") {
-      deletePlan = await prisma.newUserPlan.delete({
-        where: { userId: mongoId, isActive: true, planName: isUpgrade },
+      // Find the plan that is active
+      const activePlan = await prisma.newUserPlan.findFirst({
+        where: {
+          userId: mongoId,
+          planName: isUpgrade,
+          isActive: true,
+        },
       });
+
+      // If a plan is found, delete it
+      if (activePlan) {
+        deletePlan = await prisma.newUserPlan.delete({
+          where: {
+            userId_planName: {
+              userId: activePlan.userId,
+              planName: activePlan.planName,
+            },
+          },
+        });
+      }
 
       updatedUserPlan = await prisma.newUserPlan.create({
         data: {
