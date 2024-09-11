@@ -1633,6 +1633,16 @@ async function UpdateUserTimingAllowedLogin(req, res) {
       .json(ErrorResponse({}, error));
   }
 }
+async function getallVisitors(req, res) { 
+  try {
+    const userTrackingData = await Tracking.find({})
+      .populate("userId") // Populates the userId with the actual User details
+      .exec();
+    res.status(200).json(userTrackingData);
+  } catch (e) {
+    res.status(500);
+  }
+}
 
 module.exports = {
   getReferralCodes,
@@ -1685,4 +1695,5 @@ module.exports = {
   deleteTrialCoupon,
   userEveryDayData,
   userEveryMonthData,
+  getallVisitors,
 };

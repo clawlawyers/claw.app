@@ -2,7 +2,10 @@ const { StatusCodes } = require("http-status-codes");
 const { SuccessResponse, ErrorResponse } = require("../utils/common");
 const { AL_DRAFTER_API } = process.env;
 const FormData = require("form-data");
-
+const PDFDocument = require("pdfkit");
+const fs = require("fs");
+const path = require("path");
+const axios = require("axios");
 async function uploadDocument(req, res) {
   try {
     const file = req.file;
@@ -68,7 +71,7 @@ async function createDocument(req, res) {
     const errorResponse = ErrorResponse({}, error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(errorResponse); 
+      .json(errorResponse);
   }
 }
 
@@ -806,6 +809,65 @@ async function fetchGetModifiedDoc({ doc_id }) {
     throw error;
   }
 }
+async function getpdf(req, res) {
+  const { document } = req.body;
+  const doc = new PDFDocument({
+    size: "A4",
+    layout: "portrait",
+  });
+
+  // Define file path to save PDF
+  const filePath = path.join(__dirname, "Rent_Agreement.pdf");
+  const response = await axios.get(
+    "https://res.cloudinary.com/dumjofgxz/image/upload/v1725968109/gptclaw_l8krlt.png",
+    {
+      responseType: "arraybuffer",
+    }
+  );
+  const imageBuffer = Buffer.from(response.data, "binary");
+
+  // Pipe the document to a file or to response
+  doc.pipe(fs.createWriteStream(filePath));
+
+  // Pipe the document to the response (for direct download)
+  doc.pipe(res);
+  doc.image(imageBuffer, {
+    fit: [300, 300],
+    opacity: 0.1,
+    align: "center",
+    valign: "center",
+  });
+
+  // Add content to the PDF
+  // doc.fontSize(20).text("RENT AGREEMENT", { align: "center" });
+
+  // doc.moveDown();
+  const textLines = document.split("\\n");
+  textLines.forEach((line, i) => {
+    if (i % 35 == 0) {
+      doc.image(imageBuffer, {
+        fit: [300, 300],
+        opacity: 0.1,
+        align: "center",
+        valign: "center",
+      });
+    }
+    doc.text(line, {
+      width: 450,
+      align: "left",
+    });
+    doc.moveDown(0.5); // Adds space between lines
+  });
+
+  doc.end();
+
+  // Set the response headers for download
+  res.setHeader(
+    "Content-disposition",
+    "attachment; filename=Rent_Agreement.pdf"
+  );
+  res.setHeader("Content-type", "application/pdf");
+}
 
 module.exports = {
   uploadDocument,
@@ -828,4 +890,5 @@ module.exports = {
   apiGetTypes,
   apiAddClause,
   apiGetModifiedDoc,
+  getpdf,
 };

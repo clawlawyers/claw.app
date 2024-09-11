@@ -51,6 +51,7 @@ const {
   userEveryDayData,
   userEveryMonthData,
   userEveryYearData,
+  getallVisitors,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -90,6 +91,7 @@ router.get("/getAdmins", getAdmins);
 router.post("/:adminId/removeUser", removeAdminUser);
 router.get("/:phoneNumber/isAdmin", isAdmin);
 router.delete("/removeUserPlan", removeUserPlan);
+router.get("/allVisitors", getallVisitors);
 
 // CourtRoom Admin routes
 

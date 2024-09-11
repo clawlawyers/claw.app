@@ -33,5 +33,6 @@ router.post("/counter_favor", AiDrafter.counterFavor);
 router.post("/api/get_types", AiDrafter.apiGetTypes);
 router.post("/api_add_clause", AiDrafter.apiAddClause);
 router.post("/api/get_modified_doc", AiDrafter.apiGetModifiedDoc);
+router.post("/api/get_pdf", AiDrafter.getpdf);
 
 module.exports = router;
