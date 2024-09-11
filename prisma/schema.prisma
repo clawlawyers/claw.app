@@ -92,6 +92,7 @@ model NewUserPlan {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
   expiresAt DateTime?
+  isActive  Boolean  @default(false)
 
   @@id([userId, planName])
 }
