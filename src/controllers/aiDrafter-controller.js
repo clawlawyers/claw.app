@@ -831,26 +831,38 @@ async function getpdf(req, res) {
 
   // Pipe the document to the response (for direct download)
   doc.pipe(res);
-  doc.image(imageBuffer, {
-    fit: [300, 300],
-    opacity: 0.1,
-    align: "center",
-    valign: "center",
-  });
+  // doc.opacity(0.5);
+  // doc.image(imageBuffer, {
+  //   fit: [600, 600],
+  //   opacity: 0.1,
+  //   align: "center",
+  //   valign: "center",
+  // });
+  // doc.opacity(1);
 
   // Add content to the PDF
   // doc.fontSize(20).text("RENT AGREEMENT", { align: "center" });
 
   // doc.moveDown();
   const textLines = document.split("\\n");
+  const pageWidth = doc.page.width;
+  const pageHeight = doc.page.height;
+  const img = doc.openImage(imageBuffer);
+  const imgWidth = img.width;
+  const imgHeight = img.height;
+
+  // Calculate position for the image to be centered
+  const x = (pageWidth - imgWidth) / 2;
+  const y = (pageHeight - imgHeight) / 2;
   textLines.forEach((line, i) => {
     if (i % 35 == 0) {
-      doc.image(imageBuffer, {
-        fit: [300, 300],
-        opacity: 0.1,
+      doc.opacity(0.5);
+      doc.image(imageBuffer, x + 200, y, {
+        scale: 0.5,
         align: "center",
         valign: "center",
       });
+      doc.opacity(1);
     }
     doc.text(line, {
       width: 450,
