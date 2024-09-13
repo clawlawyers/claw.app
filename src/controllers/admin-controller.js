@@ -960,7 +960,7 @@ async function deactivateCoupon(req, res) {
   try {
     const { code } = req.body;
     const coupon = await Coupon.findOneAndUpdate(
-      { code },
+      { _id: code },
       { isActive: false },
       { new: true }
     );
@@ -975,7 +975,9 @@ async function deactivateCoupon(req, res) {
 async function deleteCoupon(req, res) {
   try {
     const { code } = req.body;
-    const coupon = await Coupon.findOneAndDelete({ code });
+    console.log(code);
+    console.log("code");
+    const coupon = await Coupon.findByIdAndDelete(code);
     if (!coupon) return res.status(404).json({ message: "Coupon not found" });
 
     res.status(200).json({ message: "Coupon deleted" });
@@ -1633,7 +1635,7 @@ async function UpdateUserTimingAllowedLogin(req, res) {
       .json(ErrorResponse({}, error));
   }
 }
-async function getallVisitors(req, res) { 
+async function getallVisitors(req, res) {
   try {
     const userTrackingData = await Tracking.find({})
       .populate("userId") // Populates the userId with the actual User details
@@ -1643,6 +1645,7 @@ async function getallVisitors(req, res) {
     res.status(500);
   }
 }
+async function deleterefralcode(req, res) {}
 
 module.exports = {
   getReferralCodes,
@@ -1696,4 +1699,5 @@ module.exports = {
   userEveryDayData,
   userEveryMonthData,
   getallVisitors,
+  deleterefralcode,
 };

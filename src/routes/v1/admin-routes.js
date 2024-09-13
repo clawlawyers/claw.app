@@ -52,6 +52,7 @@ const {
   userEveryMonthData,
   userEveryYearData,
   getallVisitors,
+  deleterefralcode,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -92,6 +93,7 @@ router.post("/:adminId/removeUser", removeAdminUser);
 router.get("/:phoneNumber/isAdmin", isAdmin);
 router.delete("/removeUserPlan", removeUserPlan);
 router.get("/allVisitors", getallVisitors);
+router.delete("/reffralcode", deleterefralcode);
 
 // CourtRoom Admin routes
 
