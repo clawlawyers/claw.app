@@ -22,6 +22,10 @@ async function fetchContext(sessionId) {
       context += `${text}\n`;
     });
 
+    console.log("context: " + context);
+
+    console.log("context ended");
+
     return context;
   } catch (error) {
     console.log(error);
@@ -40,6 +44,27 @@ async function createGptUser(phoneNumber, mongoId) {
         mongoId,
       },
     });
+
+    // This free plan only for some occasionally
+
+    const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
+
+    // const newPlan = await prisma.userPlan.create({
+    //   data: {
+    //     userId: mongoId,
+    //     planName: "free",
+    //     expiresAt: expiresAt,
+    //   },
+    // });
+
+    // console.log(newPlan);
+    let newPlan;
+    if (Date.now() < expiresAt) {
+      newPlan = await updateUserPlan(mongoId, "free", expiresAt); // it will be open in few ocations
+    }
+
+    console.log(newPlan);
+
     return newUser;
   } catch (error) {
     console.log(error);
@@ -272,26 +297,18 @@ async function createMessage(sessionId, prompt, isUser, mongoId) {
 
 async function getPlansByUserId(mongoId) {
   try {
-    const plans = await prisma.userPlan.findMany({
+    // Fetch user plans with related plan data using `include`
+    const userPlans = await prisma.userPlan.findMany({
       where: {
         userId: mongoId,
       },
+      include: {
+        plan: true, // Assuming there's a `plan` relation defined in the Prisma schema
+      },
     });
 
-    const plansData = await Promise.all(
-      plans.map(async (plan) => {
-        const Pdata = await prisma.plan.findUnique({
-          where: { name: plan.planName },
-        });
-        return Pdata;
-      })
-    );
-
-    // console.log(plansData);
-
-    const planNames = plansData.map((plan) => {
-      return plan.name;
-    });
+    // Extract the plan names from the included plan data
+    const planNames = userPlans.map((userPlan) => userPlan.plan.name);
 
     return planNames;
   } catch (e) {
@@ -340,6 +357,24 @@ async function fetchGptUserByPhoneNumbers(phoneNumbers) {
   }
 }
 
+async function getUserPlan(mongoId) {
+  try {
+    const plans = await prisma.userPlan.findMany({
+      where: {
+        userId: mongoId,
+      },
+    });
+
+    return plans;
+  } catch (err) {
+    console.error("Error while fetching users:", err);
+    throw new AppError(
+      "Error while fetching users",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function fetchGptUser(mongoId) {
   try {
     const user = await prisma.user.findUnique({
@@ -355,11 +390,34 @@ async function fetchGptUser(mongoId) {
       },
     });
 
-    const plans = await prisma.userPlan.findMany({
+    console.log(user);
+
+    let plans = await prisma.userPlan.findMany({
       where: {
         userId: mongoId,
       },
     });
+
+    // This free plan only for some occasionally
+
+    if (plans.length === 0) {
+      console.log("user do not have any plan. plan will be creating");
+
+      const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
+      console.log(new Date());
+
+      if (Date.now() < expiresAt) {
+        await updateUserPlan(mongoId, "free", expiresAt);
+      }
+
+      console.log("plan created");
+      plans = await prisma.userPlan.findMany({
+        where: {
+          userId: mongoId,
+        },
+      });
+    }
+
     const plansData = await Promise.all(
       plans.map(async (plan) => {
         const Pdata = await prisma.plan.findUnique({
@@ -836,15 +894,25 @@ async function addFirstAdminUser(userId) {
   }
 }
 
-async function updateUserPlan(mongoId, newPlan) {
+async function updateUserPlan(mongoId, newPlan, expiresAt) {
   console.log(mongoId, newPlan);
   try {
-    const updatedUserPlan = await prisma.userPlan.create({
-      data: {
-        userId: mongoId,
-        planName: newPlan,
-      },
-    });
+    if (expiresAt) {
+      const updatedUserPlan = await prisma.userPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          expiresAt: expiresAt,
+        },
+      });
+    } else {
+      const updatedUserPlan = await prisma.userPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+        },
+      });
+    }
 
     const Pdata = await prisma.plan.findUnique({
       where: { name: newPlan },
@@ -1041,4 +1109,5 @@ module.exports = {
   consumeTokenGpt,
   getPlansByUserId,
   removeUserPlans,
+  getUserPlan,
 };

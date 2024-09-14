@@ -1,12 +1,350 @@
-const mongoose = require("mongoose");
 const { GptServices, ClientService } = require("../services");
 const { ErrorResponse, SuccessResponse } = require("../utils/common");
 const { StatusCodes } = require("http-status-codes");
-const User = require("../models/user"); // Adjust the path as per your project structure
 const Coupon = require("../models/coupon");
 const Tracking = require("../models/tracking");
 const moment = require("moment");
-const { promises } = require("form-data");
+const CourtRoomBooking = require("../models/courtRoomBooking");
+const CourtroomUser = require("../models/CourtroomUser");
+const TrailBooking = require("../models/trailBookingAllow");
+const TrailCourtRoomBooking = require("../models/trailCourtRoomBooking");
+const TrailCourtroomUser = require("../models/trailCourtRoomUser");
+const SpecificLawyerCourtroomUser = require("../models/SpecificLawyerCourtroomUser");
+const AdminUser = require("../models/adminUser");
+const { createToken, verifyToken } = require("../utils/common/auth");
+
+async function getAllAdminNumbers(req, res) {
+  try {
+    const users = await AdminUser.find({});
+    const adminNumbers = users.map((user) => user.phoneNumber);
+    console.log(adminNumbers);
+    return res.status(200).json(SuccessResponse({ adminNumbers }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function addNewAdmin(req, res) {
+  const { name, phoneNumber } = req.body;
+  try {
+    const newAdmin = new AdminUser({ name, phoneNumber });
+    await newAdmin.save();
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse("Admin added successfully"));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function verifyAdminUser(req, res) {
+  try {
+    const token = req.headers["authorization"].split(" ")[1];
+    const data = verifyToken(token);
+    console.log(data);
+    const phoneNumber = data.phoneNumber;
+    const admin = await AdminUser.findOne({ phoneNumber });
+    if (!admin) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(ErrorResponse("Admin not found"));
+    }
+    const newtoken = createToken({ phoneNumber });
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ admin, ...newtoken }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
+async function adminLogin(req, res) {
+  try {
+    const { phoneNumber } = req.body;
+    const admin = await AdminUser.findOne({ phoneNumber });
+    if (!admin) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(ErrorResponse("Admin not found"));
+    }
+    console.log(admin);
+
+    const token = createToken({ phoneNumber });
+
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ admin, ...token }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({ ...error.message }, error));
+  }
+}
+
+async function deleteClientCourtroomBookings(req, res) {
+  try {
+    const { _id } = req.body;
+    await SpecificLawyerCourtroomUser.findByIdAndDelete(_id);
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse("Client courtroom bookings deleted successfully"));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function getClientCourtroomBookings(req, res) {
+  try {
+    const clientUsers = await SpecificLawyerCourtroomUser.find({});
+    return res.status(StatusCodes.OK).json(SuccessResponse(clientUsers));
+  } catch (error) {
+    console.log(error);
+    res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).j;
+  }
+}
+
+async function updateClientCourtroomBooking(req, res) {
+  try {
+    const { updatedData } = req.body;
+    const clientUser = await SpecificLawyerCourtroomUser.findOneAndUpdate(
+      {
+        Domain: updatedData.Domain,
+      },
+      {
+        ...updatedData,
+      },
+      {
+        new: true,
+      }
+    );
+    return res.status(StatusCodes.OK).json(SuccessResponse(clientUser));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function updateUserTiming(req, res) {
+  try {
+    const { bookingId, userId } = req.params;
+    const { newDate, newHour } = req.body;
+
+    // Validate input
+    if (!newDate || newHour === undefined) {
+      return res.status(400).send("Missing new date or new hour.");
+    }
+
+    // Convert newDate to a Date object
+    const newBookingDate = new Date(newDate);
+
+    // Find the booking document by ID
+    const booking = await CourtRoomBooking.findById(bookingId).populate(
+      "courtroomBookings"
+    );
+
+    if (!booking) {
+      return res.status(404).send("Booking not found.");
+    }
+
+    // Find the user within the courtroomBookings array
+    const userIndex = booking.courtroomBookings.findIndex(
+      (booking) => booking._id.toString() === userId
+    );
+
+    if (userIndex === -1) {
+      return res.status(404).send("User not found in this booking.");
+    }
+
+    // console.log(booking.courtroomBookings[userIndex]);
+
+    const existingUser = booking.courtroomBookings[userIndex];
+
+    console.log(existingUser);
+
+    // Remove the user from the current slot
+    booking.courtroomBookings.splice(userIndex, 1);
+
+    // console.log(booking);
+
+    // Check if the new slot exists for the new date and hour
+    let newBooking = await CourtRoomBooking.findOne({
+      date: newBookingDate,
+      hour: newHour,
+    }).populate("courtroomBookings");
+
+    if (!newBooking) {
+      // Create a new booking if it doesn't exist
+      newBooking = new CourtRoomBooking({
+        date: newBookingDate,
+        hour: newHour,
+        courtroomBookings: [],
+      });
+    }
+
+    console.log(newBooking);
+
+    // Check if the total bookings exceed the limit in the new slot
+    if (newBooking.courtroomBookings.length >= 4) {
+      console.log(
+        `Maximum of 4 courtrooms can be booked at ${newHour}:00 on ${newBookingDate.toDateString()}.`
+      );
+      return res
+        .status(400)
+        .send(
+          `Maximum of 4 courtrooms can be booked at ${newHour}:00 on ${newBookingDate.toDateString()}.`
+        );
+    }
+
+    // Create a new courtroom user
+    const newCourtroomUser = new CourtroomUser({
+      name: existingUser.name,
+      phoneNumber: existingUser.phoneNumber,
+      email: existingUser.email,
+      password: existingUser.password,
+      recording: existingUser.recording, // Assuming recording is required and set to true
+      caseOverview: existingUser.recording,
+    });
+
+    console.log(newCourtroomUser);
+
+    // Save the new courtroom user
+    const savedCourtroomUser = await newCourtroomUser.save();
+
+    console.log(savedCourtroomUser);
+
+    // Add the new booking
+    newBooking.courtroomBookings.push(savedCourtroomUser._id);
+
+    // Save the booking
+    await newCourtroomUser.save();
+
+    // Save the new booking
+    await newBooking.save();
+
+    // Save the updated booking document
+    await booking.save();
+
+    res.status(200).send("User slot timing successfully updated.");
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function updateUserDetails(req, res) {
+  try {
+    const { userId } = req.params;
+    const { name, phoneNumber, email, recording } = req.body;
+
+    console.log(req.body);
+
+    // Validate input
+    if (!name && !phoneNumber && !email && !recording) {
+      return res.status(400).send("No fields to update.");
+    }
+
+    // Find the user document by ID
+    const user = await CourtroomUser.findById(userId);
+
+    if (!user) {
+      return res.status(404).send("User not found.");
+    }
+
+    // Update the user data
+    if (name) user.name = name;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (email) user.email = email;
+    if (recording) user.recording = recording;
+
+    // Save the updated user document
+    await user.save();
+
+    res.status(200).send("User data successfully updated.");
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function deleteBooking(req, res) {
+  try {
+    const { bookingId, userId } = req.params;
+
+    // Find the booking document by ID
+    const booking = await CourtRoomBooking.findById(bookingId).populate(
+      "courtroomBookings"
+    );
+
+    if (!booking) {
+      return res.status(404).send("Booking not found.");
+    }
+
+    // Find and remove the user from the courtroomBookings array
+    const initialLength = booking.courtroomBookings.length;
+    booking.courtroomBookings = booking.courtroomBookings.filter(
+      (booking) => booking._id.toString() !== userId
+    );
+
+    // Check if a user was actually removed
+    if (booking.courtroomBookings.length === initialLength) {
+      return res.status(404).send("User not found in this booking.");
+    }
+
+    // Save the updated booking document
+    await booking.save();
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        SuccessResponse({ response: "User successfully removed from booking." })
+      );
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function getAllCourtRoomData(req, res) {
+  try {
+    // Fetch all bookings sorted by date and hour
+    const bookings = await CourtRoomBooking.find({})
+      .populate("courtroomBookings")
+      .sort({ date: 1, hour: 1 });
+
+    // Format dates in the response
+    const formattedBookings = bookings.map((booking) => ({
+      ...booking.toObject(),
+      date: moment(booking.date).format("YYYY-MM-DD"), // Format to YYYY-MM-DD
+    }));
+
+    return res.status(StatusCodes.OK).json(SuccessResponse(formattedBookings));
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
 
 async function removeUserPlan(req, res) {
   try {
@@ -345,6 +683,7 @@ async function getPlans(req, res) {
 
 async function getUsers(req, res) {
   try {
+    // Fetch all users from Prisma
     const users = await prisma.user.findMany({});
 
     // Filter users on the server side
@@ -355,8 +694,6 @@ async function getUsers(req, res) {
       return startsWithValidDigit && !allDigitsSame;
     });
 
-    // console.log(filteredUsers.length);
-
     const MongoUser = await ClientService.getAllClientsDetails();
 
     const filteredUsersMongo = MongoUser.filter((Muser) => {
@@ -366,34 +703,29 @@ async function getUsers(req, res) {
       return startsWithValidDigit && !allDigitsSame;
     });
 
-    // console.log(filteredUsersMongo.length);
+    // Fetch all user plans in one call and map them by user ID
+    const userPlans = await prisma.userPlan.findMany({
+      include: { plan: true },
+    });
 
-    // Merge the filtered users from both MongoDB and Supabase
-    const mergedUsers = await Promise.all(
-      filteredUsers.map(async (Muser) => {
+    const userPlansMap = userPlans.reduce((acc, userPlan) => {
+      if (!acc[userPlan.userId]) {
+        acc[userPlan.userId] = [];
+      }
+      acc[userPlan.userId].push(userPlan.plan.name);
+      return acc;
+    }, {});
+
+    // Merge the filtered users from both MongoDB and Prisma
+    const mergedUsers = filteredUsers
+      .map((Muser) => {
         const user = filteredUsersMongo.find(
           (user) => user.phoneNumber === Muser.phoneNumber
         );
-        // console.log({
-        //   mongoId: Muser.mongoId,
-        //   phoneNumber: Muser.phoneNumber,
-        //   createdAt: Muser.createdAt,
-        //   updatedAt: Muser.updatedAt,
-        //   totalTokenUsed: Muser.totalTokenUsed,
-        //   StateLocation: Muser.StateLocation,
-        //   numberOfSessions: Muser.numberOfSessions,
-        //   planName: Muser.planName,
-        //   ambassador: user.ambassador,
-        //   engagementTime: user.engagementTime,
-        //   firstName: user.firstName,
-        //   lastName: user.lastName,
-        //   collegeName: user.collegeName,
-        // });
 
         if (user) {
-          const planNames = await GptServices.getPlansByUserId(Muser.mongoId);
-
-          // console.log(planNames);
+          // Fetch the plan names from the userPlansMap
+          const planNames = userPlansMap[Muser.mongoId] || [];
 
           // Format engagement time
           const engagementTime = user?.engagementTime
@@ -419,8 +751,7 @@ async function getUsers(req, res) {
             totalTokenUsed: Muser.totalTokenUsed,
             StateLocation: Muser.StateLocation,
             numberOfSessions: Muser.numberOfSessions,
-            // planName: Muser.planName,
-            planNames,
+            planNames, // Use the fetched plan names here
             ambassador: user.ambassador,
             engagementTime: engagementTime,
             firstName: user.firstName,
@@ -431,9 +762,7 @@ async function getUsers(req, res) {
           };
         }
       })
-    );
-
-    // console.log(mergedUsers);
+      .filter(Boolean); // Remove undefined entries
 
     // Send the filtered users as response
     res.json(mergedUsers);
@@ -798,6 +1127,272 @@ async function useryearlyvisit(req, res) {
   res.json(yearlyData);
 }
 
+async function allAllowedBooking(req, res) {
+  try {
+    const allAllowedBookings = await TrailBooking.find({});
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ ...allAllowedBookings }));
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while removing user plan" });
+  }
+}
+
+async function deleteAllowBooking(req, res) {
+  try {
+    const { id } = req.params;
+    const allAllowedBookings = await TrailBooking.findByIdAndDelete(id);
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ data: "deleted successfully " }));
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while removing user plan" });
+  }
+}
+
+async function updateAllowedBooking(req, res) {
+  try {
+    const { id } = req.params;
+    const updatedData = req.body;
+
+    console.log(req.body);
+
+    // Directly pass the updatedData object to the update operation
+    const updatedUserPlan = await TrailBooking.findByIdAndUpdate(
+      id,
+      updatedData, // Pass updatedData directly
+      { new: true } // Option to return the updated document
+    );
+
+    // Check if the update was successful
+    if (!updatedUserPlan) {
+      return res.status(404).json({ error: "User plan not found" });
+    }
+
+    return res.status(200).json({ data: updatedUserPlan });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ error: "An error occurred while updating user plan" });
+  }
+}
+
+async function allowedLogin(req, res) {
+  try {
+    // Fetch all bookings sorted by date and hour
+    const bookings = await TrailCourtRoomBooking.find({})
+      .populate("courtroomBookings")
+      .sort({ date: 1, hour: 1 });
+
+    // Format dates in the response
+    const formattedBookings = bookings.map((booking) => ({
+      ...booking.toObject(),
+      date: moment(booking.date).format("YYYY-MM-DD"), // Format to YYYY-MM-DD
+    }));
+
+    return res.status(StatusCodes.OK).json(SuccessResponse(formattedBookings));
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function deleteAllowedLogin(req, res) {
+  try {
+    const { bookingId, userId } = req.params;
+
+    // Find the booking document by ID
+    const booking = await TrailCourtRoomBooking.findById(bookingId).populate(
+      "courtroomBookings"
+    );
+
+    if (!booking) {
+      return res.status(404).send("Booking not found.");
+    }
+
+    // Find and remove the user from the courtroomBookings array
+    const initialLength = booking.courtroomBookings.length;
+    booking.courtroomBookings = booking.courtroomBookings.filter(
+      (booking) => booking._id.toString() !== userId
+    );
+
+    // Check if a user was actually removed
+    if (booking.courtroomBookings.length === initialLength) {
+      return res.status(404).send("User not found in this booking.");
+    }
+
+    // Save the updated booking document
+    await booking.save();
+    return res
+      .status(StatusCodes.OK)
+      .json(
+        SuccessResponse({ response: "User successfully removed from booking." })
+      );
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function UpdateUserDetailsAllowedLogin(req, res) {
+  try {
+    const { userId } = req.params;
+    const { name, phoneNumber, email, recording } = req.body;
+
+    console.log(req.body);
+
+    // Validate input
+    if (!name && !phoneNumber && !email && !recording) {
+      return res.status(400).send("No fields to update.");
+    }
+
+    // Find the user document by ID
+    const user = await TrailCourtroomUser.findById(userId);
+
+    if (!user) {
+      return res.status(404).send("User not found.");
+    }
+
+    // Update the user data
+    if (name) user.name = name;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (email) user.email = email;
+    if (recording) user.recording = recording;
+
+    // Save the updated user document
+    await user.save();
+
+    res.status(200).send("User data successfully updated.");
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function UpdateUserTimingAllowedLogin(req, res) {
+  try {
+    const { bookingId, userId } = req.params;
+    const { newDate, newHour } = req.body;
+
+    // Validate input
+    if (!newDate || newHour === undefined) {
+      return res.status(400).send("Missing new date or new hour.");
+    }
+
+    // Convert newDate to a Date object
+    const newBookingDate = new Date(newDate);
+
+    // Find the booking document by ID
+    const booking = await TrailCourtRoomBooking.findById(bookingId).populate(
+      "courtroomBookings"
+    );
+
+    if (!booking) {
+      return res.status(404).send("Booking not found.");
+    }
+
+    // Find the user within the courtroomBookings array
+    const userIndex = booking.courtroomBookings.findIndex(
+      (booking) => booking._id.toString() === userId
+    );
+
+    if (userIndex === -1) {
+      return res.status(404).send("User not found in this booking.");
+    }
+
+    // console.log(booking.courtroomBookings[userIndex]);
+
+    const existingUser = booking.courtroomBookings[userIndex];
+
+    console.log(existingUser);
+
+    // Remove the user from the current slot
+    booking.courtroomBookings.splice(userIndex, 1);
+
+    // console.log(booking);
+
+    // Check if the new slot exists for the new date and hour
+    let newBooking = await TrailCourtRoomBooking.findOne({
+      date: newBookingDate,
+      hour: newHour,
+    }).populate("courtroomBookings");
+
+    if (!newBooking) {
+      // Create a new booking if it doesn't exist
+      newBooking = new TrailCourtRoomBooking({
+        date: newBookingDate,
+        hour: newHour,
+        courtroomBookings: [],
+      });
+    }
+
+    console.log(newBooking);
+
+    // Check if the total bookings exceed the limit in the new slot
+    if (newBooking.courtroomBookings.length >= 4) {
+      console.log(
+        `Maximum of 4 courtrooms can be booked at ${newHour}:00 on ${newBookingDate.toDateString()}.`
+      );
+      return res
+        .status(400)
+        .send(
+          `Maximum of 4 courtrooms can be booked at ${newHour}:00 on ${newBookingDate.toDateString()}.`
+        );
+    }
+
+    // // Create a new courtroom user
+    // const newCourtroomUser = new TrailCourtRoomBooking({
+    //   name: existingUser.name,
+    //   phoneNumber: existingUser.phoneNumber,
+    //   email: existingUser.email,
+    //   password: existingUser.password,
+    //   recording: existingUser.recording, // Assuming recording is required and set to true
+    //   caseOverview: existingUser.recording,
+    // });
+
+    // console.log(newCourtroomUser);
+
+    // // Save the new courtroom user
+    // const savedCourtroomUser = await newCourtroomUser.save();
+
+    // console.log(savedCourtroomUser);
+
+    // Add the new booking
+    newBooking.courtroomBookings.push(existingUser._id);
+
+    console.log(newBooking);
+
+    // // Save the booking
+    // await newCourtroomUser.save();
+
+    // Save the new booking
+    await newBooking.save();
+
+    // Save the updated booking document
+    await booking.save();
+
+    res.status(200).send("User slot timing successfully updated.");
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
 module.exports = {
   getReferralCodes,
   getPlans,
@@ -825,4 +1420,22 @@ module.exports = {
   removeAdminUser,
   isAdmin,
   removeUserPlan,
+  getAllCourtRoomData,
+  deleteBooking,
+  updateUserDetails,
+  updateUserTiming,
+  allAllowedBooking,
+  deleteAllowBooking,
+  updateAllowedBooking,
+  allowedLogin,
+  deleteAllowedLogin,
+  UpdateUserDetailsAllowedLogin,
+  UpdateUserTimingAllowedLogin,
+  updateClientCourtroomBooking,
+  getClientCourtroomBookings,
+  deleteClientCourtroomBookings,
+  addNewAdmin,
+  adminLogin,
+  verifyAdminUser,
+  getAllAdminNumbers,
 };

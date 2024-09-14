@@ -6,7 +6,11 @@ const app = express();
 const httpProxy = require("http-proxy");
 const proxy = httpProxy.createProxyServer();
 const bodyParser = require("body-parser");
+const cron = require("node-cron"); // Add this line
 require("./src/config/prisma-client");
+const { PrismaClient } = require("@prisma/client"); // Add this line
+const { DbAutomationService } = require("./src/services");
+const prisma = new PrismaClient(); // Add this line
 
 app.use(
   express.json({
@@ -30,6 +34,18 @@ app.use((req, res, next) => {
   next();
 });
 
+// app.use((req, res, next) => {
+//   const clientIp =
+//     req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+//   const origin = req.headers.origin || req.headers.referer;
+
+//   console.log("Client IP:", clientIp);
+//   console.log("Origin:", origin);
+//   console.log("Origin:", origin?.toString()?.substring(8));
+
+//   next();
+// });
+
 app.use("/api", apiRoutes);
 
 app.use("/verify", (req, res) => {
@@ -47,6 +63,21 @@ app.use("", (req, res) => {
     message: "Server is live.",
   });
 });
+
+// Schedule task to run every minute (for testing purposes)
+cron.schedule("0 0 * * *", async () => {
+  console.log("Running scheduled task to handle expired plans");
+  await DbAutomationService.handleExpiredPlans();
+});
+
+// Call the function immediately to test it
+(async () => {
+  try {
+    await DbAutomationService.handleExpiredPlans();
+  } catch (error) {
+    console.error("Error removing expired user plans:", error);
+  }
+})();
 
 app.listen(ServerConfig.PORT, async () => {
   //mongoDB connection

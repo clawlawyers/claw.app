@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 // Define the individual case history subdocument schema
-const CaseHistorySchema = new Schema({
+const TrailCaseHistorySchema = new Schema({
   argument: [{ type: String, required: true }],
   counter_argument: [{ type: String, required: true }],
   judgement: [{ type: String, required: true }],
@@ -11,27 +11,27 @@ const CaseHistorySchema = new Schema({
 });
 
 // Define the courtroom history schema
-const CourtroomHistorySchema = new Schema(
+const TrailCourtroomHistorySchema = new Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CourtroomUser",
+      ref: "TrailCourtroomUser",
       required: true,
     },
     slot: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CourtRoomBooking",
+      ref: "TrailCourtRoomBooking",
       required: true,
     },
-    history: [CaseHistorySchema],
-    latestCaseHistory: CaseHistorySchema,
+    history: [TrailCaseHistorySchema],
+    latestCaseHistory: TrailCaseHistorySchema,
   },
   { timestamps: true }
 );
 
-const CourtroomHistory = mongoose.model(
-  "CourtroomHistory",
-  CourtroomHistorySchema
+const TrailCourtroomHistory = mongoose.model(
+  "TrailCourtroomHistory",
+  TrailCourtroomHistorySchema
 );
 
-module.exports = CourtroomHistory;
+module.exports = TrailCourtroomHistory;

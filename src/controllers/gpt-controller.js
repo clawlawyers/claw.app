@@ -10,6 +10,7 @@ const {
 const { FLASK_API_ENDPOINT } = process.env;
 
 async function fetchGptApi(body) {
+  console.log(body);
   const response = await fetch(`${FLASK_API_ENDPOINT}/gpt/generate`, {
     method: "POST",
     headers: {
@@ -18,13 +19,18 @@ async function fetchGptApi(body) {
     body: JSON.stringify(body),
   });
 
-  return response.json();
+  console.log(response);
+
+  const res = response.json();
+
+  return res;
 }
 
 async function generateGptResponse(req, res) {
   try {
     const { prompt } = req.body;
     const gptApiResponse = await fetchGptApi({ prompt, context: "" });
+
     return res.status(StatusCodes.OK).json(
       SuccessResponse({
         gptResponse: { message: gptApiResponse.gptResponse },
@@ -190,6 +196,72 @@ async function appendMessage(req, res) {
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
   }
+}
+
+async function judgement(req, res) {
+  try {
+    const { sessionId } = req.body;
+
+    // Fetch Context
+    const context = await GptServices.fetchContext(sessionId);
+    const fetchedJudgement = await fetchSupremeCourtRoomJudgement({
+      context,
+    });
+    return res.status(StatusCodes.OK).json(SuccessResponse(fetchedJudgement));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function fetchSupremeCourtRoomJudgement(body) {
+  console.log(body);
+  const response = await fetch(`${FLASK_API_ENDPOINT}/gpt/judgement`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  console.log(response);
+
+  return response.json();
+}
+
+async function relevantAct(req, res) {
+  try {
+    const { sessionId } = req.body;
+
+    // Fetch Context
+    const context = await GptServices.fetchContext(sessionId);
+    const fetchedRelevantAct = await fetchRelevantAct({
+      context,
+    });
+    return res.status(StatusCodes.OK).json(SuccessResponse(fetchedRelevantAct));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function fetchRelevantAct(body) {
+  console.log(body);
+  const response = await fetch(`${FLASK_API_ENDPOINT}/gpt/reference`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  console.log(response);
+
+  return response.json();
 }
 
 async function fetchGptRelatedCases(context, courtName) {
@@ -683,4 +755,6 @@ module.exports = {
   caseSearchOn,
   caseSearchOnCheck,
   funPlan,
+  judgement,
+  relevantAct,
 };

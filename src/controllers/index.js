@@ -1,6 +1,8 @@
 module.exports = {
   UserController: require("./user-controller"),
   ClientController: require("./client-controller"),
+  CourtroomController: require("./coutroom-cotroller"),
+  SpecificLawyerCourtroomController: require("./specificLawyerCourtroom-controller"),
   PostController: require("./post-controller"),
   LeadController: require("./lead-controller"),
   GigController: require("./gig-controller"),
@@ -12,4 +14,5 @@ module.exports = {
   StripeController: require("./stripe-controller"),
   CashfreeController: require("./Cashfree-controller"),
   RazorpayController: require("./razorpay-controller"),
+  AiDrafter: require("./aiDrafter-controller"),
 };
