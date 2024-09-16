@@ -957,12 +957,15 @@ async function validateCoupon(req, res) {
 
 // Deactivate a coupon
 async function deactivateCoupon(req, res) {
+  console.log("hi ");
   try {
     const { code } = req.body;
+    console.log(code);
+
     const coupon = await Coupon.findOneAndUpdate(
       { _id: code },
-      { isActive: false },
-      { new: true }
+      { isActive: false }
+      // { new: true }
     );
     if (!coupon) return res.status(404).json({ message: "Coupon not found" });
 
@@ -1645,7 +1648,22 @@ async function getallVisitors(req, res) {
     res.status(500);
   }
 }
-async function deleterefralcode(req, res) {}
+async function deleterefralcode(req, res) {
+  try {
+    const { id } = req.body;
+
+    // Delete the referral code from Prisma DB
+    const deletedCode = await prisma.referralCode.delete({
+      where: { id },
+    });
+
+    res
+      .status(200)
+      .json({ message: "Referral code deleted successfully", deletedCode });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
 
 module.exports = {
   getReferralCodes,
