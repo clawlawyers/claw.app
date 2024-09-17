@@ -222,8 +222,8 @@ async function verifySubscription(req, res) {
 
   if (generatedSignature === razorpay_signature) {
     try {
-      existingSubscription = "sub_OxoPELYapCauog";
-      refundAmount = 686;
+      // existingSubscription = "sub_OxoPELYapCauog";
+      // refundAmount = 686;
       if (existingSubscription) {
         // Step 1: Cancel the existing subscription
         const canceledSubscription = await razorpay.subscriptions.cancel(
