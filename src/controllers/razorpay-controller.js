@@ -242,7 +242,10 @@ async function verifySubscription(req, res) {
         );
 
         console.log("Canceled Subscription:", canceledSubscription);
-        if (canceledSubscription.paid_count) {
+        if (
+          canceledSubscription.total_count -
+          canceledSubscription.remaining_count
+        ) {
           console.log(new Date(canceledSubscription.current_end * 1000)); // use
           console.log(new Date(canceledSubscription.start_at * 1000)); // use
 
