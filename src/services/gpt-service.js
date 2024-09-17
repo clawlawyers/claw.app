@@ -721,7 +721,7 @@ async function verifyReferralCode(referralCode) {
       return {
         message: "Referral code valid",
         trialDays: referralCodeExist.freeTrial,
-        dicount: referralCodeExist.discount,
+        discount: referralCodeExist.discount,
       };
     }
   } catch (error) {
@@ -961,7 +961,7 @@ async function updateUserPlan(
   mongoId,
   newPlan,
   razorpay_subscription_id,
-  isUpgrade,
+  existingSubscription,
   createdAt,
   trialDays,
   refferalCode,
@@ -985,12 +985,12 @@ async function updateUserPlan(
     //     },
     //   });
     // } else
-    if (isUpgrade !== "") {
+    if (existingSubscription !== "") {
       // Find the plan that is active
       const activePlan = await prisma.newUserPlan.findFirst({
         where: {
           userId: mongoId,
-          planName: isUpgrade,
+          subscriptionId: existingSubscription,
           isActive: true,
         },
       });
@@ -1020,6 +1020,20 @@ async function updateUserPlan(
             isCouponCode: couponCode,
           },
         });
+
+        if (refferalCode) {
+          await prisma.referralCode.update({
+            where: {
+              referralCode: refferalCode,
+            },
+            data: {
+              redeemedBy: {
+                connect: { mongoId: mongoId },
+              },
+              redeemed: true,
+            },
+          });
+        }
       } else {
         updatedUserPlan = await prisma.newUserPlan.create({
           data: {
@@ -1046,44 +1060,58 @@ async function updateUserPlan(
             isCouponCode: couponCode,
           },
         });
-      } else {
-        updatedUserPlan = await prisma.newUserPlan.create({
-          data: {
-            userId: mongoId,
-            planName: newPlan,
-            subscriptionId: razorpay_subscription_id,
-            createdAt,
-            expiresAt,
-            isActive: true,
-          },
-        });
+
+        if (refferalCode) {
+          await prisma.referralCode.update({
+            where: {
+              referralCode: refferalCode,
+            },
+            data: {
+              redeemedBy: {
+                connect: { mongoId: mongoId },
+              },
+              redeemed: true,
+            },
+          });
+        } else {
+          updatedUserPlan = await prisma.newUserPlan.create({
+            data: {
+              userId: mongoId,
+              planName: newPlan,
+              subscriptionId: razorpay_subscription_id,
+              createdAt,
+              expiresAt,
+              isActive: true,
+            },
+          });
+        }
       }
+      // else if (trialDays) {
+      //   updatedUserPlan = await prisma.newUserPlan.create({
+      //     data: {
+      //       userId: mongoId,
+      //       planName: newPlan,
+      //       subscriptionId: razorpay_subscription_id,
+      //       isActive: true,
+      //       createdAt,
+      //     },
+      //   });
+      // } else {
+      //   updatedUserPlan = await prisma.newUserPlan.create({
+      //     data: {
+      //       userId: mongoId,
+      //       planName: newPlan,
+      //       subscriptionId: razorpay_subscription_id,
+      //       createdAt,
+      //     },
+      //   });
+      // }
+      // else
+      return {
+        user: updatedUserPlan.mongoId,
+        plan: updatedUserPlan.planName,
+      };
     }
-    // else if (trialDays) {
-    //   updatedUserPlan = await prisma.newUserPlan.create({
-    //     data: {
-    //       userId: mongoId,
-    //       planName: newPlan,
-    //       subscriptionId: razorpay_subscription_id,
-    //       isActive: true,
-    //       createdAt,
-    //     },
-    //   });
-    // } else {
-    //   updatedUserPlan = await prisma.newUserPlan.create({
-    //     data: {
-    //       userId: mongoId,
-    //       planName: newPlan,
-    //       subscriptionId: razorpay_subscription_id,
-    //       createdAt,
-    //     },
-    //   });
-    // }
-    // else
-    return {
-      user: updatedUserPlan.mongoId,
-      plan: updatedUserPlan.planName,
-    };
   } catch (error) {
     console.error(error);
     throw new AppError(
