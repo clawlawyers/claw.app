@@ -167,8 +167,55 @@ async function activateTodaysNewUserPlans() {
   }
 }
 
+async function deactivateExpiredUserPlans() {
+  try {
+    // Get the current date (IST) without time
+    const utcDate = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+    const now = new Date(utcDate.getTime() + istOffset);
+
+    // Strip the time part to compare only the date
+    const todayStart = new Date(now.setHours(0, 0, 0, 0)); // Start of today
+
+    console.log("Today's date (start):", todayStart);
+
+    // Find all user plans where the expiration date is before today and they are still active
+    const expiredUserPlans = await prisma.newUserPlan.findMany({
+      where: {
+        expiresAt: {
+          lt: todayStart, // Expiration date is before today
+        },
+        isActive: true, // Only find plans that are currently active
+      },
+    });
+
+    // Deactivate all expired plans
+    for (const plan of expiredUserPlans) {
+      const { userId, planName } = plan;
+
+      // Update the plan to make it inactive
+      await prisma.newUserPlan.update({
+        where: {
+          userId_planName: {
+            userId,
+            planName,
+          },
+        },
+        data: {
+          isActive: false,
+        },
+      });
+
+      console.log(`Deactivated expired plan ${planName} for user ${userId}`);
+    }
+  } catch (error) {
+    console.error("Error deactivating expired user plans:", error);
+  }
+}
+
 module.exports = {
   handleExpiredPlans,
   updateUserTokens,
   activateTodaysNewUserPlans,
+  deactivateExpiredUserPlans,
 };

@@ -676,8 +676,8 @@ async function redeemReferralCode(referralCode, redeemedById) {
         // planName: "free",
       },
       data: {
-        planName: "student",
-        tokenUsed: 0,
+        // planName: "student",
+        // tokenUsed: 0,
         redeemedReferralCodeId: referralCode,
       },
       select: {
@@ -699,6 +699,23 @@ async function redeemReferralCode(referralCode, redeemedById) {
     console.log(error);
     throw new AppError(
       "Error while redeeming referral code",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function verifyReferralCode(referralCode) {
+  try {
+    const referralCodeExist = await CheckReferralCodeExist(referralCode);
+    if (!referralCodeExist) {
+      return { message: "Referral code not valid" };
+    } else {
+      return { message: "Referral code valid" };
+    }
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while verifying referral code",
       StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
@@ -897,11 +914,46 @@ async function addFirstAdminUser(userId) {
   }
 }
 
+async function updateUserSubscription(
+  mongoId,
+  subscriptionId,
+  isActive,
+  subscriptionEndDate
+) {
+  let updatedUser;
+  if (subscriptionEndDate) {
+    updatedUser = await prisma.newUserPlan.update({
+      where: {
+        mongoId,
+        subscriptionId: subscriptionId,
+        expiresAt: subscriptionEndDate,
+      },
+      data: {
+        isActive: isActive,
+      },
+    });
+  } else {
+    updatedUser = await prisma.newUserPlan.update({
+      where: {
+        mongoId,
+        subscriptionId: subscriptionId,
+      },
+      data: {
+        isActive: isActive,
+      },
+    });
+  }
+}
+
 async function updateUserPlan(
   mongoId,
   newPlan,
+  razorpay_subscription_id,
   isUpgrade,
   createdAt,
+  trialDays,
+  refferalCode,
+  couponCode,
   expiresAt
 ) {
   console.log(mongoId, newPlan);
@@ -910,15 +962,18 @@ async function updateUserPlan(
     const createdAtDate = new Date(createdAt).setHours(0, 0, 0, 0); // Set time to 00:00:00
     const today = new Date().setHours(0, 0, 0, 0); // Set today's date to 00:00:00
     let updatedUserPlan;
-    if (expiresAt) {
-      updatedUserPlan = await prisma.newUserPlan.create({
-        data: {
-          userId: mongoId,
-          planName: newPlan,
-          expiresAt: expiresAt,
-        },
-      });
-    } else if (isUpgrade !== "") {
+
+    // if (expiresAt) {
+    //   updatedUserPlan = await prisma.newUserPlan.create({
+    //     data: {
+    //       userId: mongoId,
+    //       planName: newPlan,
+    //       subscriptionId: razorpay_subscription_id,
+    //       expiresAt: expiresAt,
+    //     },
+    //   });
+    // } else
+    if (isUpgrade !== "") {
       // Find the plan that is active
       const activePlan = await prisma.newUserPlan.findFirst({
         where: {
@@ -940,30 +995,79 @@ async function updateUserPlan(
         });
       }
 
-      updatedUserPlan = await prisma.newUserPlan.create({
-        data: {
-          userId: mongoId,
-          planName: newPlan,
-          isActive: true,
-        },
-      });
-    } else if (createdAtDate === today) {
-      updatedUserPlan = await prisma.newUserPlan.create({
-        data: {
-          userId: mongoId,
-          planName: newPlan,
-          isActive: true,
-        },
-      });
+      if (refferalCode || couponCode) {
+        updatedUserPlan = await prisma.newUserPlan.create({
+          data: {
+            userId: mongoId,
+            planName: newPlan,
+            subscriptionId: razorpay_subscription_id,
+            isActive: true,
+            createdAt,
+            expiresAt,
+            referralCodeId: refferalCode,
+            isCouponCode: couponCode,
+          },
+        });
+      } else {
+        updatedUserPlan = await prisma.newUserPlan.create({
+          data: {
+            userId: mongoId,
+            planName: newPlan,
+            subscriptionId: razorpay_subscription_id,
+            createdAt,
+            expiresAt,
+            isActive: true,
+          },
+        });
+      }
     } else {
-      updatedUserPlan = await prisma.newUserPlan.create({
-        data: {
-          userId: mongoId,
-          planName: newPlan,
-          createdAt,
-        },
-      });
+      if (refferalCode || couponCode) {
+        updatedUserPlan = await prisma.newUserPlan.create({
+          data: {
+            userId: mongoId,
+            planName: newPlan,
+            subscriptionId: razorpay_subscription_id,
+            isActive: true,
+            createdAt,
+            expiresAt,
+            referralCodeId: refferalCode,
+            isCouponCode: couponCode,
+          },
+        });
+      } else {
+        updatedUserPlan = await prisma.newUserPlan.create({
+          data: {
+            userId: mongoId,
+            planName: newPlan,
+            subscriptionId: razorpay_subscription_id,
+            createdAt,
+            expiresAt,
+            isActive: true,
+          },
+        });
+      }
     }
+    // else if (trialDays) {
+    //   updatedUserPlan = await prisma.newUserPlan.create({
+    //     data: {
+    //       userId: mongoId,
+    //       planName: newPlan,
+    //       subscriptionId: razorpay_subscription_id,
+    //       isActive: true,
+    //       createdAt,
+    //     },
+    //   });
+    // } else {
+    //   updatedUserPlan = await prisma.newUserPlan.create({
+    //     data: {
+    //       userId: mongoId,
+    //       planName: newPlan,
+    //       subscriptionId: razorpay_subscription_id,
+    //       createdAt,
+    //     },
+    //   });
+    // }
+    // else
     return {
       user: updatedUserPlan.mongoId,
       plan: updatedUserPlan.planName,
@@ -1193,4 +1297,6 @@ module.exports = {
   getPlansByUserId,
   removeUserPlans,
   getUserPlan,
+  updateUserSubscription,
+  verifyReferralCode,
 };
