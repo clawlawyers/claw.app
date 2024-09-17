@@ -974,7 +974,6 @@ async function updateUserPlan(
   razorpay_subscription_id,
   existingSubscription,
   createdAt,
-  trialDays,
   refferalCode,
   couponCode,
   expiresAt

@@ -142,7 +142,8 @@ const get_next_due_date = async (subscription_id) => {
 
 // Create subscription
 async function createSubscription(req, res) {
-  const { plan, billingCycle, session, phoneNumber, trialDays } = req.body;
+  const { plan, billingCycle, session, phoneNumber, trialDays, isDiscount } =
+    req.body;
 
   try {
     const fetchUser = await ClientService.getClientByPhoneNumber(phoneNumber);
@@ -155,7 +156,13 @@ async function createSubscription(req, res) {
       paymentStatus: paymentStatus.INITIATED,
     });
 
-    Backendplan = planNamesquence.find((p) => p.name === plan);
+    let Backendplan;
+
+    if (isDiscount) {
+      Backendplan = OfferplanNamesquence.find((p) => p.name === plan);
+    } else {
+      Backendplan = planNamesquence.find((p) => p.name === plan);
+    }
 
     let currentTimeInSeconds = Math.floor(Date.now() / 1000); // Current time in seconds
     let date = new Date(currentTimeInSeconds * 1000); // Convert to milliseconds and create a Date object
@@ -204,14 +211,12 @@ async function createSubscription(req, res) {
 
 async function verifySubscription(req, res) {
   let {
-    refundAmount,
     existingSubscription,
     razorpay_subscription_id,
     razorpay_payment_id,
     razorpay_signature,
     _id,
     createdAt,
-    trialDays,
     refferalCode,
     couponCode,
   } = req.body;
@@ -230,8 +235,6 @@ async function verifySubscription(req, res) {
 
   if (generatedSignature === razorpay_signature) {
     try {
-      // existingSubscription = "sub_OxoPELYapCauog";
-      // refundAmount = 686;
       if (existingSubscription) {
         // Step 1: Cancel the existing subscription
         const canceledSubscription = await razorpay.subscriptions.cancel(
@@ -239,8 +242,30 @@ async function verifySubscription(req, res) {
         );
 
         console.log("Canceled Subscription:", canceledSubscription);
-
         if (canceledSubscription.paid_count) {
+          console.log(new Date(canceledSubscription.current_end * 1000)); // use
+          console.log(new Date(canceledSubscription.start_at * 1000)); // use
+
+          const endDate = new Date(canceledSubscription.current_end * 1000);
+
+          const currentDate = new Date.now();
+
+          const planId = canceledSubscription.plan_id;
+          let plan = planNamesquence.find((p) => p.id === planId);
+
+          if (!plan) {
+            plan = OfferplanNamesquence.find((p) => p.id === planId);
+          }
+
+          const onedayPrice =
+            plan.price / (plan.name.split("_")[1] === "M" ? 30 : 365);
+
+          const totalDaysBetweenEndAndCurrent = Math.floor(
+            (endDate.getTime() - currentDate.getTime()) / (24 * 60 * 60 * 1000)
+          );
+
+          const refundMoney = totalDaysBetweenEndAndCurrent * onedayPrice;
+
           const invoices = await razorpay.invoices.all({
             subscription_id: existingSubscription, // Filter by subscription ID
           });
@@ -250,9 +275,9 @@ async function verifySubscription(req, res) {
           const paymentId = invoices.items[0].payment_id;
 
           // Step 3: Refund the custom amount (if applicable)
-          if (refundAmount > 0) {
+          if (refundMoney > 0) {
             const refund = await razorpay.payments.refund(paymentId, {
-              amount: refundAmount, // Refund amount in paise
+              amount: refundMoney, // Refund amount in paise
             });
 
             console.log("Refund processed:", refund);
@@ -283,7 +308,6 @@ async function verifySubscription(req, res) {
         razorpay_subscription_id,
         existingSubscription,
         createdAt,
-        trialDays,
         refferalCode,
         couponCode,
         expiresAt
