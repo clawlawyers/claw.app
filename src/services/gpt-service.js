@@ -704,9 +704,20 @@ async function redeemReferralCode(referralCode, redeemedById) {
   }
 }
 
-async function verifyReferralCode(referralCode) {
+async function verifyReferralCode(referralCode, _id) {
   try {
     // const referralCodeExist = await CheckReferralCodeExist(referralCode);
+
+    const alreadyUse = await prisma.newUserPlan.findFirst({
+      where: {
+        userId: _id,
+        referralCodeId: referralCode,
+      },
+    });
+
+    if (alreadyUse) {
+      return { message: "Referral code not valid", reason: "Already used" };
+    }
 
     const referralCodeExist = await prisma.referralCode.findUnique({
       where: {
@@ -1121,6 +1132,30 @@ async function updateUserPlan(
   }
 }
 
+async function handleFirstPayment(userId, subscriptionId) {
+  // Do something special for the first payment, like granting a bonus or sending an email
+
+  const refferalCode = await prisma.newUserPlan.findFirst({
+    where: {
+      userId: userId,
+      subscriptionId: subscriptionId,
+    },
+  });
+
+  const code = refferalCode.referralCodeId;
+
+  await prisma.referralCode.update({
+    where: {
+      referralCode: code,
+    },
+    data: {
+      redeemedAndPayBy: {
+        connect: { mongoId: userId },
+      },
+    },
+  });
+}
+
 // async function updateUserPlan(mongoId, newPlan, expiresAt) {
 //   console.log(mongoId, newPlan);
 //   try {
@@ -1339,4 +1374,5 @@ module.exports = {
   getUserPlan,
   updateUserSubscription,
   verifyReferralCode,
+  handleFirstPayment,
 };

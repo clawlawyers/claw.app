@@ -444,9 +444,11 @@ async function redeemReferralCode(req, res) {
 
 async function verifyReferralCode(req, res) {
   try {
+    const { _id } = req.body.client;
+
     const { referralCode } = req.body;
 
-    const response = await GptServices.verifyReferralCode(referralCode);
+    const response = await GptServices.verifyReferralCode(referralCode, _id);
     return res.status(StatusCodes.OK).json(SuccessResponse(response));
   } catch (error) {
     console.log(error);

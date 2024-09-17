@@ -322,19 +322,7 @@ async function rezorpayWebhook(req, res) {
       if (paidCount === 1) {
         // This is the first payment, as the paid count is 1
 
-        const refferalCode = await prisma.new;
-
-        // Do something special for the first payment, like granting a bonus or sending an email
-        await prisma.referralCode.update({
-          where: {
-            referralCode: referralCode,
-          },
-          data: {
-            redeemedAndPayBy: {
-              connect: { mongoId: userId },
-            },
-          },
-        });
+        await GptServices.handleFirstPayment(userId, subscriptionId);
       }
 
       // Update the user's subscription as active and set the new end date
