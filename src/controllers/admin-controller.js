@@ -16,7 +16,8 @@ const TrialCourtroomCoupon = require("../models/trialCourtroomCoupon");
 
 async function deleteTrialCoupon(req, res) {
   try {
-    const coupon = data.coupon;
+    const { id } = req.body;
+    console.log(id);
     await TrialCourtroomCoupon.deleteOne(coupon);
     return res
       .status(201)
@@ -1668,7 +1669,7 @@ async function deleterefralcode(req, res) {
 }
 async function removeUser(req, res) {
   console.log("hi");
-  try { 
+  try {
     const { id } = req.body;
     console.log(id);
 
