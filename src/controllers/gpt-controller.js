@@ -441,6 +441,22 @@ async function redeemReferralCode(req, res) {
       .json(ErrorResponse({}, error));
   }
 }
+
+async function verifyReferralCode(req, res) {
+  try {
+    const { _id } = req.body.client;
+
+    const { referralCode } = req.body;
+
+    const response = await GptServices.verifyReferralCode(referralCode, _id);
+    return res.status(StatusCodes.OK).json(SuccessResponse(response));
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.messages));
+  }
+}
 async function fetchAmbassadorDetails(req, res) {
   try {
     console.log(req.body);
@@ -764,4 +780,5 @@ module.exports = {
   funPlan,
   judgement,
   relevantAct,
+  verifyReferralCode,
 };

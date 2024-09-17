@@ -4,6 +4,7 @@ const trialCourtroomCouponSchema = new mongoose.Schema({
   CouponCode: {
     type: String,
     required: true,
+    unique: true,
   },
   totalSlots: {
     type: Number,
