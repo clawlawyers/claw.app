@@ -452,7 +452,7 @@ async function verifyReferralCode(req, res) {
     console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse({}, error, messages));
+      .json(ErrorResponse({}, error.messages));
   }
 }
 async function fetchAmbassadorDetails(req, res) {
