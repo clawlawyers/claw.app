@@ -713,6 +713,8 @@ async function verifyReferralCode(referralCode) {
         referralCode,
       },
     });
+
+    console.log(referralCodeExist);
     if (!referralCodeExist) {
       return { message: "Referral code not valid" };
     } else {
