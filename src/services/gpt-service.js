@@ -706,11 +706,21 @@ async function redeemReferralCode(referralCode, redeemedById) {
 
 async function verifyReferralCode(referralCode) {
   try {
-    const referralCodeExist = await CheckReferralCodeExist(referralCode);
+    // const referralCodeExist = await CheckReferralCodeExist(referralCode);
+
+    const referralCodeExist = await prisma.referralCode.findUnique({
+      where: {
+        referralCode,
+      },
+    });
     if (!referralCodeExist) {
       return { message: "Referral code not valid" };
     } else {
-      return { message: "Referral code valid" };
+      return {
+        message: "Referral code valid",
+        trialDays: referralCodeExist.freeTrial,
+        dicount: referralCodeExist.discount,
+      };
     }
   } catch (error) {
     console.log(error);
