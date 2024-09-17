@@ -157,11 +157,20 @@ async function createSubscription(req, res) {
 
     Backendplan = planNamesquence.find((p) => p.name === plan);
 
+    let currentTimeInSeconds = Math.floor(Date.now() / 1000); // Current time in seconds
+    let date = new Date(currentTimeInSeconds * 1000); // Convert to milliseconds and create a Date object
+
+    // Modify only the date part (e.g., add 7 days)
+    date.setDate(date.getDate() + trialDays);
+
+    // Get the updated timestamp (time remains unchanged)
+    let updatedTimeInSeconds = Math.floor(date.getTime() / 1000);
+
     const subscriptionOptions = {
       plan_id: Backendplan.id, // Razorpay Plan ID from dashboard
       customer_notify: 1,
       // total_count: billingCycle === "MONTHLY" ? 12 : 1, // Monthly or yearly billing
-      start_at: Math.floor(Date.now() / 1000) + trialDays * 24 * 60 * 60, // Start 7 days from now
+      start_at: updatedTimeInSeconds,
       end_at: Math.floor(Date.now() / 1000) + 10 * 365 * 24 * 60 * 60, // Set an end date 10 years from now
       // offer_id: "offer_OwvYlKUwvJg4yc",
       notes: {
@@ -307,6 +316,26 @@ async function rezorpayWebhook(req, res) {
       const userId = data.subscription.entity.notes.user_id;
       const currentEndTimestamp = data.subscription.entity.current_end;
       const subscriptionEndDate = new Date(currentEndTimestamp * 1000);
+      // Check the paid count in the subscription entity
+      const paidCount = data.subscription.entity.paid_count;
+
+      if (paidCount === 1) {
+        // This is the first payment, as the paid count is 1
+
+        const refferalCode = await prisma.new;
+
+        // Do something special for the first payment, like granting a bonus or sending an email
+        await prisma.referralCode.update({
+          where: {
+            referralCode: referralCode,
+          },
+          data: {
+            redeemedAndPayBy: {
+              connect: { mongoId: userId },
+            },
+          },
+        });
+      }
 
       // Update the user's subscription as active and set the new end date
       await GptServices.updateUserSubscription(
