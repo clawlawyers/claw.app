@@ -1650,11 +1650,11 @@ async function getallVisitors(req, res) {
 }
 async function deleterefralcode(req, res) {
   try {
-    const { id } = req.body;
+    const { mongoId } = req.body;
 
     // Delete the referral code from Prisma DB
     const deletedCode = await prisma.referralCode.delete({
-      where: { id },
+      where: { mongoId },
     });
 
     res
@@ -1662,6 +1662,40 @@ async function deleterefralcode(req, res) {
       .json({ message: "Referral code deleted successfully", deletedCode });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+}
+async function removeUser(req, res) {
+  const { id } = req.body;
+  const deletedCode = await prisma.user.delete({
+    where: { id },
+  });
+}
+async function createReferralCodes(req, res) {
+  try {
+    const { referralCode, generatedById } = req.body;
+
+    // Validate the input data
+    if (!referralCode || !generatedById) {
+      return res
+        .status(400)
+        .json({ error: "referralCode and generatedById are required" });
+    }
+
+    // Create a new ReferralCode
+    const newReferralCode = await prisma.referralCode.create({
+      data: {
+        referralCode,
+        generatedById,
+      },
+    });
+
+    // Send a success response with the created referral code
+    return res
+      .status(201)
+      .json({ message: "Referral code created successfully", newReferralCode });
+  } catch (error) {
+    console.error("Error creating referral code:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 }
 
@@ -1718,4 +1752,6 @@ module.exports = {
   userEveryMonthData,
   getallVisitors,
   deleterefralcode,
+  removeUser,
+  createReferralCodes,
 };

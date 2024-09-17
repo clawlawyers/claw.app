@@ -53,6 +53,8 @@ const {
   userEveryYearData,
   getallVisitors,
   deleterefralcode,
+  removeUser,
+  createReferralCodes,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -63,6 +65,7 @@ const TrailBooking = require("../../models/trailBookingAllow");
 // const { updateUserPlan } = require("../../services/gpt-service");
 
 router.get("/referralcode", getReferralCodes);
+router.post("/referralcode", createReferralCodes);
 router.get("/plan", getPlans);
 router.get("/user", getUsers);
 router.get("/subscribed-user", getSubscribedUsers);
@@ -92,6 +95,7 @@ router.get("/getAdmins", getAdmins);
 router.post("/:adminId/removeUser", removeAdminUser);
 router.get("/:phoneNumber/isAdmin", isAdmin);
 router.delete("/removeUserPlan", removeUserPlan);
+router.delete("/removeUser", removeUser);
 router.get("/allVisitors", getallVisitors);
 router.delete("/referralcode", deleterefralcode);
 
