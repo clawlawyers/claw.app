@@ -68,7 +68,7 @@ async function getAllAdminNumbers(req, res) {
     const users = await AdminUser.find({});
     const adminNumbers = users.map((user) => user.phoneNumber);
     console.log(adminNumbers);
-    return res.status(200).json(SuccessResponse({ adminNumbers }));
+    return res.status(200).json(SuccessResponse({ users }));
   } catch (error) {
     console.log(error);
     res
@@ -169,6 +169,7 @@ async function getClientCourtroomBookings(req, res) {
 async function updateClientCourtroomBooking(req, res) {
   try {
     const { updatedData } = req.body;
+    console.log(updatedData);
     const clientUser = await SpecificLawyerCourtroomUser.findOneAndUpdate(
       {
         Domain: updatedData.Domain,
@@ -1661,14 +1662,23 @@ async function deleterefralcode(req, res) {
       .status(200)
       .json({ message: "Referral code deleted successfully", deletedCode });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: error.message });
   }
 }
 async function removeUser(req, res) {
-  const { id } = req.body;
-  const deletedCode = await prisma.user.delete({
-    where: { id },
-  });
+  console.log("hi");
+  try { 
+    const { id } = req.body;
+    console.log(id);
+
+    const deletedCode = await prisma.user.delete({
+      where: { mongoId: id },
+    });
+    res.status(200).json({ message: "removed" });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
 }
 async function createReferralCodes(req, res) {
   try {
