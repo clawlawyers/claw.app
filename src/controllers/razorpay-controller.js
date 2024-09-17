@@ -251,7 +251,7 @@ async function verifySubscription(req, res) {
 
           const endDate = new Date(canceledSubscription.current_end * 1000);
 
-          const currentDate = new Date.now();
+          const currentDate = new Date();
 
           const planId = canceledSubscription.plan_id;
           let plan = planNamesquence.find((p) => p.id === planId);
