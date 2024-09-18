@@ -13,7 +13,18 @@ const razorpay = new Razorpay({
 });
 
 // planNamesquence = ["BASIC_M", "ESSENTIAL_M", "BASIC_Y", "ESSENTIAL_Y"];
-planNamesquence = [
+
+// const LiveplanNamesquence = [
+//   { name: "BASIC_M", price: 399, id: "plan_OvrQPqMurmW9P2" },
+//   { name: "BASIC_Y", price: 3999, id: "plan_OvrS1uLssYZZ5A" },
+//   { name: "ESSENTIAL_M", price: 1199, id: "plan_OvrQvRwtnJhEpo" },
+//   { name: "ESSENTIAL_Y", price: 11999, id: "plan_OvrSVyFS74Lgbr" },
+//   { name: "PREMIUM_M", price: 1999, id: "plan_OvrRWAtQRSoKHu" },
+//   { name: "PREMIUM_Y", price: 19999, id: "plan_OvrSvJaxOqEuxG" },
+//   { name: "ADDON_M", price: 19999, id: "plan_OvrTcADlxAi3Fq" },
+// ];
+
+const planNamesquence = [
   { name: "BASIC_M", price: 399, id: "plan_OvslHBSlbwE1lM" },
   { name: "BASIC_Y", price: 3999, id: "plan_OvsmK9WNPatC33" },
   { name: "ESSENTIAL_M", price: 1199, id: "plan_OvsmWrzM694xvr" },
@@ -23,7 +34,7 @@ planNamesquence = [
   { name: "ADDON_M", price: 19999, id: "plan_OvsnZFctyVRhn5" },
 ];
 
-OfferplanNamesquence = [
+const OfferplanNamesquence = [
   { name: "BASIC_M", price: 199, id: "plan_OxqVBZBd8zgPzl" },
   { name: "BASIC_Y", price: 1999, id: "plan_OxqVfzDcqf1qey" },
   { name: "ESSENTIAL_M", price: 699, id: "plan_OxqWsZ3onTMiHw" },
@@ -82,8 +93,8 @@ async function verifyPayment(req, res) {
     razorpay_payment_id,
     razorpay_signature,
     _id,
-    isUpgrade,
     createdAt,
+    expiresAt,
   } = req.body;
 
   const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
@@ -98,11 +109,22 @@ async function verifyPayment(req, res) {
 
       // update the plan for user
       console.log(placedOrder.user.toString(), placedOrder.plan);
+      // const rs = await GptServices.updateUserPlan(
+      //   placedOrder.user.toString(),
+      //   placedOrder.plan,
+      //   isUpgrade,
+      //   createdAt
+      // );
+
       const rs = await GptServices.updateUserPlan(
         placedOrder.user.toString(),
         placedOrder.plan,
-        isUpgrade,
-        createdAt
+        razorpay_order_id,
+        (existingSubscription = ""),
+        createdAt,
+        (refferalCode = null),
+        (couponCode = ""),
+        expiresAt
       );
 
       console.log(rs);
@@ -184,6 +206,8 @@ async function createSubscription(req, res) {
         user_id: fetchUser._id,
       },
     };
+
+    console.log(subscriptionOptions);
 
     // Create a subscription on Razorpay
     const razorpaySubscription = await razorpay.subscriptions.create(

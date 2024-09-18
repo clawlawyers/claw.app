@@ -1007,6 +1007,19 @@ async function updateUserPlan(
     const today = new Date().setHours(0, 0, 0, 0); // Set today's date to 00:00:00
     let updatedUserPlan;
 
+    if (newPlan === "ADDON_M") {
+      updatedUserPlan = await prisma.newUserPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          subscriptionId: razorpay_subscription_id,
+          isActive: true,
+          createdAt,
+          expiresAt,
+        },
+      });
+    }
+
     if (existingSubscription) {
       // Find the plan that is active
       const activePlan = await prisma.newUserPlan.findFirst({
