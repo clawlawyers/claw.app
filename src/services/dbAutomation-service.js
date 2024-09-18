@@ -44,15 +44,17 @@ async function handleExpiredPlans() {
       },
     });
 
+    console.log(expiredPlans);
+
     for (const userPlan of expiredPlans) {
       const { userId, planName } = userPlan;
 
       // Remove expired plan
-      await prisma.userPlan.delete({
+      await prisma.newUserPlan.delete({
         where: {
           userId_planName: {
-            userId,
-            planName,
+            userId: userId,
+            planName: planName,
           },
         },
       });
