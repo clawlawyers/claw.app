@@ -708,6 +708,26 @@ async function verifyReferralCode(referralCode, _id) {
   try {
     // const referralCodeExist = await CheckReferralCodeExist(referralCode);
 
+    const referralCodes = await prisma.referralCode.findMany({
+      where: {
+        referralCode,
+        // redeemedBy: null, // This means the referral code has not been redeemed yet
+        redeemedBy: {
+          some: {
+            mongoId: _id, // The userId is the mongoId in the User model
+          },
+        },
+      },
+      include: {
+        redeemedBy: true, // Include the `redeemedBy` users' details
+      },
+    });
+
+    console.log(referralCodes);
+    if (referralCodes.length !== 0) {
+      return { message: "Referral code not valid", reason: "Already used" };
+    }
+
     const alreadyUse = await prisma.newUserPlan.findFirst({
       where: {
         userId: _id,

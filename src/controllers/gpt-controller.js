@@ -449,6 +449,8 @@ async function verifyReferralCode(req, res) {
     const { referralCode } = req.body;
 
     const response = await GptServices.verifyReferralCode(referralCode, _id);
+
+    console.log(response);
     return res.status(StatusCodes.OK).json(SuccessResponse(response));
   } catch (error) {
     console.log(error);
