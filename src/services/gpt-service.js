@@ -980,22 +980,14 @@ async function updateUserPlan(
 ) {
   console.log(mongoId, newPlan);
 
+  refferalCode = refferalCode === "" ? null : refferalCode;
+
   try {
     const createdAtDate = new Date(createdAt).setHours(0, 0, 0, 0); // Set time to 00:00:00
     const today = new Date().setHours(0, 0, 0, 0); // Set today's date to 00:00:00
     let updatedUserPlan;
 
-    // if (expiresAt) {
-    //   updatedUserPlan = await prisma.newUserPlan.create({
-    //     data: {
-    //       userId: mongoId,
-    //       planName: newPlan,
-    //       subscriptionId: razorpay_subscription_id,
-    //       expiresAt: expiresAt,
-    //     },
-    //   });
-    // } else
-    if (existingSubscription !== "") {
+    if (existingSubscription) {
       // Find the plan that is active
       const activePlan = await prisma.newUserPlan.findFirst({
         where: {
@@ -1083,45 +1075,24 @@ async function updateUserPlan(
               redeemed: true,
             },
           });
-        } else {
-          updatedUserPlan = await prisma.newUserPlan.create({
-            data: {
-              userId: mongoId,
-              planName: newPlan,
-              subscriptionId: razorpay_subscription_id,
-              createdAt,
-              expiresAt,
-              isActive: true,
-            },
-          });
         }
+      } else {
+        updatedUserPlan = await prisma.newUserPlan.create({
+          data: {
+            userId: mongoId,
+            planName: newPlan,
+            subscriptionId: razorpay_subscription_id,
+            createdAt,
+            expiresAt,
+            isActive: true,
+          },
+        });
       }
-      // else if (trialDays) {
-      //   updatedUserPlan = await prisma.newUserPlan.create({
-      //     data: {
-      //       userId: mongoId,
-      //       planName: newPlan,
-      //       subscriptionId: razorpay_subscription_id,
-      //       isActive: true,
-      //       createdAt,
-      //     },
-      //   });
-      // } else {
-      //   updatedUserPlan = await prisma.newUserPlan.create({
-      //     data: {
-      //       userId: mongoId,
-      //       planName: newPlan,
-      //       subscriptionId: razorpay_subscription_id,
-      //       createdAt,
-      //     },
-      //   });
-      // }
-      // else
-      return {
-        user: updatedUserPlan.mongoId,
-        plan: updatedUserPlan.planName,
-      };
     }
+    return {
+      user: updatedUserPlan.mongoId,
+      plan: updatedUserPlan.planName,
+    };
   } catch (error) {
     console.error(error);
     throw new AppError(
