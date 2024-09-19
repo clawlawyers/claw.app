@@ -159,9 +159,9 @@ async function createSubscription(req, res) {
     let Backendplan;
 
     if (isDiscount) {
-      Backendplan = OfferplanNamesquence.find((p) => p.name === plan);
+      Backendplan = LiveOfferplanNamesquence.find((p) => p.name === plan);
     } else {
-      Backendplan = planNamesquence.find((p) => p.name === plan);
+      Backendplan = LiveplanNamesquence.find((p) => p.name === plan);
     }
 
     let updatedTimeInSeconds;
@@ -265,10 +265,10 @@ async function verifySubscription(req, res) {
           const currentDate = new Date();
 
           const planId = canceledSubscription.plan_id;
-          let plan = planNamesquence.find((p) => p.id === planId);
+          let plan = LiveplanNamesquence.find((p) => p.id === planId);
 
           if (!plan) {
-            plan = OfferplanNamesquence.find((p) => p.id === planId);
+            plan = LiveOfferplanNamesquence.find((p) => p.id === planId);
           }
 
           const onedayPrice =
