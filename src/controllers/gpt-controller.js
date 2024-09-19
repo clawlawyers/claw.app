@@ -461,7 +461,7 @@ async function verifyReferralCode(req, res) {
 }
 async function fetchAmbassadorDetails(req, res) {
   try {
-    console.log(req.body);
+    // console.log(req.body);
     const { _id, firstName, lastName, collegeName } = req.body.client;
     const response = await GptServices.fetchReferralDetails(_id);
     return res.status(StatusCodes.OK).json(
