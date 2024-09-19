@@ -35,10 +35,8 @@ router.get(
   authMiddleware.checkAmabassador,
   GptController.fetchAmbassadorDetails
 );
-
 router.post("/referralCode/generate", GptController.createReferralCode);
 router.post("/referralCode/redeem", GptController.redeemReferralCode);
-router.post("/verifyReferralCode", GptController.verifyReferralCode);
 
 // router.post('/conversation', GptController.generateGptResponse);
 router.post("/session", GptController.startSession);

@@ -12,64 +12,13 @@ const TrailCourtroomUser = require("../models/trailCourtRoomUser");
 const SpecificLawyerCourtroomUser = require("../models/SpecificLawyerCourtroomUser");
 const AdminUser = require("../models/adminUser");
 const { createToken, verifyToken } = require("../utils/common/auth");
-const TrialCourtroomCoupon = require("../models/trialCourtroomCoupon");
-
-async function deleteTrialCoupon(req, res) {
-  try {
-    const { id } = req.body;
-    console.log(id);
-    await TrialCourtroomCoupon.deleteOne(coupon);
-    return res
-      .status(201)
-      .json(SuccessResponse({ status: "coupon deleted sucessfully" }));
-  } catch (error) {
-    console.log(error);
-    res
-      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse({}, error.message));
-  }
-}
-
-async function createTrialCoupon(req, res) {
-  try {
-    const { CouponCode, StartDate, EndDate, totalSlots, bookedSlots } =
-      req.body;
-    const newCoupon = new TrialCourtroomCoupon({
-      CouponCode,
-      StartDate,
-      EndDate,
-      totalSlots,
-      bookedSlots,
-    });
-    await newCoupon.save();
-    return res.status(201).json(SuccessResponse({ coupon: newCoupon }));
-  } catch (error) {
-    console.log(error);
-    res
-      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse({}, error.message));
-  }
-}
-
-async function getTrialCoupon(req, res) {
-  try {
-    const coupons = await TrialCourtroomCoupon.find({});
-    console.log(coupons);
-    return res.status(200).json(SuccessResponse({ coupons }));
-  } catch (error) {
-    console.log(error);
-    res
-      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse({}, error.message));
-  }
-}
 
 async function getAllAdminNumbers(req, res) {
   try {
     const users = await AdminUser.find({});
     const adminNumbers = users.map((user) => user.phoneNumber);
     console.log(adminNumbers);
-    return res.status(200).json(SuccessResponse({ users }));
+    return res.status(200).json(SuccessResponse({ adminNumbers }));
   } catch (error) {
     console.log(error);
     res
@@ -170,7 +119,6 @@ async function getClientCourtroomBookings(req, res) {
 async function updateClientCourtroomBooking(req, res) {
   try {
     const { updatedData } = req.body;
-    console.log(updatedData);
     const clientUser = await SpecificLawyerCourtroomUser.findOneAndUpdate(
       {
         Domain: updatedData.Domain,
@@ -959,15 +907,12 @@ async function validateCoupon(req, res) {
 
 // Deactivate a coupon
 async function deactivateCoupon(req, res) {
-  console.log("hi ");
   try {
     const { code } = req.body;
-    console.log(code);
-
     const coupon = await Coupon.findOneAndUpdate(
-      { _id: code },
-      { isActive: false }
-      // { new: true }
+      { code },
+      { isActive: false },
+      { new: true }
     );
     if (!coupon) return res.status(404).json({ message: "Coupon not found" });
 
@@ -980,9 +925,7 @@ async function deactivateCoupon(req, res) {
 async function deleteCoupon(req, res) {
   try {
     const { code } = req.body;
-    console.log(code);
-    console.log("code");
-    const coupon = await Coupon.findByIdAndDelete(code);
+    const coupon = await Coupon.findOneAndDelete({ code });
     if (!coupon) return res.status(404).json({ message: "Coupon not found" });
 
     res.status(200).json({ message: "Coupon deleted" });
@@ -1071,72 +1014,6 @@ async function userdailyvisit(req, res) {
 
   res.json(dailyData);
 }
-async function userEveryDayData(req, res) {
-  var data = [];
-  for (var i = 0; i < 7; i++) {
-    const startOfDay = moment().subtract(i, "days").startOf("day").toDate();
-    const endOfDay = moment().subtract(i, "days").endOf("day").toDate();
-
-    const dailyData = await Tracking.aggregate([
-      { $match: { timestamp: { $gte: startOfDay, $lte: endOfDay } } },
-      {
-        $group: {
-          _id: {
-            path: "$path",
-            isUser: {
-              $cond: {
-                if: { $ne: ["$userId", null] },
-                then: true,
-                else: false,
-              },
-            },
-          },
-          totalVisits: { $sum: 1 },
-          totalDuration: { $sum: "$visitDuration" },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          path: "$_id.path",
-          isUser: "$_id.isUser",
-          totalVisits: 1,
-          totalDuration: 1,
-        },
-      },
-      {
-        $group: {
-          _id: "$path",
-          visits: {
-            $push: {
-              isUser: "$isUser",
-              totalVisits: "$totalVisits",
-              totalDuration: "$totalDuration",
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          path: "$_id",
-          visits: 1,
-        },
-      },
-    ]);
-    data.push(dailyData);
-  }
-  const todayIndex = moment().day(); // For example, if today is Wednesday, todayIndex will be 3
-
-  // Shuffle the array so that today's day is at index 0
-  const shuffledData = [
-    ...data.slice(todayIndex - 1), // Slice from today's index to the end of the week
-    ...data.slice(0, todayIndex - 1), // Concatenate the beginning of the week to today's index
-  ];
-
-  console.log(todayIndex);
-  res.json(shuffledData);
-}
 
 // User Visit for monthly data
 async function usermonthlyvisit(req, res) {
@@ -1193,73 +1070,6 @@ async function usermonthlyvisit(req, res) {
 
   res.json(monthlyData);
 }
-async function userEveryMonthData(req, res) {
-  var data = [];
-  for (var i = 0; i < 12; i++) {
-    const startOfMonth = moment()
-      .subtract(i, "months")
-      .startOf("month")
-      .toDate();
-    const endOfMonth = moment().subtract(i, "months").endOf("month").toDate();
-
-    const monthlyData = await Tracking.aggregate([
-      { $match: { timestamp: { $gte: startOfMonth, $lte: endOfMonth } } },
-      {
-        $group: {
-          _id: {
-            path: "$path",
-            isUser: {
-              $cond: {
-                if: { $ne: ["$userId", null] },
-                then: true,
-                else: false,
-              },
-            },
-          },
-          totalVisits: { $sum: 1 },
-          totalDuration: { $sum: "$visitDuration" },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          path: "$_id.path",
-          isUser: "$_id.isUser",
-          totalVisits: 1,
-          totalDuration: 1,
-        },
-      },
-      {
-        $group: {
-          _id: "$path",
-          visits: {
-            $push: {
-              isUser: "$isUser",
-              totalVisits: "$totalVisits",
-              totalDuration: "$totalDuration",
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          path: "$_id",
-          visits: 1,
-        },
-      },
-    ]);
-    data.push(monthlyData);
-  }
-  const currentMonthIndex = moment().month(); // For example, if today is September, currentMonthIndex will be 8
-
-  // Shuffle the array so that the current month is at index 0
-  const shuffledData = [
-    ...data.slice(currentMonthIndex - 1), // Slice from the current month to the end of the year
-    ...data.slice(0, currentMonthIndex - 1),
-  ];
-  res.json(shuffledData);
-}
 
 // User Visit  for yearly data
 async function useryearlyvisit(req, res) {
@@ -1315,64 +1125,6 @@ async function useryearlyvisit(req, res) {
   ]);
 
   res.json(yearlyData);
-}
-async function userEveryYearData(req, res) {
-  var data = [];
-  for (var i = 0; i < 1; i++) {
-    const startOfYear = moment().startOf("year").toDate();
-    const endOfYear = moment().endOf("year").toDate();
-
-    const yearlyData = await Tracking.aggregate([
-      { $match: { timestamp: { $gte: startOfYear, $lte: endOfYear } } },
-      {
-        $group: {
-          _id: {
-            path: "$path",
-            isUser: {
-              $cond: {
-                if: { $ne: ["$userId", null] },
-                then: true,
-                else: false,
-              },
-            },
-          },
-          totalVisits: { $sum: 1 },
-          totalDuration: { $sum: "$visitDuration" },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          path: "$_id.path",
-          isUser: "$_id.isUser",
-          totalVisits: 1,
-          totalDuration: 1,
-        },
-      },
-      {
-        $group: {
-          _id: "$path",
-          visits: {
-            $push: {
-              isUser: "$isUser",
-              totalVisits: "$totalVisits",
-              totalDuration: "$totalDuration",
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          path: "$_id",
-          visits: 1,
-        },
-      },
-    ]);
-    data.push(yearlyData);
-  }
-
-  res.json(data);
 }
 
 async function allAllowedBooking(req, res) {
@@ -1640,75 +1392,6 @@ async function UpdateUserTimingAllowedLogin(req, res) {
       .json(ErrorResponse({}, error));
   }
 }
-async function getallVisitors(req, res) {
-  try {
-    const userTrackingData = await Tracking.find({})
-      .populate("userId") // Populates the userId with the actual User details
-      .exec();
-    res.status(200).json(userTrackingData);
-  } catch (e) {
-    res.status(500);
-  }
-}
-async function deleterefralcode(req, res) {
-  try {
-    const { mongoId } = req.body;
-
-    // Delete the referral code from Prisma DB
-    const deletedCode = await prisma.referralCode.delete({
-      where: { mongoId },
-    });
-
-    res
-      .status(200)
-      .json({ message: "Referral code deleted successfully", deletedCode });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: error.message });
-  }
-}
-async function removeUser(req, res) {
-  console.log("hi");
-  try {
-    const { id } = req.body;
-    console.log(id);
-
-    const deletedCode = await prisma.user.delete({
-      where: { mongoId: id },
-    });
-    res.status(200).json({ message: "removed" });
-  } catch (e) {
-    res.status(500).json({ message: e.message });
-  }
-}
-async function createReferralCodes(req, res) {
-  try {
-    const { referralCode, generatedById } = req.body;
-
-    // Validate the input data
-    if (!referralCode || !generatedById) {
-      return res
-        .status(400)
-        .json({ error: "referralCode and generatedById are required" });
-    }
-
-    // Create a new ReferralCode
-    const newReferralCode = await prisma.referralCode.create({
-      data: {
-        referralCode,
-        generatedById,
-      },
-    });
-
-    // Send a success response with the created referral code
-    return res
-      .status(201)
-      .json({ message: "Referral code created successfully", newReferralCode });
-  } catch (error) {
-    console.error("Error creating referral code:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-}
 
 module.exports = {
   getReferralCodes,
@@ -1728,7 +1411,6 @@ module.exports = {
   allCoupon,
   usertracking,
   userdailyvisit,
-  userEveryYearData,
   usermonthlyvisit,
   useryearlyvisit,
   updateUserPlan,
@@ -1756,13 +1438,4 @@ module.exports = {
   adminLogin,
   verifyAdminUser,
   getAllAdminNumbers,
-  getTrialCoupon,
-  createTrialCoupon,
-  deleteTrialCoupon,
-  userEveryDayData,
-  userEveryMonthData,
-  getallVisitors,
-  deleterefralcode,
-  removeUser,
-  createReferralCodes,
 };

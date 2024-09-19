@@ -15,5 +15,4 @@ module.exports = {
   CashfreeController: require("./Cashfree-controller"),
   RazorpayController: require("./razorpay-controller"),
   AiDrafter: require("./aiDrafter-controller"),
-  TimeBased: require("./timeBased-controller"),
 };

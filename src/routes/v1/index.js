@@ -18,7 +18,6 @@ const Salesman = require("./salesman");
 const Razorpay = require("./razorpay-routes");
 const BookingPayment = require("./bookingPayment-routes");
 const AiDrafter = require("./aiDrafter-routes");
-const TimeBased = require("./timeBased-routes");
 const router = express.Router();
 
 router.use("/user", UserRoutes);
@@ -40,6 +39,5 @@ router.use("/salesman", Salesman);
 router.use("/courtroom", courtroomRoutes);
 router.use("/specificLawyerCourtroom", specificLawyerCourtroomRoutes);
 router.use("/ai-drafter", AiDrafter);
-router.use("/time-based", TimeBased);
 
 module.exports = router;

@@ -24,6 +24,7 @@ const orderSchema = new mongoose.Schema(
     },
     request: {
       type: Number,
+      required: true,
     },
     session: {
       type: Number,
