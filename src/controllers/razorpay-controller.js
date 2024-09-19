@@ -14,24 +14,45 @@ const razorpay = new Razorpay({
 
 // planNamesquence = ["BASIC_M", "ESSENTIAL_M", "BASIC_Y", "ESSENTIAL_Y"];
 
-const LiveplanNamesquence = [
-  { name: "BASIC_M", price: 399, id: "plan_OvrQPqMurmW9P2" },
-  { name: "BASIC_Y", price: 3999, id: "plan_OvrS1uLssYZZ5A" },
-  { name: "ESSENTIAL_M", price: 1199, id: "plan_OvrQvRwtnJhEpo" },
-  { name: "ESSENTIAL_Y", price: 11999, id: "plan_OvrSVyFS74Lgbr" },
-  { name: "PREMIUM_M", price: 1999, id: "plan_OvrRWAtQRSoKHu" },
-  { name: "PREMIUM_Y", price: 19999, id: "plan_OvrSvJaxOqEuxG" },
-  { name: "ADDON_M", price: 899, id: "plan_OvrTcADlxAi3Fq" },
-];
+const isLive = false;
 
-const LiveOfferplanNamesquence = [
-  { name: "BASIC_M", price: 199, id: "plan_OydA5Ekx6q2Cvf" },
-  { name: "BASIC_Y", price: 1999, id: "plan_OydYkw0YXrKu4N" },
-  { name: "ESSENTIAL_M", price: 699, id: "plan_OydAxwpAvxG0L0" },
-  { name: "ESSENTIAL_Y", price: 6999, id: "plan_OydhV1HSz1IwWc" },
-  { name: "PREMIUM_M", price: 1199, id: "plan_OydT8PYPUZzwNJ" },
-  { name: "PREMIUM_Y", price: 11999, id: "plan_OyditM9Is1AREu" },
-];
+const LiveplanNamesquence = isLive
+  ? [
+      { name: "BASIC_M", price: 399, id: "plan_OvrQPqMurmW9P2" },
+      { name: "BASIC_Y", price: 3999, id: "plan_OvrS1uLssYZZ5A" },
+      { name: "ESSENTIAL_M", price: 1199, id: "plan_OvrQvRwtnJhEpo" },
+      { name: "ESSENTIAL_Y", price: 11999, id: "plan_OvrSVyFS74Lgbr" },
+      { name: "PREMIUM_M", price: 1999, id: "plan_OvrRWAtQRSoKHu" },
+      { name: "PREMIUM_Y", price: 19999, id: "plan_OvrSvJaxOqEuxG" },
+      { name: "ADDON_M", price: 899, id: "plan_OvrTcADlxAi3Fq" },
+    ]
+  : [
+      { name: "BASIC_M", price: 399, id: "plan_OvslHBSlbwE1lM" },
+      { name: "BASIC_Y", price: 3999, id: "plan_OvsmK9WNPatC33" },
+      { name: "ESSENTIAL_M", price: 1199, id: "plan_OvsmWrzM694xvr" },
+      { name: "ESSENTIAL_Y", price: 11999, id: "plan_OvsmpBeBxh8SS5" },
+      { name: "PREMIUM_M", price: 1999, id: "plan_Ovsn4BAGrxqz7V" },
+      { name: "PREMIUM_Y", price: 19999, id: "plan_OvsnLSAarhWgJg" },
+      { name: "ADDON_M", price: 899, id: "plan_OvsnZFctyVRhn5" },
+    ];
+
+const LiveOfferplanNamesquence = isLive
+  ? [
+      { name: "BASIC_M", price: 199, id: "plan_OydA5Ekx6q2Cvf" },
+      { name: "BASIC_Y", price: 1999, id: "plan_OydYkw0YXrKu4N" },
+      { name: "ESSENTIAL_M", price: 699, id: "plan_OydAxwpAvxG0L0" },
+      { name: "ESSENTIAL_Y", price: 6999, id: "plan_OydhV1HSz1IwWc" },
+      { name: "PREMIUM_M", price: 1199, id: "plan_OydT8PYPUZzwNJ" },
+      { name: "PREMIUM_Y", price: 11999, id: "plan_OyditM9Is1AREu" },
+    ]
+  : [
+      { name: "BASIC_M", price: 199, id: "plan_OxqVBZBd8zgPzl" },
+      { name: "BASIC_Y", price: 1999, id: "plan_OxqVfzDcqf1qey" },
+      { name: "ESSENTIAL_M", price: 699, id: "plan_OxqWsZ3onTMiHw" },
+      { name: "ESSENTIAL_Y", price: 6999, id: "plan_OxqXInXr75GmLt" },
+      { name: "PREMIUM_M", price: 1199, id: "plan_OxqXiIPa0szExN" },
+      { name: "PREMIUM_Y", price: 11999, id: "plan_OydlmF2HCHk2cI" },
+    ];
 
 const planNamesquence = [
   { name: "BASIC_M", price: 399, id: "plan_OvslHBSlbwE1lM" },
