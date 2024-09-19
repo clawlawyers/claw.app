@@ -6,12 +6,22 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
+
 async function uploadDocument(req, res) {
   try {
-    const file = req.file;
+    var file = req.file;
+    const doc_id = req.body.doc_id;
+    console.log(doc_id);
+    console.log("filedata1234");
+
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
+    console.log(file);
+
+    const intval = Math.floor(Math.random() * 10000) + 1;
+    file.originalname = `${doc_id}` + ".docx";
+    console.log(file);
 
     const fetchedData = await FetchupdateDocument({ file: file });
 
@@ -341,12 +351,14 @@ async function fetchGenerateDocumentForType({ doc_id }) {
 }
 
 async function breakout(req, res) {
+  console.log("hi");
   try {
     const { doc_id } = req.body;
+    console.log(doc_id);
     const fetchedData = await fetchBreakout({ doc_id });
     return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     const errorResponse = ErrorResponse({}, error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
@@ -365,6 +377,7 @@ async function fetchBreakout({ doc_id }) {
         "Content-Type": "application/json",
       },
     });
+    console.log(response);
     if (!response.ok) {
       const errorText = await response.text(); // Get the error message from the response
       throw new Error(
@@ -811,75 +824,191 @@ async function fetchGetModifiedDoc({ doc_id }) {
 }
 async function getpdf(req, res) {
   const { document } = req.body;
-  const doc = new PDFDocument({
-    size: "A4",
-    layout: "portrait",
-  });
+  console.log(document);
+  try {
+    // Define file path to save PDF
+    // const filePath = path.join(__dirname, "Rent_Agreement.pdf");
+    // const response = await axios.get(
+    //   "https://res.cloudinary.com/dumjofgxz/image/upload/v1725968109/gptclaw_l8krlt.png",
+    //   {
+    //     responseType: "arraybuffer",
+    //   }
+    // );
+    // console.log(response.data);
 
-  // Define file path to save PDF
-  const filePath = path.join(__dirname, "Rent_Agreement.pdf");
-  const response = await axios.get(
-    "https://res.cloudinary.com/dumjofgxz/image/upload/v1725968109/gptclaw_l8krlt.png",
-    {
-      responseType: "arraybuffer",
+    // const imageBuffer = Buffer.from(response.data, "binary");
+
+    console.log("imagepath");
+    const regularFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Regular.ttf"
+    );
+    const boldFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Bold.ttf"
+    );
+    console.log("hjkvh");
+    const doc = new PDFDocument();
+    doc.registerFont("NotoSans", regularFontPath);
+    doc.registerFont("NotoSans-Bold", boldFontPath);
+
+    doc.font("NotoSans");
+    console.log("hg");
+
+    // // Pipe the document to a file or to response
+    // doc.pipe(fs.createWriteStream(filePath));
+
+    // // Pipe the document to the response (for direct download)
+    // doc.pipe(res);
+    // doc.opacity(0.5);
+    // doc.image(imageBuffer, {
+    //   fit: [600, 600],
+    //   opacity: 0.1,
+    // align: "center",
+    //   valign: "center",
+    // });
+    // doc.opacity(1);
+
+    // Add content to the PDF
+    // doc.fontSize(20).text("RENT AGREEMENT", { align: "center" });
+
+    // doc.moveDown();
+    const textLines = document.split("\\n");
+    // const textLines = ["asdadasda"];
+    console.log(textLines);
+    // cosnole.log("hi");
+    for (var i = 0; i < textLines.length; i++) {
+      doc.text(textLines[i]);
+      doc.moveDown();
     }
-  );
-  const imageBuffer = Buffer.from(response.data, "binary");
 
-  // Pipe the document to a file or to response
-  doc.pipe(fs.createWriteStream(filePath));
+    // textLines.map((line, i) => {
+    //   cosnole.log(line);
 
-  // Pipe the document to the response (for direct download)
-  doc.pipe(res);
-  // doc.opacity(0.5);
-  // doc.image(imageBuffer, {
-  //   fit: [600, 600],
-  //   opacity: 0.1,
-  //   align: "center",
-  //   valign: "center",
-  // });
-  // doc.opacity(1);
+    //   doc.text(line);
+    //   doc.moveDown(); // Adds space between lines
+    // });
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", async () => {
+      console.log("hi");
 
-  // Add content to the PDF
-  // doc.fontSize(20).text("RENT AGREEMENT", { align: "center" });
+      const pdfBuffer = Buffer.concat(chunks);
 
-  // doc.moveDown();
-  const textLines = document.split("\\n");
-  const pageWidth = doc.page.width;
-  const pageHeight = doc.page.height;
-  const img = doc.openImage(imageBuffer);
-  const imgWidth = img.width;
-  const imgHeight = img.height;
+      // Load the generated PDF to add watermark on every page
+      const { PDFDocument: LibPDFDocument, rgb } = require("pdf-lib");
+      const pdfDoc = await LibPDFDocument.load(pdfBuffer);
+      const pages = pdfDoc.getPages();
+      const imagePath = path.join(__dirname, "..", "fonts", "gptclaw.png"); // Update with the correct image path
+      console.log("imagepath");
+      const imageBuffer = fs.readFileSync(imagePath);
+      const watermarkImage = await pdfDoc.embedPng(imageBuffer);
 
-  // Calculate position for the image to be centered
-  const x = (pageWidth - imgWidth) / 2;
-  const y = (pageHeight - imgHeight) / 2;
-  textLines.forEach((line, i) => {
-    if (i % 35 == 0) {
-      doc.opacity(0.5);
-      doc.image(imageBuffer, x + 200, y, {
-        scale: 0.5,
-        align: "center",
-        valign: "center",
+      pages.forEach((page) => {
+        const { width, height } = page.getSize();
+        const imageWidth = 400; // Adjust size as needed
+        const imageHeight =
+          (imageWidth / watermarkImage.width) * watermarkImage.height; // Maintain aspect ratio
+        const xPosition = (width - imageWidth) / 2;
+        const yPosition = (height - imageHeight) / 2;
+
+        page.drawImage(watermarkImage, {
+          x: xPosition,
+          y: yPosition,
+          width: imageWidth,
+          height: imageHeight,
+          opacity: 0.3, // Adjust opacity as needed
+        });
       });
-      doc.opacity(1);
-    }
-    doc.text(line, {
-      width: 450,
-      align: "left",
+      console.log("hi");
+
+      // Save the final PDF with watermark
+      const watermarkedPdfBytes = await pdfDoc.save();
+      res.setHeader("Content-disposition", `attachment; filename="new.pdf"`);
+      res.setHeader("Content-type", "application/pdf");
+      res.send(Buffer.from(watermarkedPdfBytes));
     });
-    doc.moveDown(0.5); // Adds space between lines
-  });
 
-  doc.end();
+    doc.end();
 
-  // Set the response headers for download
-  res.setHeader(
-    "Content-disposition",
-    "attachment; filename=Rent_Agreement.pdf"
-  );
-  res.setHeader("Content-type", "application/pdf");
+    // Set the response headers for download
+  } catch (e) {}
 }
+// async function getpdf(req, res) {
+//   const { document } = req.body;
+//   const doc = new PDFDocument({
+//     size: "A4",
+//     layout: "portrait",
+//   });
+
+//   // Define file path to save PDF
+//   const filePath = path.join(__dirname, "Rent_Agreement.pdf");
+//   const response = await axios.get(
+//     "https://res.cloudinary.com/dumjofgxz/image/upload/v1725968109/gptclaw_l8krlt.png",
+//     {
+//       responseType: "arraybuffer",
+//     }
+//   );
+//   const imageBuffer = Buffer.from(response.data, "binary");
+
+//   // Pipe the document to a file or to response
+//   doc.pipe(fs.createWriteStream(filePath));
+
+//   // Pipe the document to the response (for direct download)
+//   doc.pipe(res);
+//   // doc.opacity(0.5);
+//   // doc.image(imageBuffer, {
+//   //   fit: [600, 600],
+//   //   opacity: 0.1,
+//   //   align: "center",
+//   //   valign: "center",
+//   // });
+//   // doc.opacity(1);
+
+//   // Add content to the PDF
+//   // doc.fontSize(20).text("RENT AGREEMENT", { align: "center" });
+
+//   // doc.moveDown();
+//   const textLines = document.split("\\n");
+//   const pageWidth = doc.page.width;
+//   const pageHeight = doc.page.height;
+//   const img = doc.openImage(imageBuffer);
+//   const imgWidth = img.width;
+//   const imgHeight = img.height;
+
+//   // Calculate position for the image to be centered
+//   const x = (pageWidth - imgWidth) / 2;
+//   const y = (pageHeight - imgHeight) / 2;
+//   textLines.forEach((line, i) => {
+//     if (i % 35 == 0) {
+//       doc.opacity(0.5);
+//       doc.image(imageBuffer, x + 200, y, {
+//         scale: 0.5,
+//         align: "center",
+//         valign: "center",
+//       });
+//       doc.opacity(1);
+//     }
+//     doc.text(line, {
+//       width: 450,
+//       align: "left",
+//     });
+//     doc.moveDown(0.5); // Adds space between lines
+//   });
+
+//   doc.end();
+
+//   // Set the response headers for download
+//   res.setHeader(
+//     "Content-disposition",
+//     "attachment; filename=Rent_Agreement.pdf"
+//   );
+//   res.setHeader("Content-type", "application/pdf");
+// }
 
 module.exports = {
   uploadDocument,
