@@ -151,6 +151,8 @@ model Session {
 model Message {
   id        String    @id @default(uuid())
   text      String
+  textArray String[]  @default([]) // Required list with default empty array.
+
   isUser    Boolean
   sessionId String
   createdAt DateTime  @default(now())

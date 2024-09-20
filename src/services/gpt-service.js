@@ -712,7 +712,7 @@ async function verifyReferralCode(referralCode, _id) {
       where: {
         referralCode,
         // redeemedBy: null, // This means the referral code has not been redeemed yet
-        redeemedBy: {
+        redeemedAndPayBy: {
           some: {
             mongoId: _id, // The userId is the mongoId in the User model
           },
