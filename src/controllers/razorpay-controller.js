@@ -13,23 +13,64 @@ const razorpay = new Razorpay({
 });
 
 // planNamesquence = ["BASIC_M", "ESSENTIAL_M", "BASIC_Y", "ESSENTIAL_Y"];
-planNamesquence = [
+
+const isLive = false;
+
+const LiveplanNamesquence = isLive
+  ? [
+      { name: "BASIC_M", price: 399, id: "plan_OvrQPqMurmW9P2" },
+      { name: "BASIC_Y", price: 3999, id: "plan_OvrS1uLssYZZ5A" },
+      { name: "ESSENTIAL_M", price: 1199, id: "plan_OvrQvRwtnJhEpo" },
+      { name: "ESSENTIAL_Y", price: 11999, id: "plan_OvrSVyFS74Lgbr" },
+      { name: "PREMIUM_M", price: 1999, id: "plan_OvrRWAtQRSoKHu" },
+      { name: "PREMIUM_Y", price: 19999, id: "plan_OvrSvJaxOqEuxG" },
+      { name: "ADDON_M", price: 899, id: "plan_OvrTcADlxAi3Fq" },
+    ]
+  : [
+      { name: "BASIC_M", price: 399, id: "plan_OvslHBSlbwE1lM" },
+      { name: "BASIC_Y", price: 3999, id: "plan_OvsmK9WNPatC33" },
+      { name: "ESSENTIAL_M", price: 1199, id: "plan_OvsmWrzM694xvr" },
+      { name: "ESSENTIAL_Y", price: 11999, id: "plan_OvsmpBeBxh8SS5" },
+      { name: "PREMIUM_M", price: 1999, id: "plan_Ovsn4BAGrxqz7V" },
+      { name: "PREMIUM_Y", price: 19999, id: "plan_OvsnLSAarhWgJg" },
+      { name: "ADDON_M", price: 899, id: "plan_OvsnZFctyVRhn5" },
+    ];
+
+const LiveOfferplanNamesquence = isLive
+  ? [
+      { name: "BASIC_M", price: 199, id: "plan_OydA5Ekx6q2Cvf" },
+      { name: "BASIC_Y", price: 1999, id: "plan_OydYkw0YXrKu4N" },
+      { name: "ESSENTIAL_M", price: 699, id: "plan_OydAxwpAvxG0L0" },
+      { name: "ESSENTIAL_Y", price: 6999, id: "plan_OydhV1HSz1IwWc" },
+      { name: "PREMIUM_M", price: 1199, id: "plan_OydT8PYPUZzwNJ" },
+      { name: "PREMIUM_Y", price: 11999, id: "plan_OyditM9Is1AREu" },
+    ]
+  : [
+      { name: "BASIC_M", price: 199, id: "plan_OxqVBZBd8zgPzl" },
+      { name: "BASIC_Y", price: 1999, id: "plan_OxqVfzDcqf1qey" },
+      { name: "ESSENTIAL_M", price: 699, id: "plan_OxqWsZ3onTMiHw" },
+      { name: "ESSENTIAL_Y", price: 6999, id: "plan_OxqXInXr75GmLt" },
+      { name: "PREMIUM_M", price: 1199, id: "plan_OxqXiIPa0szExN" },
+      { name: "PREMIUM_Y", price: 11999, id: "plan_OydlmF2HCHk2cI" },
+    ];
+
+const planNamesquence = [
   { name: "BASIC_M", price: 399, id: "plan_OvslHBSlbwE1lM" },
   { name: "BASIC_Y", price: 3999, id: "plan_OvsmK9WNPatC33" },
   { name: "ESSENTIAL_M", price: 1199, id: "plan_OvsmWrzM694xvr" },
   { name: "ESSENTIAL_Y", price: 11999, id: "plan_OvsmpBeBxh8SS5" },
   { name: "PREMIUM_M", price: 1999, id: "plan_Ovsn4BAGrxqz7V" },
   { name: "PREMIUM_Y", price: 19999, id: "plan_OvsnLSAarhWgJg" },
-  { name: "ADDON_M", price: 19999, id: "plan_OvsnZFctyVRhn5" },
+  { name: "ADDON_M", price: 899, id: "plan_OvsnZFctyVRhn5" },
 ];
 
-OfferplanNamesquence = [
+const OfferplanNamesquence = [
   { name: "BASIC_M", price: 199, id: "plan_OxqVBZBd8zgPzl" },
   { name: "BASIC_Y", price: 1999, id: "plan_OxqVfzDcqf1qey" },
   { name: "ESSENTIAL_M", price: 699, id: "plan_OxqWsZ3onTMiHw" },
   { name: "ESSENTIAL_Y", price: 6999, id: "plan_OxqXInXr75GmLt" },
   { name: "PREMIUM_M", price: 1199, id: "plan_OxqXiIPa0szExN" },
-  { name: "PREMIUM_Y", price: 6999, id: "plan_OxqY56Csjdo46R" },
+  { name: "PREMIUM_Y", price: 11999, id: "plan_OydlmF2HCHk2cI" },
 ];
 
 async function createPayment(req, res) {
@@ -82,8 +123,8 @@ async function verifyPayment(req, res) {
     razorpay_payment_id,
     razorpay_signature,
     _id,
-    isUpgrade,
     createdAt,
+    expiresAt,
   } = req.body;
 
   const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
@@ -98,11 +139,16 @@ async function verifyPayment(req, res) {
 
       // update the plan for user
       console.log(placedOrder.user.toString(), placedOrder.plan);
+
       const rs = await GptServices.updateUserPlan(
         placedOrder.user.toString(),
         placedOrder.plan,
-        isUpgrade,
-        createdAt
+        razorpay_order_id,
+        (existingSubscription = ""),
+        createdAt,
+        (refferalCode = null),
+        (couponCode = ""),
+        expiresAt
       );
 
       console.log(rs);
@@ -114,31 +160,6 @@ async function verifyPayment(req, res) {
     res.status(400).json({ status: "Payment verification failed" });
   }
 }
-
-// Function to get the next due date for a subscription
-const get_next_due_date = async (subscription_id) => {
-  try {
-    const subscription = await razorpay.subscriptions.fetch(subscription_id);
-    console.log(subscription);
-
-    const next_due_date = new Date(subscription.current_end * 1000); // convert timestamp to readable date
-
-    return next_due_date;
-  } catch (error) {
-    console.error("Error fetching subscription details:", error);
-    throw new Error("Failed to retrieve subscription information");
-  }
-};
-
-// Example usage
-// const subscription_id = "sub_OxcufCqcf4vsq6"; // Replace with the actual subscription ID
-// get_next_due_date(subscription_id)
-//   .then((next_due_date) => {
-//     console.log("Next due date:", next_due_date);
-//   })
-//   .catch((error) => {
-//     console.error("Error:", error.message);
-//   });
 
 // Create subscription
 async function createSubscription(req, res) {
@@ -159,19 +180,28 @@ async function createSubscription(req, res) {
     let Backendplan;
 
     if (isDiscount) {
-      Backendplan = OfferplanNamesquence.find((p) => p.name === plan);
+      Backendplan = LiveOfferplanNamesquence.find((p) => p.name === plan);
     } else {
-      Backendplan = planNamesquence.find((p) => p.name === plan);
+      Backendplan = LiveplanNamesquence.find((p) => p.name === plan);
     }
 
-    let currentTimeInSeconds = Math.floor(Date.now() / 1000); // Current time in seconds
-    let date = new Date(currentTimeInSeconds * 1000); // Convert to milliseconds and create a Date object
+    let updatedTimeInSeconds;
 
-    // Modify only the date part (e.g., add 7 days)
-    date.setDate(date.getDate() + trialDays);
+    if (trialDays) {
+      let currentTimeInSeconds = Math.floor(Date.now() / 1000); // Current time in seconds
+      let date = new Date(currentTimeInSeconds * 1000); // Convert to milliseconds and create a Date object
 
-    // Get the updated timestamp (time remains unchanged)
-    let updatedTimeInSeconds = Math.floor(date.getTime() / 1000);
+      // Modify only the date part (e.g., add 7 days)
+      date.setDate(date.getDate() + trialDays);
+
+      // Get the updated timestamp (time remains unchanged)
+      updatedTimeInSeconds = Math.floor(date.getTime() / 1000);
+    } else {
+      let currentTimeInSeconds = Math.floor(Date.now() / 1000); // Current time in seconds
+
+      // Add 5 minutes (300 seconds) to the current time
+      updatedTimeInSeconds = currentTimeInSeconds + 120;
+    }
 
     const subscriptionOptions = {
       plan_id: Backendplan.id, // Razorpay Plan ID from dashboard
@@ -179,11 +209,13 @@ async function createSubscription(req, res) {
       // total_count: billingCycle === "MONTHLY" ? 12 : 1, // Monthly or yearly billing
       start_at: updatedTimeInSeconds,
       end_at: Math.floor(Date.now() / 1000) + 10 * 365 * 24 * 60 * 60, // Set an end date 10 years from now
-      // offer_id: "offer_OwvYlKUwvJg4yc",
+      // offer_id:k "offer_OwvYlKUwvJg4yc",
       notes: {
         user_id: fetchUser._id,
       },
     };
+
+    console.log(subscriptionOptions);
 
     // Create a subscription on Razorpay
     const razorpaySubscription = await razorpay.subscriptions.create(
@@ -254,10 +286,10 @@ async function verifySubscription(req, res) {
           const currentDate = new Date();
 
           const planId = canceledSubscription.plan_id;
-          let plan = planNamesquence.find((p) => p.id === planId);
+          let plan = LiveplanNamesquence.find((p) => p.id === planId);
 
           if (!plan) {
-            plan = OfferplanNamesquence.find((p) => p.id === planId);
+            plan = LiveOfferplanNamesquence.find((p) => p.id === planId);
           }
 
           const onedayPrice =

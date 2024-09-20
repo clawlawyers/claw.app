@@ -291,6 +291,46 @@ async function fetchGptRelatedCases(context, courtName) {
   }
 }
 
+async function suggestQuestions(req, res) {
+  try {
+    const { context } = req.body;
+    const Fetchedquestions = await Fetchquestions(context);
+    return res.status(StatusCodes.OK).json(SuccessResponse(Fetchedquestions));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
+async function Fetchquestions(context) {
+  console.log(context);
+  try {
+    const response = await fetch(`${FLASK_API_ENDPOINT}/gpt/questions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ context }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("API response status:", response.status);
+      console.error("API response body:", errorBody);
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const parsed = await response.json();
+
+    return parsed;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to make api request to gpt.claw");
+  }
+}
+
 async function getRelatedCases(req, res) {
   try {
     const { sessionId } = req.params;
@@ -461,7 +501,7 @@ async function verifyReferralCode(req, res) {
 }
 async function fetchAmbassadorDetails(req, res) {
   try {
-    console.log(req.body);
+    // console.log(req.body);
     const { _id, firstName, lastName, collegeName } = req.body.client;
     const response = await GptServices.fetchReferralDetails(_id);
     return res.status(StatusCodes.OK).json(
@@ -783,4 +823,5 @@ module.exports = {
   judgement,
   relevantAct,
   verifyReferralCode,
+  suggestQuestions,
 };

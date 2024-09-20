@@ -20,6 +20,11 @@ router.post("/upload_prerequisites", AiDrafter.uploadPrerequisites);
 router.post("/upload_optional_parameters", AiDrafter.uploadOptionalParameters);
 router.post("/get_requirements", AiDrafter.getRequirements);
 router.post("/generate_document", AiDrafter.generateDocument);
+router.post(
+  "/get_document_prompt_requirements",
+  AiDrafter.getDocumentPromptRequirements
+); // this only for get from prompt
+
 router.post("/generate_document_for_type", AiDrafter.generateDocumentForType);
 router.post("/breakout", AiDrafter.breakout);
 router.post("/generate_db", AiDrafter.generateDatabase);

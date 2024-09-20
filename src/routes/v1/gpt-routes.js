@@ -45,6 +45,9 @@ router.post("/session", GptController.startSession);
 router.post("/session/prompt", GptController.appendMessage);
 router.post("/session/judgement", GptController.judgement);
 router.post("/session/relevantAct", GptController.relevantAct);
+
+router.post("/suggested-questions", GptController.suggestQuestions);
+
 // router.post("/dummy", GptController.caseSearchOn);
 // router.post("/dummyCheckbox", GptController.caseSearchOnCheck);
 // router.post("/funny", GptController.funPlan);

@@ -47,7 +47,7 @@ async function createGptUser(phoneNumber, mongoId) {
 
     // This free plan only for some occasionally
 
-    const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
+    // const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
 
     // const newPlan = await prisma.userPlan.create({
     //   data: {
@@ -58,12 +58,12 @@ async function createGptUser(phoneNumber, mongoId) {
     // });
 
     // console.log(newPlan);
-    let newPlan;
-    if (Date.now() < expiresAt) {
-      newPlan = await updateUserPlan(mongoId, "free", expiresAt); // it will be open in few ocations
-    }
+    // let newPlan;
+    // if (Date.now() < expiresAt) {
+    //   newPlan = await updateUserPlan(mongoId, "free", expiresAt); // it will be open in few ocations
+    // }
 
-    console.log(newPlan);
+    // console.log(newPlan);
 
     return newUser;
   } catch (error) {
@@ -712,7 +712,7 @@ async function verifyReferralCode(referralCode, _id) {
       where: {
         referralCode,
         // redeemedBy: null, // This means the referral code has not been redeemed yet
-        redeemedBy: {
+        redeemedAndPayBy: {
           some: {
             mongoId: _id, // The userId is the mongoId in the User model
           },
@@ -775,13 +775,36 @@ async function fetchReferralDetails(mongoId) {
       },
     });
 
-    console.log(response);
-    if (response && response.generatedReferralCode) {
-      const redeemCount = await prisma.user.count({
-        where: { redeemedReferralCodeId: response.generatedReferralCode?.id },
-      });
+    // console.log(response);
 
-      return { referralCode: response.generatedReferralCode, redeemCount };
+    console.log(mongoId.toHexString());
+
+    const userRedeemed = await prisma.referralCode.findFirst({
+      where: {
+        generatedById: mongoId.toHexString(),
+      },
+      select: {
+        redeemedBy: true,
+        redeemedAndPayBy: true,
+      },
+    });
+
+    console.log("Redeemed users => ", userRedeemed);
+
+    totaoRedeemedWithPayBy = userRedeemed.redeemedAndPayBy.length;
+    totaoRedeemed = userRedeemed.redeemedBy.length;
+
+    if (response && response.generatedReferralCode) {
+      // const redeemCount = await prisma.user.count({
+      //   where: {
+      //     redeemedReferralCodeId: response.generatedReferralCode?.referralCode,
+      //   },
+      // });
+
+      return {
+        referralCode: response.generatedReferralCode,
+        redeemCount: totaoRedeemedWithPayBy,
+      };
     } else {
       return { referralCode: null, redeemCount: null };
     }
@@ -1006,6 +1029,19 @@ async function updateUserPlan(
     const createdAtDate = new Date(createdAt).setHours(0, 0, 0, 0); // Set time to 00:00:00
     const today = new Date().setHours(0, 0, 0, 0); // Set today's date to 00:00:00
     let updatedUserPlan;
+
+    if (newPlan === "ADDON_M") {
+      updatedUserPlan = await prisma.newUserPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          subscriptionId: razorpay_subscription_id,
+          isActive: true,
+          createdAt,
+          expiresAt,
+        },
+      });
+    }
 
     if (existingSubscription) {
       // Find the plan that is active

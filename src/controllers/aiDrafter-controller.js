@@ -308,6 +308,48 @@ async function fetchGenerateDocument({ doc_id }) {
   }
 }
 
+async function getDocumentPromptRequirements(req, res) {
+  try {
+    const { doc_id } = req.body;
+    const fetchedData = await fetchGetDocumentPromptRequirements({ doc_id });
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
+  } catch (error) {
+    console.log(error);
+    const errorResponse = ErrorResponse({}, error.message);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function fetchGetDocumentPromptRequirements({ doc_id }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(
+      `${AL_DRAFTER_API}/get_document_prompt_requirements`,
+      {
+        method: "POST",
+        body: JSON.stringify({ doc_id }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 async function generateDocumentForType(req, res) {
   try {
     const { doc_id } = req.body;
@@ -1032,4 +1074,5 @@ module.exports = {
   apiAddClause,
   apiGetModifiedDoc,
   getpdf,
+  getDocumentPromptRequirements,
 };
