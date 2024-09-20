@@ -1683,30 +1683,84 @@ async function removeUser(req, res) {
 }
 async function createReferralCodes(req, res) {
   try {
-    const { referralCode, generatedById } = req.body;
+    const { phoneNumber, firstName, lastName, collegeName } = req.body;
 
-    // Validate the input data
-    if (!referralCode || !generatedById) {
-      return res
-        .status(400)
-        .json({ error: "referralCode and generatedById are required" });
-    }
+    // console.log(req.body.client);
+    console.log(phoneNumber);
+    console.log("asdasd");
+    let { _id } = await ClientService.getClientByPhoneNumber(phoneNumber);
+    _id = _id.toString();
+    console.log(_id);
 
-    // Create a new ReferralCode
-    const newReferralCode = await prisma.referralCode.create({
-      data: {
-        referralCode,
-        generatedById,
-      },
+    const updatedClient = await ClientService.updateClient(_id, {
+      firstName,
+      lastName,
+      collegeName,
+      ambassador: true,
     });
 
-    // Send a success response with the created referral code
-    return res
-      .status(201)
-      .json({ message: "Referral code created successfully", newReferralCode });
+    // console.log(updatedClient);
+
+    const referralCodeExist = await GptServices.CheckReferralCodeExistToUser(
+      _id
+    );
+
+    // console.log(referralCodeExist);
+
+    if (referralCodeExist) {
+      return res.status(StatusCodes.OK).json(
+        SuccessResponse({
+          message: "Referral Code Already Exists",
+          referralCode: referralCodeExist,
+          redeemCount: 0,
+          client: {
+            firstName,
+            lastName,
+            collegeName,
+          },
+        })
+      );
+    }
+    const checkCodeAlreadyExist = async (rCode) => {
+      await GptServices.CheckReferralCodeExist(rCode);
+    };
+
+    const rCode = () => {
+      return firstName?.substr(0, 3) + Math.floor(100 + Math.random() * 900);
+    };
+
+    if (checkCodeAlreadyExist(rCode)) {
+      const referralCode = await GptServices.createReferralCode(_id, rCode);
+      return res.status(StatusCodes.OK).json(
+        SuccessResponse({
+          referralCode,
+          redeemCount: 0,
+          client: {
+            firstName,
+            lastName,
+            collegeName,
+          },
+        })
+      );
+    }
+
+    const referralCode = await GptServices.createReferralCode(_id, rCode);
+    return res.status(200).json(
+      SuccessResponse({
+        referralCode,
+        redeemCount: 0,
+        client: {
+          firstName,
+          lastName,
+          collegeName,
+        },
+      })
+    );
   } catch (error) {
-    console.error("Error creating referral code:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
   }
 }
 

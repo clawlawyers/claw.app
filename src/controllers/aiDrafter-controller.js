@@ -19,15 +19,15 @@ async function uploadDocument(req, res) {
     }
     console.log(file);
 
-    const intval = Math.floor(Math.random() * 10000) + 1;
-    file.originalname = `${doc_id}` + ".docx";
-    console.log(file);
+    // const intval = Math.floor(Math.random() * 10000) + 1;
+    // file.originalname = `${doc_id}` + ".docx";
+    // console.log(file);
 
     const fetchedData = await FetchupdateDocument({ file: file });
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     const errorResponse = ErrorResponse({}, error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
