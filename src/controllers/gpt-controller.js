@@ -169,12 +169,7 @@ async function appendMessage(req, res) {
     const context = await GptServices.fetchContext(sessionId);
 
     // Save User Prompt
-    const { token } = await GptServices.createMessage(
-      sessionId,
-      prompt,
-      true,
-      user.mongoId
-    );
+    await GptServices.createMessage(sessionId, prompt, true, user.mongoId);
 
     // Make a call to gpt for generating response
     console.log("called by mode", modelName);
@@ -189,12 +184,71 @@ async function appendMessage(req, res) {
 
     return res
       .status(StatusCodes.OK)
-      .json(SuccessResponse({ sessionId, gptResponse, token }));
+      .json(SuccessResponse({ sessionId, gptResponse }));
   } catch (error) {
     console.log(error);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
+  }
+}
+
+async function appendRegeneratedMessage(req, res) {
+  try {
+    const { prompt, sessionId } = req.body;
+
+    const { modelName, user } = await GptServices.fetchSessionBySessionId(
+      sessionId
+    );
+    if (!modelName)
+      throw new AppError("Invalid sessionId", StatusCodes.BAD_REQUEST);
+
+    // Fetch Context
+    const context = await GptServices.fetchContextForRegenerate(sessionId);
+
+    // Save User Prompt
+    // await GptServices.createMessage(sessionId, prompt, true, user.mongoId);
+
+    // Make a call to gpt for generating response
+    console.log("called by mode", modelName);
+    const gptApiResponse = await fetchGptApi({ prompt, context });
+
+    // Save Gpt Response
+    const gptResponse = await GptServices.RegenertaedMessage(
+      sessionId,
+      gptApiResponse.gptResponse,
+      false
+    );
+
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ sessionId, gptResponse }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function feedBack(req, res) {
+  try {
+    const { messageId, impression, feedbackType, feedbackMessage } = req.body;
+    const userId = req.body.client._id;
+
+    const message = await GptServices.appendFeedbackMessageByMessageId(
+      messageId,
+      impression,
+      feedbackType,
+      feedbackMessage,
+      userId
+    );
+    return res.status(StatusCodes.OK).json(SuccessResponse(message));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
   }
 }
 
@@ -273,6 +327,46 @@ async function fetchGptRelatedCases(context, courtName) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ context, courtName }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error("API response status:", response.status);
+      console.error("API response body:", errorBody);
+      throw new Error(`API request failed with status ${response.status}`);
+    }
+
+    const parsed = await response.json();
+
+    return parsed;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to make api request to gpt.claw");
+  }
+}
+
+async function suggestQuestions(req, res) {
+  try {
+    const { context } = req.body;
+    const Fetchedquestions = await Fetchquestions(context);
+    return res.status(StatusCodes.OK).json(SuccessResponse(Fetchedquestions));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
+async function Fetchquestions(context) {
+  console.log(context);
+  try {
+    const response = await fetch(`${FLASK_API_ENDPOINT}/gpt/questions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ context }),
     });
 
     if (!response.ok) {
@@ -441,9 +535,27 @@ async function redeemReferralCode(req, res) {
       .json(ErrorResponse({}, error));
   }
 }
+
+async function verifyReferralCode(req, res) {
+  try {
+    const { _id } = req.body.client;
+
+    const { referralCode } = req.body;
+
+    const response = await GptServices.verifyReferralCode(referralCode, _id);
+
+    console.log(response);
+    return res.status(StatusCodes.OK).json(SuccessResponse(response));
+  } catch (error) {
+    console.log(error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.messages));
+  }
+}
 async function fetchAmbassadorDetails(req, res) {
   try {
-    console.log(req.body);
+    // console.log(req.body);
     const { _id, firstName, lastName, collegeName } = req.body.client;
     const response = await GptServices.fetchReferralDetails(_id);
     return res.status(StatusCodes.OK).json(
@@ -563,14 +675,17 @@ async function fetchCaseDetails(req, res) {
     const { _id } = req.body.client;
     const { folderId, caseId } = req.params;
     const data = await fetchGptCases(folderId, caseId);
-    const updatedTokenVault = await consumeTokenCaseSearch(_id, 1);
-    console.log(updatedTokenVault);
+    // const updatedTokenVault = await consumeTokenCaseSearch(_id, 1);
+    // console.log(updatedTokenVault);
     const respo = formatCaseData(data);
 
     // Assuming SuccessResponse and ErrorResponse are functions that return the appropriate response formats
-    return res
-      .status(StatusCodes.OK)
-      .json(SuccessResponse({ fetchedData: respo, ...updatedTokenVault }));
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        fetchedData: respo,
+        // ...updatedTokenVault
+      })
+    );
   } catch (error) {
     console.log(error);
     // Assuming ErrorResponse is a function that returns the appropriate error response format
@@ -612,18 +727,21 @@ async function queryCase(req, res) {
     } = req.body;
 
     if (!query) throw new AppError("Invalid query", StatusCodes.BAD_REQUEST);
-    const updatedTokenVault = await consumeTokenCaseSearch(_id, 1);
-    console.log(updatedTokenVault);
+    // const updatedTokenVault = await consumeTokenCaseSearch(_id, 1);
+    // console.log(updatedTokenVault);
     const response = await fetchGptCaseQuery({
       startDate,
       endDate,
       query,
       courtName,
     });
-    console.log(updatedTokenVault);
-    return res
-      .status(StatusCodes.OK)
-      .json(SuccessResponse({ ...response, ...updatedTokenVault }));
+    // console.log(updatedTokenVault);
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        ...response,
+        // ...updatedTokenVault
+      })
+    );
   } catch (error) {
     console.log(error);
     res
@@ -757,4 +875,8 @@ module.exports = {
   funPlan,
   judgement,
   relevantAct,
+  verifyReferralCode,
+  suggestQuestions,
+  appendRegeneratedMessage,
+  feedBack,
 };
