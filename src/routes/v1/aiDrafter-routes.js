@@ -20,10 +20,6 @@ router.post("/upload_prerequisites", AiDrafter.uploadPrerequisites);
 router.post("/upload_optional_parameters", AiDrafter.uploadOptionalParameters);
 router.post("/get_requirements", AiDrafter.getRequirements);
 router.post("/generate_document", AiDrafter.generateDocument);
-router.post(
-  "/get_document_prompt_requirements",
-  AiDrafter.getDocumentPromptRequirements
-); // this only for get from prompt
 
 router.post("/generate_document_for_type", AiDrafter.generateDocumentForType);
 router.post("/breakout", AiDrafter.breakout);
@@ -37,7 +33,5 @@ router.post("/neutralize", AiDrafter.neutralize);
 router.post("/counter_favor", AiDrafter.counterFavor);
 router.post("/api/get_types", AiDrafter.apiGetTypes);
 router.post("/api_add_clause", AiDrafter.apiAddClause);
-router.post("/api/get_modified_doc", AiDrafter.apiGetModifiedDoc);
-router.post("/api/get_pdf", AiDrafter.getpdf);
 
 module.exports = router;

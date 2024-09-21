@@ -529,64 +529,61 @@ async function fetchGptUser(mongoId) {
 
     console.log(user);
 
-    let plans = await prisma.newUserPlan.findMany({
+    let plans = await prisma.userPlan.findMany({
       where: {
         userId: mongoId,
-      },
-      include: {
-        plan: true,
       },
     });
 
     // This free plan only for some occasionally
 
-    // if (plans.length === 0) {
-    //   console.log("user do not have any plan. plan will be creating");
+    if (plans.length === 0) {
+      console.log("user do not have any plan. plan will be creating");
 
-    //   const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
-    //   console.log(new Date());
+      const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
+      console.log(new Date());
 
-    //   if (Date.now() < expiresAt) {
-    //     await updateUserPlan(mongoId, "free", expiresAt);
-    //   }
+      if (Date.now() < expiresAt) {
+        await updateUserPlan(mongoId, "free", expiresAt);
+      }
 
-    //   console.log("plan created");
-    //   plans = await prisma.userPlan.findMany({
-    //     where: {
-    //       userId: mongoId,
-    //     },
-    //   });
-    // }
+      console.log("plan created");
+      plans = await prisma.userPlan.findMany({
+        where: {
+          userId: mongoId,
+        },
+      });
+    }
 
-    // const plansData = await Promise.all(
-    //   plans.map(async (plan) => {
-    //     const Pdata = await prisma.plan.findUnique({
-    //       where: { name: plan.planName },
-    //     });
+    const plansData = await Promise.all(
+      plans.map(async (plan) => {
+        const Pdata = await prisma.plan.findUnique({
+          where: { name: plan.planName },
+        });
 
-    //     return Pdata;
-    //   })
-    // );
+        return Pdata;
+      })
+    );
 
-    // const planNames = plansData.map((plan) => {
-    //   return plan.name;
-    // });
+    const planNames = plansData.map((plan) => {
+      return plan.name;
+    });
 
     if (!user) return null;
     return {
       createdAt: user.createdAt,
       phoneNumber: user.phoneNumber,
-      plan: plans,
-      // token: {
-      //   used: {
-      //     gptTokenUsed: user.gptTokenUsed,
-      //     caseSearchTokenUsed: user.caseSearchTokenUsed,
-      //   },
-      //   total: {
-      //     totalGptTokens: user.totalGptTokens,
-      //     totalCaseSearchTokens: user.totalCaseSearchTokens,
-      //   },
-      // },
+      plan: planNames,
+      token: {
+        used: {
+          gptTokenUsed: user.gptTokenUsed,
+          caseSearchTokenUsed: user.caseSearchTokenUsed,
+        },
+        total: {
+          totalGptTokens: user.totalGptTokens,
+          totalCaseSearchTokens: user.totalCaseSearchTokens,
+        },
+      },
     };
   } catch (error) {
     console.log(error);
@@ -814,8 +811,8 @@ async function redeemReferralCode(referralCode, redeemedById) {
         // planName: "free",
       },
       data: {
-        // planName: "student",
-        // tokenUsed: 0,
+        planName: "student",
+        tokenUsed: 0,
         redeemedReferralCodeId: referralCode,
       },
       select: {
@@ -837,66 +834,6 @@ async function redeemReferralCode(referralCode, redeemedById) {
     console.log(error);
     throw new AppError(
       "Error while redeeming referral code",
-      StatusCodes.INTERNAL_SERVER_ERROR
-    );
-  }
-}
-
-async function verifyReferralCode(referralCode, _id) {
-  try {
-    // const referralCodeExist = await CheckReferralCodeExist(referralCode);
-
-    const referralCodes = await prisma.referralCode.findMany({
-      where: {
-        referralCode,
-        // redeemedBy: null, // This means the referral code has not been redeemed yet
-        redeemedAndPayBy: {
-          some: {
-            mongoId: _id, // The userId is the mongoId in the User model
-          },
-        },
-      },
-      include: {
-        redeemedBy: true, // Include the `redeemedBy` users' details
-      },
-    });
-
-    console.log(referralCodes);
-    if (referralCodes.length !== 0) {
-      return { message: "Referral code not valid", reason: "Already used" };
-    }
-
-    const alreadyUse = await prisma.newUserPlan.findFirst({
-      where: {
-        userId: _id,
-        referralCodeId: referralCode,
-      },
-    });
-
-    if (alreadyUse) {
-      return { message: "Referral code not valid", reason: "Already used" };
-    }
-
-    const referralCodeExist = await prisma.referralCode.findUnique({
-      where: {
-        referralCode,
-      },
-    });
-
-    console.log(referralCodeExist);
-    if (!referralCodeExist) {
-      return { message: "Referral code not valid" };
-    } else {
-      return {
-        message: "Referral code valid",
-        trialDays: referralCodeExist.freeTrial,
-        discount: referralCodeExist.discount,
-      };
-    }
-  } catch (error) {
-    console.log(error);
-    throw new AppError(
-      "Error while verifying referral code",
       StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
@@ -1118,174 +1055,55 @@ async function addFirstAdminUser(userId) {
   }
 }
 
-async function updateUserSubscription(
-  mongoId,
-  subscriptionId,
-  isActive,
-  subscriptionEndDate
-) {
-  let updatedUser;
-  if (subscriptionEndDate) {
-    updatedUser = await prisma.newUserPlan.update({
-      where: {
-        mongoId,
-        subscriptionId: subscriptionId,
-        expiresAt: subscriptionEndDate,
-      },
-      data: {
-        isActive: isActive,
-      },
-    });
-  } else {
-    updatedUser = await prisma.newUserPlan.update({
-      where: {
-        mongoId,
-        subscriptionId: subscriptionId,
-      },
-      data: {
-        isActive: isActive,
-      },
-    });
-  }
-}
-
-async function updateUserPlan(
-  mongoId,
-  newPlan,
-  razorpay_subscription_id,
-  existingSubscription,
-  createdAt,
-  refferalCode,
-  couponCode,
-  expiresAt
-) {
+async function updateUserPlan(mongoId, newPlan, expiresAt) {
   console.log(mongoId, newPlan);
-
-  refferalCode = refferalCode === "" ? null : refferalCode;
-
   try {
-    const createdAtDate = new Date(createdAt).setHours(0, 0, 0, 0); // Set time to 00:00:00
-    const today = new Date().setHours(0, 0, 0, 0); // Set today's date to 00:00:00
-    let updatedUserPlan;
-
-    if (newPlan === "ADDON_M") {
-      updatedUserPlan = await prisma.newUserPlan.create({
+    if (expiresAt) {
+      const updatedUserPlan = await prisma.userPlan.create({
         data: {
           userId: mongoId,
           planName: newPlan,
-          subscriptionId: razorpay_subscription_id,
-          isActive: true,
-          createdAt,
-          expiresAt,
+          expiresAt: expiresAt,
         },
       });
-    }
-
-    if (existingSubscription) {
-      // Find the plan that is active
-      const activePlan = await prisma.newUserPlan.findFirst({
-        where: {
-          userId: mongoId,
-          subscriptionId: existingSubscription,
-          isActive: true,
-        },
-      });
-
-      // If a plan is found, delete it
-      if (activePlan) {
-        deletePlan = await prisma.newUserPlan.delete({
-          where: {
-            userId_planName: {
-              userId: activePlan.userId,
-              planName: activePlan.planName,
-            },
-          },
-        });
-      }
-
-      if (refferalCode || couponCode) {
-        updatedUserPlan = await prisma.newUserPlan.create({
-          data: {
-            userId: mongoId,
-            planName: newPlan,
-            subscriptionId: razorpay_subscription_id,
-            isActive: true,
-            createdAt,
-            expiresAt,
-            referralCodeId: refferalCode,
-            isCouponCode: couponCode,
-          },
-        });
-
-        if (refferalCode) {
-          await prisma.referralCode.update({
-            where: {
-              referralCode: refferalCode,
-            },
-            data: {
-              redeemedBy: {
-                connect: { mongoId: mongoId },
-              },
-              redeemed: true,
-            },
-          });
-        }
-      } else {
-        updatedUserPlan = await prisma.newUserPlan.create({
-          data: {
-            userId: mongoId,
-            planName: newPlan,
-            subscriptionId: razorpay_subscription_id,
-            createdAt,
-            expiresAt,
-            isActive: true,
-          },
-        });
-      }
     } else {
-      if (refferalCode || couponCode) {
-        updatedUserPlan = await prisma.newUserPlan.create({
-          data: {
-            userId: mongoId,
-            planName: newPlan,
-            subscriptionId: razorpay_subscription_id,
-            isActive: true,
-            createdAt,
-            expiresAt,
-            referralCodeId: refferalCode,
-            isCouponCode: couponCode,
-          },
-        });
-
-        if (refferalCode) {
-          await prisma.referralCode.update({
-            where: {
-              referralCode: refferalCode,
-            },
-            data: {
-              redeemedBy: {
-                connect: { mongoId: mongoId },
-              },
-              redeemed: true,
-            },
-          });
-        }
-      } else {
-        updatedUserPlan = await prisma.newUserPlan.create({
-          data: {
-            userId: mongoId,
-            planName: newPlan,
-            subscriptionId: razorpay_subscription_id,
-            createdAt,
-            expiresAt,
-            isActive: true,
-          },
-        });
-      }
+      const updatedUserPlan = await prisma.userPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+        },
+      });
     }
+
+    const Pdata = await prisma.plan.findUnique({
+      where: { name: newPlan },
+    });
+
+    // console.log(plansData);
+    let totalGptTokens = Pdata.gptToken;
+    let totalCaseSearchTokens = Pdata.caseSearchToken;
+
+    console.log(totalGptTokens, totalCaseSearchTokens);
+
+    const updatedUser = await prisma.user.update({
+      where: {
+        mongoId: mongoId,
+      },
+      data: {
+        totalGptTokens: {
+          increment: totalGptTokens, // or any other value you want to increment by
+        },
+        totalCaseSearchTokens: {
+          increment: totalCaseSearchTokens, // or any other value you want to increment by
+        },
+      },
+    });
+
+    console.log(updatedUser);
+
     return {
-      user: updatedUserPlan.mongoId,
-      plan: updatedUserPlan.planName,
+      user: updatedUser.mongoId,
+      plan: newPlan,
     };
   } catch (error) {
     console.error(error);
@@ -1295,89 +1113,6 @@ async function updateUserPlan(
     );
   }
 }
-
-async function handleFirstPayment(userId, subscriptionId) {
-  // Do something special for the first payment, like granting a bonus or sending an email
-
-  const refferalCode = await prisma.newUserPlan.findFirst({
-    where: {
-      userId: userId,
-      subscriptionId: subscriptionId,
-    },
-  });
-
-  const code = refferalCode.referralCodeId;
-
-  await prisma.referralCode.update({
-    where: {
-      referralCode: code,
-    },
-    data: {
-      redeemedAndPayBy: {
-        connect: { mongoId: userId },
-      },
-    },
-  });
-}
-
-// async function updateUserPlan(mongoId, newPlan, expiresAt) {
-//   console.log(mongoId, newPlan);
-//   try {
-//     if (expiresAt) {
-//       const updatedUserPlan = await prisma.userPlan.create({
-//         data: {
-//           userId: mongoId,
-//           planName: newPlan,
-//           expiresAt: expiresAt,
-//         },
-//       });
-//     } else {
-//       const updatedUserPlan = await prisma.userPlan.create({
-//         data: {
-//           userId: mongoId,
-//           planName: newPlan,
-//         },
-//       });
-//     }
-
-//     const Pdata = await prisma.plan.findUnique({
-//       where: { name: newPlan },
-//     });
-
-//     // console.log(plansData);
-//     let totalGptTokens = Pdata.gptToken;
-//     let totalCaseSearchTokens = Pdata.caseSearchToken;
-
-//     console.log(totalGptTokens, totalCaseSearchTokens);
-
-//     const updatedUser = await prisma.user.update({
-//       where: {
-//         mongoId: mongoId,
-//       },
-//       data: {
-//         totalGptTokens: {
-//           increment: totalGptTokens, // or any other value you want to increment by
-//         },
-//         totalCaseSearchTokens: {
-//           increment: totalCaseSearchTokens, // or any other value you want to increment by
-//         },
-//       },
-//     });
-
-//     console.log(updatedUser);
-
-//     return {
-//       user: updatedUser.mongoId,
-//       plan: newPlan,
-//     };
-//   } catch (error) {
-//     console.error(error);
-//     throw new AppError(
-//       "Error while updating user plan",
-//       StatusCodes.INTERNAL_SERVER_ERROR
-//     );
-//   }
-// }
 
 async function removeUserPlans(userId, planNames) {
   try {
@@ -1536,10 +1271,4 @@ module.exports = {
   getPlansByUserId,
   removeUserPlans,
   getUserPlan,
-  updateUserSubscription,
-  verifyReferralCode,
-  handleFirstPayment,
-  fetchContextForRegenerate,
-  RegenertaedMessage,
-  appendFeedbackMessageByMessageId,
 };

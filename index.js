@@ -74,8 +74,6 @@ cron.schedule("0 0 * * *", async () => {
 (async () => {
   try {
     await DbAutomationService.handleExpiredPlans();
-    await DbAutomationService.activateTodaysNewUserPlans();
-    await DbAutomationService.deactivateExpiredUserPlans();
   } catch (error) {
     console.error("Error removing expired user plans:", error);
   }
