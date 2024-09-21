@@ -169,12 +169,7 @@ async function appendMessage(req, res) {
     const context = await GptServices.fetchContext(sessionId);
 
     // Save User Prompt
-    const { token } = await GptServices.createMessage(
-      sessionId,
-      prompt,
-      true,
-      user.mongoId
-    );
+    await GptServices.createMessage(sessionId, prompt, true, user.mongoId);
 
     // Make a call to gpt for generating response
     console.log("called by mode", modelName);
@@ -189,12 +184,71 @@ async function appendMessage(req, res) {
 
     return res
       .status(StatusCodes.OK)
-      .json(SuccessResponse({ sessionId, gptResponse, token }));
+      .json(SuccessResponse({ sessionId, gptResponse }));
   } catch (error) {
     console.log(error);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
+  }
+}
+
+async function appendRegeneratedMessage(req, res) {
+  try {
+    const { prompt, sessionId } = req.body;
+
+    const { modelName, user } = await GptServices.fetchSessionBySessionId(
+      sessionId
+    );
+    if (!modelName)
+      throw new AppError("Invalid sessionId", StatusCodes.BAD_REQUEST);
+
+    // Fetch Context
+    const context = await GptServices.fetchContextForRegenerate(sessionId);
+
+    // Save User Prompt
+    // await GptServices.createMessage(sessionId, prompt, true, user.mongoId);
+
+    // Make a call to gpt for generating response
+    console.log("called by mode", modelName);
+    const gptApiResponse = await fetchGptApi({ prompt, context });
+
+    // Save Gpt Response
+    const gptResponse = await GptServices.RegenertaedMessage(
+      sessionId,
+      gptApiResponse.gptResponse,
+      false
+    );
+
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ sessionId, gptResponse }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
+async function feedBack(req, res) {
+  try {
+    const { messageId, impression, feedbackType, feedbackMessage } = req.body;
+    const userId = req.body.client._id;
+
+    const message = await GptServices.appendFeedbackMessageByMessageId(
+      messageId,
+      impression,
+      feedbackType,
+      feedbackMessage,
+      userId
+    );
+    return res.status(StatusCodes.OK).json(SuccessResponse(message));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
   }
 }
 
@@ -824,4 +878,6 @@ module.exports = {
   relevantAct,
   verifyReferralCode,
   suggestQuestions,
+  appendRegeneratedMessage,
+  feedBack,
 };

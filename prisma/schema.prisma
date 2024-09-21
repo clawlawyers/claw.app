@@ -72,6 +72,7 @@ model User {
   isCasesearch  Boolean  @default(true)  
   NewPlan NewPlan[]
   redeemedAndPayByCodes   ReferralCode[] @relation("RedeemedAndPayByUser") // Tracks multiple redeemed and paid referrals
+  feedbacks              Feedback[]    @relation("UserFeedback") // New relation field for Feedback
 
 }
 
@@ -165,8 +166,13 @@ model Message {
 
 model Feedback {
   id        String   @id @default(uuid())
-  rating    Int
   messageId String   @unique
+  rating         Int?
+  impression     String   @default("Positive") // or "Negative"
+  feedbackType   String   @default("ResponseGenerated") // or "References" or "Judgement"
+  feedbackMessage String
   createdAt DateTime @default(now())
   message   Message  @relation(fields: [messageId], references: [id])
+  userId         String
+  user           User     @relation("UserFeedback", fields: [userId], references: [mongoId]) // Specifying relation name
 }

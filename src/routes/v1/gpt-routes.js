@@ -48,6 +48,10 @@ router.post("/session/relevantAct", GptController.relevantAct);
 
 router.post("/suggested-questions", GptController.suggestQuestions);
 
+router.post("/regenerate-response", GptController.appendRegeneratedMessage);
+
+router.post("/feedback", GptController.feedBack);
+
 // router.post("/dummy", GptController.caseSearchOn);
 // router.post("/dummyCheckbox", GptController.caseSearchOnCheck);
 // router.post("/funny", GptController.funPlan);

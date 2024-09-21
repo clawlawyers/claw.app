@@ -36,6 +36,57 @@ async function fetchContext(sessionId) {
   }
 }
 
+async function fetchContextForRegenerate(sessionId) {
+  try {
+    const messages = await prisma.message.findMany({
+      where: {
+        sessionId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        text: true,
+      },
+      take: 4, // Fetch the top 4 messages
+    });
+
+    console.log(messages);
+
+    // Get the top 3 messages
+    const topMessages = messages.slice(0, 3); // Get the first three elements.
+    const splitMessages = messages.slice(2, 4); // Get elements at index 2 and 3 from the original messages array.
+
+    console.log(splitMessages);
+
+    // // Include the 4th message separately if it exists
+    // const fourthMessage = messages[3] ? messages[3].text : "";
+
+    // console.log(fourthMessage);
+
+    let context = "";
+    splitMessages.forEach(({ text }) => {
+      context += `${text}\n`;
+    });
+
+    // // Add the 4th message to context if it exists
+    // if (fourthMessage) {
+    //   context += `${fourthMessage}\n`;
+    // }
+
+    console.log("context: " + context);
+    console.log("context ended");
+
+    return context;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while generating conversation context",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function createGptUser(phoneNumber, mongoId) {
   try {
     const newUser = await prisma.user.create({
@@ -263,7 +314,7 @@ async function createMessage(sessionId, prompt, isUser, mongoId) {
   try {
     console.log(sessionId, prompt);
     if (isUser) {
-      const updatedTokenVault = await consumeTokenGpt(mongoId, 1);
+      // const updatedTokenVault = await consumeTokenGpt(mongoId, 1);
       const newMessage = await prisma.message.create({
         data: {
           sessionId,
@@ -274,7 +325,7 @@ async function createMessage(sessionId, prompt, isUser, mongoId) {
       return {
         messageId: newMessage.id,
         message: newMessage.text,
-        ...updatedTokenVault,
+        // ...updatedTokenVault,
       };
     } else {
       const newMessage = await prisma.message.create({
@@ -290,6 +341,92 @@ async function createMessage(sessionId, prompt, isUser, mongoId) {
     console.log(error);
     throw new AppError(
       "Error while creating new message",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function RegenertaedMessage(sessionId, prompt, isUser, mongoId) {
+  try {
+    console.log(sessionId, prompt);
+    if (isUser) {
+      const newMessage = await prisma.message.create({
+        data: {
+          sessionId,
+          text: prompt,
+          isUser,
+        },
+      });
+      return {
+        messageId: newMessage.id,
+        message: newMessage.text,
+        // ...updatedTokenVault,
+      };
+    } else {
+      // Find the latest message where isUser is false
+      const latestMessage = await prisma.message.findFirst({
+        where: {
+          sessionId,
+          isUser, // Only messages where isUser is false
+        },
+        orderBy: {
+          createdAt: "desc", // Order by creation date descending
+        },
+        select: {
+          id: true, // Select the ID to update it later
+        },
+      });
+
+      if (!latestMessage) {
+        console.log("No message found with isUser as false.");
+        return;
+      }
+
+      // Update the response of the latest message
+      const newMessage = await prisma.message.update({
+        where: {
+          id: latestMessage.id, // Use the ID of the found message
+        },
+        data: {
+          text: prompt, // Set the new response
+        },
+      });
+
+      console.log("Response updated successfully for the latest message.");
+      return { messageId: newMessage.id, message: newMessage.text };
+    }
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while creating new message",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function appendFeedbackMessageByMessageId(
+  messageId,
+  impression,
+  feedbackType,
+  feedbackMessage,
+  userId
+) {
+  try {
+    // Find the latest message where isUser is false
+    // Create the feedback entry
+    const feedback = await prisma.feedback.create({
+      data: {
+        messageId,
+        impression,
+        feedbackType,
+        feedbackMessage,
+        userId,
+      },
+    });
+  } catch (error) {
+    console.error("Error while fetching latest message:", error);
+    throw new AppError(
+      "Error while fetching latest message",
       StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
@@ -580,6 +717,7 @@ async function fetchSessionMessages(sessionId) {
             text: true,
             isUser: true,
             createdAt: true,
+            textArray: true,
           },
         },
       },
@@ -1401,4 +1539,7 @@ module.exports = {
   updateUserSubscription,
   verifyReferralCode,
   handleFirstPayment,
+  fetchContextForRegenerate,
+  RegenertaedMessage,
+  appendFeedbackMessageByMessageId,
 };
