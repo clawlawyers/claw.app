@@ -36,7 +36,8 @@
     "path": "^0.12.7",
     "pdfkit": "^0.15.0",
     "razorpay": "^2.9.4",
-    "stripe": "^14.23.0"
+    "stripe": "^14.23.0",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.0",

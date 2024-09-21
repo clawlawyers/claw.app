@@ -4,15 +4,12 @@ const router = express.Router();
 const { authMiddleware } = require("../../middlewares");
 const RazorpayController = require("../../controllers/razorpay-controller");
 
-router.post(
-  "/create-order",
+router.post("/create-order", RazorpayController.createPayment);
+router.post("/verifyPayment", RazorpayController.verifyPayment);
 
-  RazorpayController.createPayment
-);
-router.post(
-  "/verifyPayment",
+router.post("/create-subscription", RazorpayController.createSubscription);
+router.post("/verify-subscription", RazorpayController.verifySubscription);
 
-  RazorpayController.verifyPayment
-);
+router.post("/razorpay-webhook", RazorpayController.rezorpayWebhook);
 
 module.exports = router;
