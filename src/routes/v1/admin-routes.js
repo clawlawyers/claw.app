@@ -97,7 +97,7 @@ router.get("/:phoneNumber/isAdmin", isAdmin);
 router.delete("/removeUserPlan", removeUserPlan);
 router.delete("/removeUser", removeUser);
 router.get("/allVisitors", getallVisitors);
-router.delete("/referralcode", deleterefralcode);
+router.delete("/referralcode/:id", deleterefralcode);
 
 // CourtRoom Admin routes
 

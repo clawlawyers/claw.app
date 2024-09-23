@@ -13,6 +13,7 @@ const SpecificLawyerCourtroomUser = require("../models/SpecificLawyerCourtroomUs
 const AdminUser = require("../models/adminUser");
 const { createToken, verifyToken } = require("../utils/common/auth");
 const TrialCourtroomCoupon = require("../models/trialCourtroomCoupon");
+const prisma = require("../config/prisma-client");
 
 async function deleteTrialCoupon(req, res) {
   try {
@@ -1652,11 +1653,19 @@ async function getallVisitors(req, res) {
 }
 async function deleterefralcode(req, res) {
   try {
-    const { mongoId } = req.body;
+    const { id } = req.params;
+
+    console.log(id);
+
+    const getRefferalCode = await prisma.referralCode.findFirst({
+      where: { id: id },
+    });
+
+    console.log(getRefferalCode);
 
     // Delete the referral code from Prisma DB
     const deletedCode = await prisma.referralCode.delete({
-      where: { mongoId },
+      where: { referralCode: getRefferalCode.referralCode },
     });
 
     res
