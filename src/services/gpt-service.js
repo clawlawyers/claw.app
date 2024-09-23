@@ -717,7 +717,7 @@ async function fetchSessionMessages(sessionId) {
             text: true,
             isUser: true,
             createdAt: true,
-            textArray: true,
+            // textArray: true,
           },
         },
       },
