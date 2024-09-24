@@ -13,10 +13,15 @@ model ReferralCode {
   referralCode  String   @unique @id
   redeemed      Boolean  @default(false)
   generatedById String   @unique
+  freeTrial     Int      @default(7)
+  discount      Int      @default(50)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   generatedBy   User     @relation("GeneratedByUser", fields: [generatedById], references: [mongoId])
   redeemedBy    User[]   @relation("RedeemedByUser")
+  redeemedAndPayBy  User[]   @relation("RedeemedAndPayByUser") // Updated to allow multiple users
+
+  newUserPlans     NewUserPlan[] // Refers to related NewUserPlan
 }
 
 model Plan {
@@ -61,11 +66,15 @@ model User {
   numberOfSessions        Int           @default(1)
   plan                    Plan          @relation(fields: [planName], references: [name])
   plans                   UserPlan[]
-
+  newplans                NewUserPlan[]
   redeemedReferralCode    ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [referralCode])
   adminUser                Admin?        @relation("AdminUsers", fields: [adminUserId], references: [id])
   isCasesearch  Boolean  @default(true)  
- }
+  NewPlan NewPlan[]
+  redeemedAndPayByCodes   ReferralCode[] @relation("RedeemedAndPayByUser") // Tracks multiple redeemed and paid referrals
+  feedbacks              Feedback[]    @relation("UserFeedback") // New relation field for Feedback
+
+}
 
 model UserPlan {
   userId   String
@@ -79,6 +88,44 @@ model UserPlan {
 
   @@id([userId, planName])
 }
+
+
+
+model NewUserPlan {
+  userId   String
+  planName String
+  user     User    @relation(fields: [userId], references: [mongoId], onDelete: Cascade)
+  plan     NewPlan @relation(fields: [planName], references: [name], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  subscriptionId   String  @default("")
+  expiresAt DateTime?
+  isActive  Boolean  @default(false)
+ // Add referralCodeId to store the referral code string
+  referralCodeId String?   // This will store the referral code string
+  referralCode   ReferralCode? @relation(fields: [referralCodeId], references: [referralCode], onDelete: SetNull) // Relation to ReferralCode
+  
+  isCouponCode   String  @default("")
+
+  @@id([userId, planName])
+}
+
+model NewPlan {
+  name      String   @id @unique
+  legalGptAccess  Boolean  @default(false)
+  AICaseSearchAccess  Boolean  @default(false)
+  AISummerizer  Boolean  @default(false)
+  AddOnAccess  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  session   Int      @default(1)
+  duration String    @default("monthly")
+  users     User[]
+  planUsers           NewUserPlan[]
+ 
+}
+
+
 
 model Model {
   name      String    @id
@@ -105,6 +152,8 @@ model Session {
 model Message {
   id        String    @id @default(uuid())
   text      String
+  textArray String[]  @default([]) // Required list with default empty array.
+
   isUser    Boolean
   sessionId String
   createdAt DateTime  @default(now())
@@ -117,8 +166,13 @@ model Message {
 
 model Feedback {
   id        String   @id @default(uuid())
-  rating    Int
   messageId String   @unique
+  rating         Int?
+  impression     String   @default("Positive") // or "Negative"
+  feedbackType   String   @default("ResponseGenerated") // or "References" or "Judgement"
+  feedbackMessage String
   createdAt DateTime @default(now())
   message   Message  @relation(fields: [messageId], references: [id])
+  userId         String
+  user           User     @relation("UserFeedback", fields: [userId], references: [mongoId]) // Specifying relation name
 }
