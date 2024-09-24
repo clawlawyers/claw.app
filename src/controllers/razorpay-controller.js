@@ -123,6 +123,8 @@ async function verifyPayment(req, res) {
     razorpay_payment_id,
     razorpay_signature,
     _id,
+    couponCode,
+    refferalCode,
     createdAt,
     expiresAt,
   } = req.body;
@@ -144,10 +146,10 @@ async function verifyPayment(req, res) {
         placedOrder.user.toString(),
         placedOrder.plan,
         razorpay_order_id,
-        (existingSubscription = ""),
+        existingSubscription,
         createdAt,
-        (refferalCode = null),
-        (couponCode = ""),
+        refferalCode,
+        couponCode,
         expiresAt
       );
 
