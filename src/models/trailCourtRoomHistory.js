@@ -20,7 +20,7 @@ const TrailCourtroomHistorySchema = new Schema(
     },
     slot: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "TrialCourtroomCoupon",
+      ref: "TrailCourtRoomBooking",
       required: true,
     },
     history: [TrailCaseHistorySchema],

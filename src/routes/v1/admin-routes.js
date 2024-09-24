@@ -45,16 +45,6 @@ const {
   adminLogin,
   verifyAdminUser,
   getAllAdminNumbers,
-  getTrialCoupon,
-  createTrialCoupon,
-  deleteTrialCoupon,
-  userEveryDayData,
-  userEveryMonthData,
-  userEveryYearData,
-  getallVisitors,
-  deleterefralcode,
-  removeUser,
-  createReferralCodes,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -65,7 +55,6 @@ const TrailBooking = require("../../models/trailBookingAllow");
 // const { updateUserPlan } = require("../../services/gpt-service");
 
 router.get("/referralcode", getReferralCodes);
-router.post("/referralcode", createReferralCodes);
 router.get("/plan", getPlans);
 router.get("/user", getUsers);
 router.get("/subscribed-user", getSubscribedUsers);
@@ -82,10 +71,7 @@ router.get("/allcoupons", allCoupon);
 router.patch("/generateReferralCode", generateReferralCode);
 router.post("/usertrack", usertracking);
 router.get("/dailyuserpagevisit", userdailyvisit);
-router.get("/everyDayData", userEveryDayData);
-router.get("/everyMonthData", userEveryMonthData);
 router.get("/monthlyuserpagevisit", usermonthlyvisit);
-router.get("/everyYearData", userEveryYearData);
 router.get("/yearlyuserpagevisit", useryearlyvisit);
 router.patch("/updateUserLocation", setLocation);
 router.patch("/updateUserPlans", updateUserPlan);
@@ -95,9 +81,6 @@ router.get("/getAdmins", getAdmins);
 router.post("/:adminId/removeUser", removeAdminUser);
 router.get("/:phoneNumber/isAdmin", isAdmin);
 router.delete("/removeUserPlan", removeUserPlan);
-router.delete("/removeUser", removeUser);
-router.get("/allVisitors", getallVisitors);
-router.delete("/referralcode/:id", deleterefralcode);
 
 // CourtRoom Admin routes
 
@@ -197,11 +180,5 @@ router.post("/add-new-admin", addNewAdmin);
 router.post("/login", adminLogin);
 router.post("/verify", verifyAdminUser);
 router.get("/getAllUsers", getAllAdminNumbers);
-
-// trial courtroom coupon routes
-
-router.get("/trial-coupon", getTrialCoupon);
-router.post("/trial-coupon", createTrialCoupon);
-router.delete("/trial-coupon", deleteTrialCoupon);
 
 module.exports = router;
