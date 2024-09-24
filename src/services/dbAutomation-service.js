@@ -61,7 +61,7 @@ async function handleExpiredPlans() {
       console.log(`Removed expired plan ${planName} for user ${userId}`);
 
       // Update tokens
-      await updateUserTokens(userId, planName);
+      // await updateUserTokens(userId, planName);
     }
   } catch (error) {
     console.error("Error handling expired plans:", error);
