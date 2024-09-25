@@ -128,6 +128,7 @@ async function verifyPayment(req, res) {
     createdAt,
     expiresAt,
     existingSubscription,
+    amount,
   } = req.body;
 
   const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
@@ -151,7 +152,8 @@ async function verifyPayment(req, res) {
         createdAt,
         refferalCode,
         couponCode,
-        expiresAt
+        expiresAt,
+        amount
       );
 
       console.log(rs);

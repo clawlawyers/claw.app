@@ -104,7 +104,7 @@ model NewUserPlan {
  // Add referralCodeId to store the referral code string
   referralCodeId String?   // This will store the referral code string
   referralCode   ReferralCode? @relation(fields: [referralCodeId], references: [referralCode], onDelete: SetNull) // Relation to ReferralCode
-  
+  Paidprice   Int @default(0)
   isCouponCode   String  @default("")
 
   @@id([userId, planName])

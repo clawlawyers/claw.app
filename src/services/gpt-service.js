@@ -1157,7 +1157,8 @@ async function updateUserPlan(
   createdAt,
   refferalCode,
   couponCode,
-  expiresAt
+  expiresAt,
+  amount
 ) {
   console.log(mongoId, newPlan);
 
@@ -1177,6 +1178,7 @@ async function updateUserPlan(
           isActive: true,
           createdAt,
           expiresAt,
+          Paidprice: amount,
         },
       });
     }
@@ -1214,6 +1216,7 @@ async function updateUserPlan(
             expiresAt,
             referralCodeId: refferalCode,
             isCouponCode: couponCode,
+            Paidprice: amount,
           },
         });
 
@@ -1239,6 +1242,7 @@ async function updateUserPlan(
             createdAt,
             expiresAt,
             isActive: true,
+            Paidprice: amount,
           },
         });
       }
@@ -1254,6 +1258,7 @@ async function updateUserPlan(
             expiresAt,
             referralCodeId: refferalCode,
             isCouponCode: couponCode,
+            Paidprice: amount,
           },
         });
 
@@ -1279,6 +1284,7 @@ async function updateUserPlan(
             createdAt,
             expiresAt,
             isActive: true,
+            Paidprice: amount,
           },
         });
       }
