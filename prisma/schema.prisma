@@ -73,6 +73,7 @@ model User {
   NewPlan NewPlan[]
   redeemedAndPayByCodes   ReferralCode[] @relation("RedeemedAndPayByUser") // Tracks multiple redeemed and paid referrals
   feedbacks              Feedback[]    @relation("UserFeedback") // New relation field for Feedback
+  isambassadorBenifined    Boolean? 
 
 }
 
