@@ -35,14 +35,22 @@ router.get(
   authMiddleware.checkAmabassador,
   GptController.fetchAmbassadorDetails
 );
+
 router.post("/referralCode/generate", GptController.createReferralCode);
 router.post("/referralCode/redeem", GptController.redeemReferralCode);
+router.post("/verifyReferralCode", GptController.verifyReferralCode);
 
 // router.post('/conversation', GptController.generateGptResponse);
 router.post("/session", GptController.startSession);
 router.post("/session/prompt", GptController.appendMessage);
 router.post("/session/judgement", GptController.judgement);
 router.post("/session/relevantAct", GptController.relevantAct);
+
+router.post("/suggested-questions", GptController.suggestQuestions);
+
+router.post("/regenerate-response", GptController.appendRegeneratedMessage);
+
+router.post("/feedback", GptController.feedBack);
 
 // router.post("/dummy", GptController.caseSearchOn);
 // router.post("/dummyCheckbox", GptController.caseSearchOnCheck);
