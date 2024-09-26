@@ -1169,6 +1169,24 @@ async function updateUserPlan(
     // const today = new Date().setHours(0, 0, 0, 0); // Set today's date to 00:00:00
     let updatedUserPlan;
 
+    if (razorpay_subscription_id === "ambassador") {
+      updatedUserPlan = await prisma.newUserPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          subscriptionId: razorpay_subscription_id,
+          isActive: true,
+          createdAt,
+          expiresAt,
+          Paidprice: amount,
+        },
+      });
+      return {
+        user: updatedUserPlan.mongoId,
+        plan: updatedUserPlan.planName,
+      };
+    }
+
     if (newPlan === "ADDON_M") {
       updatedUserPlan = await prisma.newUserPlan.create({
         data: {
@@ -1181,6 +1199,10 @@ async function updateUserPlan(
           Paidprice: amount,
         },
       });
+      return {
+        user: updatedUserPlan.mongoId,
+        plan: updatedUserPlan.planName,
+      };
     }
 
     if (existingSubscription !== "") {
@@ -1400,6 +1422,22 @@ async function updateUserPlan(
     console.error(error);
     throw new AppError(
       "Error while updating user plan",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function updateIsAmbassadorBenifined(mongoId, bool) {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { mongoId },
+      data: { isambassadorBenifined: bool },
+    });
+    return updatedUser;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while updating user ambassador benifined status",
       StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
@@ -1651,4 +1689,5 @@ module.exports = {
   fetchContextForRegenerate,
   RegenertaedMessage,
   appendFeedbackMessageByMessageId,
+  updateIsAmbassadorBenifined,
 };

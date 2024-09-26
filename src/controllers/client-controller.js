@@ -141,6 +141,29 @@ async function verify(req, res) {
       1
     );
 
+    const gtpUserGuy = await prisma.user.findFirst({
+      where: {
+        mongoId: updatedClient.id,
+      },
+    });
+
+    if (gtpUserGuy.isambassadorBenifined === false) {
+      const createAt = new Date();
+      const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+      await GptServices.updateIsAmbassadorBenifined(updatedClient.id, true);
+      await GptServices.updateUserPlan(
+        updatedClient.id,
+        "FREE_M",
+        "ambassador",
+        "",
+        createAt,
+        null,
+        "",
+        expiresAt,
+        0
+      );
+    }
+
     // console.log(sessions);
 
     // console.log(sessions.StateLocation);

@@ -14,6 +14,7 @@ const AdminUser = require("../models/adminUser");
 const { createToken, verifyToken } = require("../utils/common/auth");
 const TrialCourtroomCoupon = require("../models/trialCourtroomCoupon");
 const prisma = require("../config/prisma-client");
+const { createNewUser } = require("../services/common-service");
 
 async function deleteTrialCoupon(req, res) {
   try {
@@ -1692,19 +1693,27 @@ async function removeUser(req, res) {
 }
 async function createReferralCodes(req, res) {
   try {
-    const { phoneNumber, firstName, lastName, collegeName } = req.body;
+    const { phoneNumber, firstName, lastName, collegeName, email } = req.body;
 
     // console.log(req.body.client);
     console.log(phoneNumber);
     console.log("asdasd");
-    let { _id } = await ClientService.getClientByPhoneNumber(phoneNumber);
-    _id = _id.toString();
+    const resp = await ClientService.getClientByPhoneNumber(phoneNumber);
+    let _id;
+    if (resp === null) {
+      const resp = await createNewUser(phoneNumber, true);
+      console.log(resp);
+      _id = resp.mongoId;
+    } else {
+      _id = resp._id.toString();
+    }
     console.log(_id);
 
     const updatedClient = await ClientService.updateClient(_id, {
       firstName,
       lastName,
       collegeName,
+      email,
       ambassador: true,
     });
 
@@ -1730,6 +1739,38 @@ async function createReferralCodes(req, res) {
         })
       );
     }
+
+    const createAt = new Date();
+    const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const exitingPlan = await prisma.newUserPlan.findMany({
+      where: {
+        userId: _id,
+      },
+    });
+
+    if (exitingPlan.length === 0) {
+      // await GptServices.updateUserPlan(
+      //   _id,
+      //   "FREE_M",
+      //   "ambassador",
+      //   "",
+      //   createAt,
+      //   null,
+      //   "",
+      //   expiresAt,
+      //   0
+      // );
+      await prisma.user.update({
+        where: {
+          mongoId: _id,
+        },
+        data: {
+          isambassadorBenifined: false,
+        },
+      });
+    }
+
     const checkCodeAlreadyExist = async (rCode) => {
       await GptServices.CheckReferralCodeExist(rCode);
     };

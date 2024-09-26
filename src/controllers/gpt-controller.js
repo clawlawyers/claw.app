@@ -589,6 +589,29 @@ async function fetchGptUser(req, res) {
     //   // gptUser.token.total = parseFloat(gptUser.token.total.toFixed(1));
     // }
 
+    const gtpUserGuy = await prisma.user.findFirst({
+      where: {
+        mongoId: _id,
+      },
+    });
+
+    if (gtpUserGuy.isambassadorBenifined === false) {
+      const createAt = new Date();
+      const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+      await GptServices.updateIsAmbassadorBenifined(_id, true);
+      await GptServices.updateUserPlan(
+        _id,
+        "FREE_M",
+        "ambassador",
+        "",
+        createAt,
+        null,
+        "",
+        expiresAt,
+        0
+      );
+    }
+
     return res.status(StatusCodes.OK).json(SuccessResponse(gptUser));
   } catch (error) {
     console.log(error);
