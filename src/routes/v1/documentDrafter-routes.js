@@ -8,13 +8,11 @@ const router = express.Router();
 // Google Cloud Storage configuration
 const storage = new Storage({
   keyFilename: path.join(
-    "/etc/secrets/src/routes/v1/voltaic-charter-435107-j5-d041d0de66bf.json"
+    "/etc/secrets/voltaic-charter-435107-j5-d041d0de66bf.json"
   ), // Replace with your service account key file path
 });
 
-console.log(
-  "/etc/secrets/src/routes/v1/voltaic-charter-435107-j5-d041d0de66bf.json"
-);
+console.log("/etc/secrets/voltaic-charter-435107-j5-d041d0de66bf.json");
 
 const bucketName = "test_rajkiron"; // Replace with your bucket name
 const bucket = storage.bucket(bucketName);
