@@ -376,7 +376,6 @@ async function createPaymentLink(req, res) {
     mobile,
     description,
     trialDays,
-    userId,
     planName,
     refferalCode,
     couponCode,
@@ -385,6 +384,10 @@ async function createPaymentLink(req, res) {
     createdAt,
     price,
   } = req.body;
+
+  const { _id } = req.body.client;
+
+  const userId = _id;
 
   // Payment link options
   const options = {
