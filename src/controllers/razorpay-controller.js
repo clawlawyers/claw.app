@@ -445,9 +445,14 @@ async function rezorpayWebhook(req, res) {
             status: 'Paid',
           }
 
+          console.log()
 
-          console.log(`Payment successful for mobile: ${obj}`);
 
+          // Option 1: Using JSON.stringify
+          console.log(`Payment successful for mobile: ${JSON.stringify(obj, null, 2)}`);
+
+          // Option 2: Logging the object separately
+          console.log('Payment successful for mobile:', obj);
           // Respond with success
           res.status(200).json({ success: true });
       } else {
