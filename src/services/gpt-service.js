@@ -1150,6 +1150,7 @@ async function updateUserSubscription(
 }
 
 async function updateUserPlanPayment(mongoId, planName, paymentId, amountPaid) {
+  console.log(mongoId, planName, paymentId, amountPaid);
   try {
     const planduration = planName.split("_")[1];
     let duration = planduration === "M" ? 30 : 365;
