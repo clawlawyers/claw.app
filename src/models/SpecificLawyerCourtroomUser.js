@@ -64,6 +64,7 @@ const SpecificLawyerCourtroomUserSchema = new Schema({
     required: true,
   },
   recording: { type: Boolean, required: true },
+  drafteFavor: { type: String },
   caseOverview: {
     type: String,
     required: true,

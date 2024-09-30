@@ -10,6 +10,8 @@ router.post("/verifyPayment", RazorpayController.verifyPayment);
 router.post("/create-subscription", RazorpayController.createSubscription);
 router.post("/verify-subscription", RazorpayController.verifySubscription);
 
+router.post("/createPaymentLink", RazorpayController.createPaymentLink);
+
 router.post("/razorpay-webhook", RazorpayController.rezorpayWebhook);
 
 module.exports = router;
