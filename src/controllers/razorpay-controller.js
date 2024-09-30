@@ -369,103 +369,137 @@ async function verifySubscription(req, res) {
   }
 }
 
-async function createPaymentLink(req,res){
-  const { amount, currency, mobile, description, trialDays, userId } = req.body;
+async function createPaymentLink(req, res) {
+  const {
+    amount,
+    currency,
+    mobile,
+    description,
+    trialDays,
+    userId,
+    planName,
+    refferalCode,
+    couponCode,
+    existingSubscription,
+    expiresAt,
+    createdAt,
+    price,
+  } = req.body;
 
   // Payment link options
   const options = {
-      amount: amount * 100, // Razorpay works in paise, so multiply the amount by 100
-      currency: currency || 'INR',
-      description: description || 'Payment for services',
-      customer: {
-          contact: mobile,
-      },
-      notify: {
-          sms: true,
-          email: false,
-      },
-      notes: {
-        userId:userId
-      },
-      reminder_enable: true, // sends reminders for the unpaid links
-      expire_by: Math.floor(Date.now() / 1000) + trialDays*24 * 3600, // set expiration time (1 day from now)
+    amount: amount * 100, // Razorpay works in paise, so multiply the amount by 100
+    currency: currency || "INR",
+    description: description || "Payment for services",
+    customer: {
+      contact: mobile,
+    },
+    notify: {
+      sms: true,
+      email: false,
+    },
+    notes: {
+      userId: userId,
+      price: price,
+      planName: planName,
+    },
+    reminder_enable: true, // sends reminders for the unpaid links
+    expire_by: Math.floor(Date.now() / 1000) + trialDays * 24 * 3600, // set expiration time (1 day from now)
   };
 
   try {
-      // Create the payment link using Razorpay API
-      const paymentLink = await razorpay.paymentLink.create(options);
-      res.status(200).json({
-          success: true,
-          paymentLink: paymentLink.short_url,  // send the payment link in the response
-      });
+    // Create the payment link using Razorpay API
+    const paymentLink = await razorpay.paymentLink.create(options);
+
+    const rs = await GptServices.updateUserPlan(
+      placedOrder.user.toString(),
+      placedOrder.plan,
+      (razorpay_order_id = paymentLink.short_url),
+      existingSubscription,
+      createdAt,
+      refferalCode,
+      couponCode,
+      expiresAt,
+      (amount = 0)
+    );
+    res.status(200).json({
+      success: true,
+      paymentLink: paymentLink.short_url, // send the payment link in the response
+    });
   } catch (error) {
-      console.error('Error creating payment link:', error);
-      res.status(500).json({
-          success: false,
-          message: 'Failed to create payment link',
-          error: error.message,
-      });
+    console.error("Error creating payment link:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create payment link",
+      error: error.message,
+    });
   }
 }
 
-const WebHookCode="Clawapp.dev"
-
+const WebHookCode = "Clawapp.dev";
 
 async function rezorpayWebhook(req, res) {
-  const receivedSignature = req.headers['x-razorpay-signature'];
+  const receivedSignature = req.headers["x-razorpay-signature"];
   const payload = JSON.stringify(req.body);
 
   // Validate the webhook signature
   const expectedSignature = crypto
-      .createHmac('sha256', WebHookCode)
-      .update(payload)
-      .digest('hex');
+    .createHmac("sha256", WebHookCode)
+    .update(payload)
+    .digest("hex");
 
   if (receivedSignature === expectedSignature) {
-      const event = req.body.event;
+    const event = req.body.event;
 
-      // Handle payment success event
-      if (event === 'payment_link.paid') {
-          const paymentDetails = req.body.payload.payment_link.entity;
-          const paymentId = paymentDetails.id;
-          const customerMobile = paymentDetails.customer.contact;
-          const userId=paymentDetails.notes.userId
-          const amountPaid = paymentDetails.amount_paid;
+    // Handle payment success event
+    if (event === "payment_link.paid") {
+      const paymentDetails = req.body.payload.payment_link.entity;
+      const paymentId = paymentDetails.id;
+      const customerMobile = paymentDetails.customer.contact;
+      const userId = paymentDetails.notes.userId;
+      const planName = paymentDetails.notes.planName;
+      const price = paymentDetails.notes.price;
+      const amountPaid = paymentDetails.amount_paid;
 
-          // Update the database with payment details
-          // mockDatabase[customerMobile] = {
-          //     paymentId,
-          //     amountPaid,
-          //     status: 'Paid',
-          // };
+      const updatePlan = await GptServices.updateUserPlanPayment(
+        userId,
+        planName,
+        paymentId,
+        price
+      );
 
-          const obj={
-            customerMobile,
-            userId,
-            paymentId,
-            amountPaid,
-            status: 'Paid',
-          }
+      // Update the database with payment details
+      // mockDatabase[customerMobile] = {
+      //     paymentId,
+      //     amountPaid,
+      //     status: 'Paid',
+      // };
 
-          console.log()
+      const obj = {
+        customerMobile,
+        userId,
+        paymentId,
+        amountPaid,
+        status: "Paid",
+      };
 
+      // Option 1: Using JSON.stringify
+      console.log(
+        `Payment successful for mobile: ${JSON.stringify(obj, null, 2)}`
+      );
 
-          // Option 1: Using JSON.stringify
-          console.log(`Payment successful for mobile: ${JSON.stringify(obj, null, 2)}`);
-
-          // Option 2: Logging the object separately
-          console.log('Payment successful for mobile:', obj);
-          // Respond with success
-          res.status(200).json({ success: true });
-      } else {
-          res.status(200).json({ success: true, message: 'Event not handled' });
-      }
+      // Option 2: Logging the object separately
+      console.log("Payment successful for mobile:", obj);
+      // Respond with success
+      res.status(200).json({ success: true });
+    } else {
+      res.status(200).json({ success: true, message: "Event not handled" });
+    }
   } else {
-      console.log('Invalid signature, possible tampering detected');
-      res.status(403).json({ success: false, message: 'Invalid signature' });
+    console.log("Invalid signature, possible tampering detected");
+    res.status(403).json({ success: false, message: "Invalid signature" });
   }
 }
-
 
 // async function rezorpayWebhook(req, res) {
 //   const event = req.body.event;
@@ -525,5 +559,5 @@ module.exports = {
   createSubscription,
   verifySubscription,
   rezorpayWebhook,
-  createPaymentLink
+  createPaymentLink,
 };
