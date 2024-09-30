@@ -370,7 +370,7 @@ async function verifySubscription(req, res) {
 }
 
 async function createPaymentLink(req,res){
-  const { amount, currency, mobile, description, trialDays } = req.body;
+  const { amount, currency, mobile, description, trialDays, userId } = req.body;
 
   // Payment link options
   const options = {
@@ -379,6 +379,7 @@ async function createPaymentLink(req,res){
       description: description || 'Payment for services',
       customer: {
           contact: mobile,
+          userId:userId
       },
       notify: {
           sms: true,
@@ -426,16 +427,26 @@ async function rezorpayWebhook(req, res) {
           const paymentDetails = req.body.payload.payment_link.entity;
           const paymentId = paymentDetails.id;
           const customerMobile = paymentDetails.customer.contact;
+          const userId=paymentDetails.customer.userId
           const amountPaid = paymentDetails.amount_paid;
 
           // Update the database with payment details
-          mockDatabase[customerMobile] = {
-              paymentId,
-              amountPaid,
-              status: 'Paid',
-          };
+          // mockDatabase[customerMobile] = {
+          //     paymentId,
+          //     amountPaid,
+          //     status: 'Paid',
+          // };
 
-          console.log(`Payment successful for mobile: ${customerMobile}`);
+          const obj={
+            customerMobile,
+            userId,
+            paymentId,
+            amountPaid,
+            status: 'Paid',
+          }
+
+
+          console.log(`Payment successful for mobile: ${obj}`);
 
           // Respond with success
           res.status(200).json({ success: true });
