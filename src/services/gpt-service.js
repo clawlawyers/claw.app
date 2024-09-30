@@ -1163,7 +1163,7 @@ async function updateUserPlanPayment(mongoId, planName, paymentId, amountPaid) {
     });
 
     let newDate = new Date(userPlan.expiresAt);
-    newDate.setDate(currentDate.getDate() + duration);
+    newDate.setDate(newDate.getDate() + duration);
 
     const userPlanUpdate = await prisma.newUserPlan.update({
       where: {
