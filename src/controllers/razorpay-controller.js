@@ -414,6 +414,8 @@ async function createPaymentLink(req, res) {
     // Create the payment link using Razorpay API
     const paymentLink = await razorpay.paymentLink.create(options);
 
+    let price = 0;
+
     const rs = await GptServices.updateUserPlan(
       userId,
       planName,
@@ -423,14 +425,14 @@ async function createPaymentLink(req, res) {
       refferalCode,
       couponCode,
       expiresAt,
-      (amount = 0)
+      price
     );
     res.status(200).json({
       success: true,
       paymentLink: paymentLink.short_url, // send the payment link in the response
     });
   } catch (error) {
-    console.error("Error creating payment link:", error);
+    console.error("Error creating payment link:", error.message);
     res.status(500).json({
       success: false,
       message: "Failed to create payment link",
