@@ -379,11 +379,13 @@ async function createPaymentLink(req,res){
       description: description || 'Payment for services',
       customer: {
           contact: mobile,
-          userId:userId
       },
       notify: {
           sms: true,
           email: false,
+      },
+      notes: {
+        userId:userId
       },
       reminder_enable: true, // sends reminders for the unpaid links
       expire_by: Math.floor(Date.now() / 1000) + trialDays*24 * 3600, // set expiration time (1 day from now)
@@ -427,7 +429,7 @@ async function rezorpayWebhook(req, res) {
           const paymentDetails = req.body.payload.payment_link.entity;
           const paymentId = paymentDetails.id;
           const customerMobile = paymentDetails.customer.contact;
-          const userId=paymentDetails.customer.userId
+          const userId=paymentDetails.notes.userId
           const amountPaid = paymentDetails.amount_paid;
 
           // Update the database with payment details
