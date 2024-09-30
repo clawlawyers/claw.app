@@ -415,8 +415,8 @@ async function createPaymentLink(req, res) {
     const paymentLink = await razorpay.paymentLink.create(options);
 
     const rs = await GptServices.updateUserPlan(
-      placedOrder.user.toString(),
-      placedOrder.plan,
+      userId,
+      planName,
       (razorpay_order_id = paymentLink.short_url),
       existingSubscription,
       createdAt,
