@@ -1168,8 +1168,10 @@ async function updateUserPlanPayment(mongoId, planName, paymentId, amountPaid) {
 
     const userPlanUpdate = await prisma.newUserPlan.update({
       where: {
-        userId: mongoId,
-        planName: planName,
+        userId_planName: {
+          userId: mongoId,
+          planName: planName,
+        },
       },
       data: {
         subscriptionId: paymentId,
