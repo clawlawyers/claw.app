@@ -14,7 +14,7 @@ const razorpay = new Razorpay({
 
 // planNamesquence = ["BASIC_M", "ESSENTIAL_M", "BASIC_Y", "ESSENTIAL_Y"];
 
-const isLive = false;
+const isLive = true;
 
 const LiveplanNamesquence = isLive
   ? [
