@@ -121,7 +121,7 @@ async function checkClientAdiraAuth(req, res, next) {
       throw new AppError("No user found", StatusCodes.NOT_FOUND);
     }
     // console.log(client);
-    req.body.courtroomClient = client?.userBooking;
+    req.user = client?.userBooking;
     next();
   } catch (error) {
     const errorResponse = ErrorResponse({}, error);

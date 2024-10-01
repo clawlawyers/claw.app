@@ -207,6 +207,6 @@ router.delete("/trial-coupon", deleteTrialCoupon);
 
 // client Adira
 
-router.post("/client/book-courtroom", bookClientAdira);
+router.post("/client/book-adira", bookClientAdira);
 
 module.exports = router;
