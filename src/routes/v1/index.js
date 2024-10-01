@@ -19,6 +19,7 @@ const Razorpay = require("./razorpay-routes");
 const BookingPayment = require("./bookingPayment-routes");
 const AiDrafter = require("./aiDrafter-routes");
 const TimeBased = require("./timeBased-routes");
+const ClientAdira = require("./clientAdira-routes");
 const router = express.Router();
 
 router.use("/user", UserRoutes);
@@ -41,5 +42,6 @@ router.use("/courtroom", courtroomRoutes);
 router.use("/specificLawyerCourtroom", specificLawyerCourtroomRoutes);
 router.use("/ai-drafter", AiDrafter);
 router.use("/time-based", TimeBased);
+router.use("/clientAdhira", ClientAdira);
 
 module.exports = router;

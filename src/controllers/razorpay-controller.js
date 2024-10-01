@@ -334,6 +334,8 @@ async function verifySubscription(req, res) {
         razorpay_subscription_id
       );
 
+      console.log("Razorpay subscription:", subscription);
+
       let expiresAt =
         subscription.current_end === null
           ? subscription.charge_at
@@ -341,17 +343,17 @@ async function verifySubscription(req, res) {
 
       expiresAt = new Date(expiresAt * 1000);
 
-      // Step 5: Update the user plan after subscription success
-      await GptServices.updateUserPlan(
-        placedOrder.user.toString(),
-        placedOrder.plan,
-        razorpay_subscription_id,
-        existingSubscription,
-        createdAt,
-        refferalCode,
-        couponCode,
-        expiresAt
-      );
+      // // Step 5: Update the user plan after subscription success
+      // await GptServices.updateUserPlan(
+      //   placedOrder.user.toString(),
+      //   placedOrder.plan,
+      //   razorpay_subscription_id,
+      //   existingSubscription,
+      //   createdAt,
+      //   refferalCode,
+      //   couponCode,
+      //   expiresAt
+      // );
 
       res.status(200).json({
         status:
@@ -369,57 +371,194 @@ async function verifySubscription(req, res) {
   }
 }
 
-async function rezorpayWebhook(req, res) {
-  const event = req.body.event;
-  const data = req.body.payload;
+async function createPaymentLink(req, res) {
+  const {
+    amount,
+    currency,
+    mobile,
+    description,
+    trialDays,
+    planName,
+    refferalCode,
+    couponCode,
+    existingSubscription,
+    expiresAt,
+    createdAt,
+    price,
+  } = req.body;
+
+  const { _id } = req.body.client;
+
+  const userId = _id;
+
+  // Payment link options
+  const options = {
+    amount: amount * 100, // Razorpay works in paise, so multiply the amount by 100
+    currency: currency || "INR",
+    description: description || "Payment for services",
+    customer: {
+      contact: mobile,
+    },
+    notify: {
+      sms: true,
+      email: false,
+    },
+    notes: {
+      userId: userId,
+      price: price,
+      planName: planName,
+    },
+    reminder_enable: true, // sends reminders for the unpaid links
+    expire_by: Math.floor(Date.now() / 1000) + trialDays * 24 * 3600, // set expiration time (1 day from now)
+  };
 
   try {
-    if (event === "subscription.charged" || event === "invoice.paid") {
-      // Successful subscription or invoice payment
-      const subscriptionId = data.subscription.entity.id;
-      const userId = data.subscription.entity.notes.user_id;
-      const currentEndTimestamp = data.subscription.entity.current_end;
-      const subscriptionEndDate = new Date(currentEndTimestamp * 1000);
-      // Check the paid count in the subscription entity
-      const paidCount = data.subscription.entity.paid_count;
+    // Create the payment link using Razorpay API
+    const paymentLink = await razorpay.paymentLink.create(options);
 
-      if (paidCount === 1) {
-        // This is the first payment, as the paid count is 1
+    let price = 0;
 
-        await GptServices.handleFirstPayment(userId, subscriptionId);
-      }
-
-      // Update the user's subscription as active and set the new end date
-      await GptServices.updateUserSubscription(
-        userId,
-        subscriptionId,
-        (isActive = true),
-        subscriptionEndDate
-      );
-
-      res.status(200).json({ message: "Subscription updated successfully" });
-    } else if (
-      event === "invoice.payment_failed" ||
-      event === "subscription.halted"
-    ) {
-      // Payment failure or subscription halt event
-      const userId = data.subscription.entity.notes.user_id;
-      const subscriptionId = data.subscription.entity.id;
-
-      // Mark the user's subscription as inactive
-      await updateUserSubscription(userId, subscriptionId, (isActive = false));
-
-      res.status(200).json({
-        message: "Subscription marked as inactive due to payment failure",
-      });
-    } else {
-      res.status(400).json({ message: "Unhandled event type" });
-    }
+    const rs = await GptServices.updateUserPlan(
+      userId,
+      planName,
+      (razorpay_order_id = paymentLink.short_url),
+      existingSubscription,
+      createdAt,
+      refferalCode,
+      couponCode,
+      expiresAt,
+      price
+    );
+    res.status(200).json({
+      success: true,
+      paymentLink: paymentLink.short_url, // send the payment link in the response
+    });
   } catch (error) {
-    console.error("Error processing webhook:", error);
-    res.status(500).json({ error: "Failed to process webhook" });
+    console.error("Error creating payment link:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create payment link",
+      error: error.message,
+    });
   }
 }
+
+const WebHookCode = "Clawapp.dev";
+
+async function rezorpayWebhook(req, res) {
+  const receivedSignature = req.headers["x-razorpay-signature"];
+  const payload = JSON.stringify(req.body);
+
+  // Validate the webhook signature
+  const expectedSignature = crypto
+    .createHmac("sha256", WebHookCode)
+    .update(payload)
+    .digest("hex");
+
+  if (receivedSignature === expectedSignature) {
+    const event = req.body.event;
+
+    // Handle payment success event
+    if (event === "payment_link.paid") {
+      const paymentDetails = req.body.payload.payment_link.entity;
+      const paymentId = paymentDetails.id;
+      const customerMobile = paymentDetails.customer.contact;
+      const userId = paymentDetails.notes.userId;
+      const planName = paymentDetails.notes.planName;
+      const price = paymentDetails.notes.price;
+      const amountPaid = paymentDetails.amount_paid;
+
+      const updatePlan = await GptServices.updateUserPlanPayment(
+        userId,
+        planName,
+        paymentId,
+        price
+      );
+
+      // Update the database with payment details
+      // mockDatabase[customerMobile] = {
+      //     paymentId,
+      //     amountPaid,
+      //     status: 'Paid',
+      // };
+
+      const obj = {
+        customerMobile,
+        userId,
+        paymentId,
+        amountPaid,
+        status: "Paid",
+      };
+
+      // Option 1: Using JSON.stringify
+      console.log(
+        `Payment successful for mobile: ${JSON.stringify(obj, null, 2)}`
+      );
+
+      // Option 2: Logging the object separately
+      console.log("Payment successful for mobile:", obj);
+      // Respond with success
+      res.status(200).json({ success: true });
+    } else {
+      res.status(200).json({ success: true, message: "Event not handled" });
+    }
+  } else {
+    console.log("Invalid signature, possible tampering detected");
+    res.status(403).json({ success: false, message: "Invalid signature" });
+  }
+}
+
+// async function rezorpayWebhook(req, res) {
+//   const event = req.body.event;
+//   const data = req.body.payload;
+
+//   try {
+//     if (event === "subscription.charged" || event === "invoice.paid") {
+//       // Successful subscription or invoice payment
+//       const subscriptionId = data.subscription.entity.id;
+//       const userId = data.subscription.entity.notes.user_id;
+//       const currentEndTimestamp = data.subscription.entity.current_end;
+//       const subscriptionEndDate = new Date(currentEndTimestamp * 1000);
+//       // Check the paid count in the subscription entity
+//       const paidCount = data.subscription.entity.paid_count;
+
+//       if (paidCount === 1) {
+//         // This is the first payment, as the paid count is 1
+
+//         await GptServices.handleFirstPayment(userId, subscriptionId);
+//       }
+
+//       // Update the user's subscription as active and set the new end date
+//       await GptServices.updateUserSubscription(
+//         userId,
+//         subscriptionId,
+//         (isActive = true),
+//         subscriptionEndDate
+//       );
+
+//       res.status(200).json({ message: "Subscription updated successfully" });
+//     } else if (
+//       event === "invoice.payment_failed" ||
+//       event === "subscription.halted"
+//     ) {
+//       // Payment failure or subscription halt event
+//       const userId = data.subscription.entity.notes.user_id;
+//       const subscriptionId = data.subscription.entity.id;
+
+//       // Mark the user's subscription as inactive
+//       await updateUserSubscription(userId, subscriptionId, (isActive = false));
+
+//       res.status(200).json({
+//         message: "Subscription marked as inactive due to payment failure",
+//       });
+//     } else {
+//       res.status(400).json({ message: "Unhandled event type" });
+//     }
+//   } catch (error) {
+//     console.error("Error processing webhook:", error);
+//     res.status(500).json({ error: "Failed to process webhook" });
+//   }
+// }
 
 module.exports = {
   createPayment,
@@ -427,4 +566,5 @@ module.exports = {
   createSubscription,
   verifySubscription,
   rezorpayWebhook,
+  createPaymentLink,
 };

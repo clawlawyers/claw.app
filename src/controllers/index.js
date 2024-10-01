@@ -16,4 +16,5 @@ module.exports = {
   RazorpayController: require("./razorpay-controller"),
   AiDrafter: require("./aiDrafter-controller"),
   TimeBased: require("./timeBased-controller"),
+  ClientAdiraController: require("./clientAdira-controller"),
 };

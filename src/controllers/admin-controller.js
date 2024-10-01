@@ -1814,6 +1814,55 @@ async function createReferralCodes(req, res) {
   }
 }
 
+//  client adira
+
+async function bookClientAdira(req, res) {
+  try {
+    const { name, phoneNumber, email, Domain, startDate, endDate, totalHours } =
+      req.body;
+
+    // Input validation (basic example, can be extended as per requirements)
+    if (
+      !name ||
+      !phoneNumber ||
+      !email ||
+      !Domain ||
+      !startDate ||
+      !endDate ||
+      !totalHours
+    ) {
+      return res.status(400).json({ error: "All fields are required." });
+    }
+
+    const respo = await ClientAdiraUser.create({
+      name,
+      phoneNumber,
+      email,
+      Domain,
+      startDate,
+      endDate,
+      totalHours,
+    });
+
+    // await sendConfirmationEmail(
+    //   email,
+    //   name,
+    //   phoneNumber,
+    //   password,
+    //   totalHours,
+    // );
+
+    res
+      .status(201)
+      .json({ message: "Adira client booked successfully", respo });
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
 module.exports = {
   getReferralCodes,
   getPlans,
@@ -1869,4 +1918,5 @@ module.exports = {
   deleterefralcode,
   removeUser,
   createReferralCodes,
+  bookClientAdira,
 };

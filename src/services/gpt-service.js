@@ -1149,6 +1149,61 @@ async function updateUserSubscription(
   }
 }
 
+async function updateUserPlanPayment(mongoId, planName, paymentId, amountPaid) {
+  console.log(mongoId, planName, paymentId, amountPaid);
+  try {
+    const planduration = planName.split("_")[1];
+    let duration = planduration === "M" ? 30 : 365;
+
+    const userPlan = await prisma.newUserPlan.findFirst({
+      where: {
+        userId: mongoId,
+        planName: planName,
+      },
+    });
+
+    const dateToExpire = userPlan.expiresAt;
+    let newDate = new Date(dateToExpire);
+    newDate.setDate(dateToExpire.getDate() + duration);
+
+    const userPlanUpdate = await prisma.newUserPlan.update({
+      where: {
+        userId_planName: {
+          userId: mongoId,
+          planName: planName,
+        },
+      },
+      data: {
+        subscriptionId: paymentId,
+        expiresAt: newDate,
+        Paidprice: parseInt(amountPaid),
+      },
+    });
+
+    if (userPlan.referralCodeId) {
+      await prisma.referralCode.update({
+        where: {
+          referralCode: userPlan.referralCodeId,
+        },
+        data: {
+          redeemedAndPayBy: {
+            connect: { mongoId: mongoId },
+          },
+          redeemed: true,
+        },
+      });
+    }
+
+    return userPlanUpdate;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while updating user plan",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function updateUserPlan(
   mongoId,
   newPlan,
@@ -1248,7 +1303,7 @@ async function updateUserPlan(
               referralCode: refferalCode,
             },
             data: {
-              redeemedAndPayBy: {
+              redeemedBy: {
                 connect: { mongoId: mongoId },
               },
               redeemed: true,
@@ -1690,4 +1745,5 @@ module.exports = {
   RegenertaedMessage,
   appendFeedbackMessageByMessageId,
   updateIsAmbassadorBenifined,
+  updateUserPlanPayment,
 };

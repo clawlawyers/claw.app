@@ -5,17 +5,25 @@ const { Storage } = require("@google-cloud/storage");
 const path = require("path");
 const router = express.Router();
 
+let storage;
+if(process.env.NODE_ENV !== "production"){
 // Google Cloud Storage configuration
-const storage = new Storage({
+ storage = new Storage({
   keyFilename: path.join(
-    __dirname,
-    "./voltaic-charter-435107-j5-d041d0de66bf.json"
+    "/src/routes/v1/voltaic-charter-435107-j5-d041d0de66bf.json"
   ), // Replace with your service account key file path
 });
+}else{
+  // Google Cloud Storage configuration
+ storage = new Storage({
+  keyFilename: path.join(
+    "/etc/secrets/voltaic-charter-435107-j5-d041d0de66bf.json"
+  ), // Replace with your service account key file path
+});
+}
 
-console.log(
-  path.join(__dirname, "./voltaic-charter-435107-j5-d041d0de66bf.json")
-);
+
+console.log("/etc/secrets/voltaic-charter-435107-j5-d041d0de66bf.json");
 
 const bucketName = "test_rajkiron"; // Replace with your bucket name
 const bucket = storage.bucket(bucketName);
