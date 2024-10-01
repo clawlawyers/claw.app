@@ -3,6 +3,7 @@ const {
   UserService,
   CourtroomService,
   SpecificLawyerCourtroomService,
+  ClientAdiraService,
 } = require("../services");
 const { ErrorResponse } = require("../utils/common/");
 const { StatusCodes } = require("http-status-codes");
@@ -102,6 +103,32 @@ async function checkSpecificLawyerCourtroomAuth(req, res, next) {
   }
 }
 
+async function checkClientAdiraAuth(req, res, next) {
+  try {
+    const clientIp =
+      req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+    const origin = req.headers.origin || req.headers.referer;
+
+    // console.log("Client IP:", clientIp);
+    // console.log("Origin:", origin);
+    // console.log("Origin:", origin?.toString()?.substring(8));
+    const domain = origin?.toString()?.substring(8);
+    req.domain = domain;
+    req.ip = clientIp;
+
+    const client = await ClientAdiraService.getClientByDomainName(domain);
+    if (!client) {
+      throw new AppError("No user found", StatusCodes.NOT_FOUND);
+    }
+    // console.log(client);
+    req.body.courtroomClient = client?.userBooking;
+    next();
+  } catch (error) {
+    const errorResponse = ErrorResponse({}, error);
+    return res.status(StatusCodes.UNAUTHORIZED).json(errorResponse);
+  }
+}
+
 async function checkVerifiedLawyer(req, res, next) {
   try {
     const lawyer = await UserService.getUserByPhoneNumber(req.body.phoneNumber);
@@ -147,4 +174,5 @@ module.exports = {
   checkAmabassador,
   checkCourtroomAuth,
   checkSpecificLawyerCourtroomAuth,
+  checkClientAdiraAuth,
 };

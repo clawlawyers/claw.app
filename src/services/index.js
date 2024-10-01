@@ -13,4 +13,5 @@ module.exports = {
   BookingPayment: require("./bookingPayment-service"),
   PaymentService: require("./payment-service"),
   DbAutomationService: require("./dbAutomation-service"),
+  ClientAdiraService: require("./clientAdira-service"),
 };

@@ -15,8 +15,6 @@ const { createToken, verifyToken } = require("../utils/common/auth");
 const TrialCourtroomCoupon = require("../models/trialCourtroomCoupon");
 const prisma = require("../config/prisma-client");
 const { createNewUser } = require("../services/common-service");
-const { AiDrafter } = require(".");
-const ClientAdiraUser = require("../models/cleintAdira");
 
 async function deleteTrialCoupon(req, res) {
   try {

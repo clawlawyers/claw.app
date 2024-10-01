@@ -334,6 +334,8 @@ async function verifySubscription(req, res) {
         razorpay_subscription_id
       );
 
+      console.log("Razorpay subscription:", subscription);
+
       let expiresAt =
         subscription.current_end === null
           ? subscription.charge_at
@@ -341,17 +343,17 @@ async function verifySubscription(req, res) {
 
       expiresAt = new Date(expiresAt * 1000);
 
-      // Step 5: Update the user plan after subscription success
-      await GptServices.updateUserPlan(
-        placedOrder.user.toString(),
-        placedOrder.plan,
-        razorpay_subscription_id,
-        existingSubscription,
-        createdAt,
-        refferalCode,
-        couponCode,
-        expiresAt
-      );
+      // // Step 5: Update the user plan after subscription success
+      // await GptServices.updateUserPlan(
+      //   placedOrder.user.toString(),
+      //   placedOrder.plan,
+      //   razorpay_subscription_id,
+      //   existingSubscription,
+      //   createdAt,
+      //   refferalCode,
+      //   couponCode,
+      //   expiresAt
+      // );
 
       res.status(200).json({
         status:
