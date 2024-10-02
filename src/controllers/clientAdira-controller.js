@@ -1,3 +1,4 @@
+const { StatusCodes } = require("http-status-codes");
 const { SuccessResponse, ErrorResponse } = require("../utils/common");
 
 async function getUser(req, res) {
