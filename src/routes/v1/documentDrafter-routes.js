@@ -11,7 +11,7 @@ if (process.env.NODE_ENV !== "production") {
   // Google Cloud Storage configuration
   storage = new Storage({
     keyFilename: path.join(
-      "/src/routes/v1/voltaic-charter-435107-j5-d041d0de66bf.json"
+      __dirname + "/voltaic-charter-435107-j5-d041d0de66bf.json"
     ), // Replace with your service account key file path
   });
 } else {
@@ -23,6 +23,9 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
+console.log(
+  path.join(__dirname + "/voltaic-charter-435107-j5-d041d0de66bf.json")
+);
 console.log("/etc/secrets/voltaic-charter-435107-j5-d041d0de66bf.json");
 
 const bucketName = "test_rajkiron"; // Replace with your bucket name
