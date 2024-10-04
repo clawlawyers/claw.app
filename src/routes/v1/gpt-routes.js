@@ -52,6 +52,8 @@ router.post("/regenerate-response", GptController.appendRegeneratedMessage);
 
 router.post("/feedback", GptController.feedBack);
 
+router.post("/cancelSubscription", GptController.cancelSubscription);
+
 // router.post("/dummy", GptController.caseSearchOn);
 // router.post("/dummyCheckbox", GptController.caseSearchOnCheck);
 // router.post("/funny", GptController.funPlan);

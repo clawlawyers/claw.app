@@ -7,6 +7,9 @@ const { AWS_S3_BUCKET_NAME, AWS_REGION } = require("../config/server-config");
 const { createToken } = require("../utils/common/auth");
 const prisma = require("../config/prisma-client");
 const { fetchGptUser } = require("../services/gpt-service");
+const {
+  sendConfirmationEmailForAmbasForFreePlan,
+} = require("../utils/common/sendEmail");
 
 /**
  * POST:  client/signup
@@ -162,6 +165,11 @@ async function verify(req, res) {
         expiresAt,
         0
       );
+
+      const username = existing?.firstName;
+      const email = existing?.email;
+
+      await sendConfirmationEmailForAmbasForFreePlan(email, username);
     }
 
     // console.log(sessions);

@@ -6,6 +6,9 @@ const {
   consumeTokenGpt,
   consumeTokenCaseSearch,
 } = require("../services/gpt-service");
+const {
+  sendConfirmationEmailForAmbasForFreePlan,
+} = require("../utils/common/sendEmail");
 
 const { FLASK_API_ENDPOINT } = process.env;
 
@@ -610,6 +613,10 @@ async function fetchGptUser(req, res) {
         expiresAt,
         0
       );
+      const username = req?.body?.client?.firstName;
+      const email = req?.body?.client?.email;
+
+      await sendConfirmationEmailForAmbasForFreePlan(email, username);
     }
 
     return res.status(StatusCodes.OK).json(SuccessResponse(gptUser));
@@ -873,6 +880,20 @@ async function deleteUserSessions(req, res) {
   }
 }
 
+async function cancelSubscription(req, res) {
+  try {
+    const { _id } = req.body.client;
+    const { planName } = req.body;
+    await GptServices.cancelSubscription(_id, planName);
+    return res.status(StatusCodes.OK).json(SuccessResponse());
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+
 module.exports = {
   startSession,
   getUserSessions,
@@ -903,4 +924,5 @@ module.exports = {
   suggestQuestions,
   appendRegeneratedMessage,
   feedBack,
+  cancelSubscription,
 };
