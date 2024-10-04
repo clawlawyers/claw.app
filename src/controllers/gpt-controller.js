@@ -1,6 +1,8 @@
 const { GptServices } = require("../services");
 const { ErrorResponse, SuccessResponse } = require("../utils/common");
 const { StatusCodes } = require("http-status-codes");
+const fs = require("fs");
+const path = require("path");
 const AppError = require("../utils/errors/app-error");
 const {
   consumeTokenGpt,
@@ -890,7 +892,81 @@ async function cancelSubscription(req, res) {
     console.log(error);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse({}, error));
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
+async function readAloud(req, res) {
+  const { input_text } = req.body;
+
+  if (!input_text) {
+    return res.status(400).send({ error: "input_text is required" });
+  }
+
+  try {
+    // Fetch the MP3 file from the read_aloud API
+    const filePath = await fetchReadAloud({ input_text });
+
+    // Send the MP3 file as response
+    res.set({
+      "Content-Type": "audio/mpeg",
+      "Content-Disposition": 'attachment; filename="output.mp3"',
+    });
+    res.sendFile(filePath, (err) => {
+      // After sending the file, delete it from the server
+      if (err) {
+        console.error("Error sending file:", err);
+      }
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error("Error deleting file:", err);
+        } else {
+          console.log("File deleted successfully");
+        }
+      });
+    });
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
+async function fetchReadAloud({ input_text }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+
+    // Send the POST request to the read_aloud API
+    const response = await fetch("http://20.193.128.165/api/read_aloud", {
+      method: "POST",
+      body: JSON.stringify({ input_text }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    // Check if the response is not OK
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+
+    // Handle the MP3 file response (binary data)
+    const mp3Data = await response.arrayBuffer();
+    const filePath = path.join(__dirname, "output.mp3");
+
+    // Save the MP3 file temporarily to the server
+    fs.writeFileSync(filePath, Buffer.from(mp3Data));
+
+    // Return the path to the file for sending in response
+    return filePath;
+  } catch (error) {
+    console.error(error);
+    throw error;
   }
 }
 
@@ -925,4 +1001,5 @@ module.exports = {
   appendRegeneratedMessage,
   feedBack,
   cancelSubscription,
+  readAloud,
 };
