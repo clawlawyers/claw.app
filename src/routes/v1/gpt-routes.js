@@ -12,7 +12,7 @@ const router = express.Router();
 // router.delete('/model')
 
 // routes to create/manage sessions
-// router.use(authMiddleware.checkClientAuth);
+ router.use(authMiddleware.checkClientAuth);
 router.get("/user", GptController.fetchGptUser);
 router.post("/case/related/:sessionId", GptController.getRelatedCases);
 router.get("/case/:folderId/:caseId", GptController.fetchCaseDetails);
