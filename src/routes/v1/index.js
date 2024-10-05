@@ -42,6 +42,6 @@ router.use("/courtroom", courtroomRoutes);
 router.use("/specificLawyerCourtroom", specificLawyerCourtroomRoutes);
 router.use("/ai-drafter", AiDrafter);
 router.use("/time-based", TimeBased);
-router.use("/clientAdhira", ClientAdira);
+router.use("/clientAdira", ClientAdira);
 
 module.exports = router;

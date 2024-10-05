@@ -7,6 +7,11 @@ const { AWS_S3_BUCKET_NAME, AWS_REGION } = require("../config/server-config");
 const { createToken } = require("../utils/common/auth");
 const prisma = require("../config/prisma-client");
 const { fetchGptUser } = require("../services/gpt-service");
+const {
+  sendConfirmationEmailForAmbasForFreePlan,
+} = require("../utils/common/sendEmail");
+const sessionCleanup = require("../utils/common/sessionHelper");
+const { default: mongoose } = require("mongoose");
 
 /**
  * POST:  client/signup
@@ -125,11 +130,53 @@ async function verify(req, res) {
       verified,
     });
     console.log(updatedClient.id, existing.id);
+
+    const existingPlan = await prisma.newUserPlan.findMany({
+      where: {
+        userId: existing.id,
+      },
+      include: {
+        plan: true,
+      },
+    });
+
+    let maxSession = 0;
+
+    existingPlan.forEach((plan) => {
+      maxSession = Math.max(maxSession, plan?.plan?.session);
+    });
+
+    console.log(maxSession);
+
+    // console.log(JSON.stringify(existingPlan));
+    // console.log(existingPlan);
+
+    // Clean up old/inactive sessions
+    await sessionCleanup(existing);
+
+    // If active sessions have reached the limit, logout all users
+    if (existing.sessions.length >= maxSession) {
+      existing.sessions = []; // Clear all sessions
+      await existing.save();
+      // return res
+      //   .status(403)
+      //   .send("All users have been logged out. Please log in again.");
+    }
+
+    // Create new JWT and session ID
+    const sessionId = new mongoose.Types.ObjectId().toString();
+
     // create jwt
     const { jwt, expiresAt } = createToken({
       id: updatedClient.id,
       phoneNumber,
+      sessionId,
     });
+
+    // Add the new session to activeSessions array
+    existing.sessions.push({ sessionId });
+    await existing.save();
+
     // console.log(jwt, expiresAt);
     // check if new gpt user
     const existingGptUser = await fetchGptUser(existing.id);
@@ -162,6 +209,11 @@ async function verify(req, res) {
         expiresAt,
         0
       );
+
+      const username = existing?.firstName;
+      const email = existing?.email;
+
+      await sendConfirmationEmailForAmbasForFreePlan(email, username);
     }
 
     // console.log(sessions);
@@ -191,7 +243,7 @@ async function verify(req, res) {
     // console.log(successResponse);
     return res.status(StatusCodes.OK).json(successResponse);
   } catch (error) {
-    const errorResponse = ErrorResponse({}, error);
+    const errorResponse = ErrorResponse({}, error.message);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(errorResponse);

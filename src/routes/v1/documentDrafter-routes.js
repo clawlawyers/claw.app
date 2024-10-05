@@ -3,26 +3,29 @@ const express = require("express");
 const multer = require("multer");
 const { Storage } = require("@google-cloud/storage");
 const path = require("path");
+const { checkClientAdiraAuth } = require("../../middlewares/auth-middleware");
 const router = express.Router();
 
 let storage;
-if(process.env.NODE_ENV !== "production"){
-// Google Cloud Storage configuration
- storage = new Storage({
-  keyFilename: path.join(
-    "/src/routes/v1/voltaic-charter-435107-j5-d041d0de66bf.json"
-  ), // Replace with your service account key file path
-});
-}else{
+if (process.env.NODE_ENV !== "production") {
   // Google Cloud Storage configuration
- storage = new Storage({
-  keyFilename: path.join(
-    "/etc/secrets/voltaic-charter-435107-j5-d041d0de66bf.json"
-  ), // Replace with your service account key file path
-});
+  storage = new Storage({
+    keyFilename: path.join(
+      __dirname + "/voltaic-charter-435107-j5-d041d0de66bf.json"
+    ), // Replace with your service account key file path
+  });
+} else {
+  // Google Cloud Storage configuration
+  storage = new Storage({
+    keyFilename: path.join(
+      "/etc/secrets/voltaic-charter-435107-j5-d041d0de66bf.json"
+    ), // Replace with your service account key file path
+  });
 }
 
-
+console.log(
+  path.join(__dirname + "/voltaic-charter-435107-j5-d041d0de66bf.json")
+);
 console.log("/etc/secrets/voltaic-charter-435107-j5-d041d0de66bf.json");
 
 const bucketName = "test_rajkiron"; // Replace with your bucket name
@@ -44,10 +47,10 @@ const authenticateUser = (req, res, next) => {
 // Route to upload a file to the user's folder
 router.post(
   "/uploadFile",
-  authenticateUser,
+  checkClientAdiraAuth,
   upload.single("file"),
   async (req, res) => {
-    const userId = req.user.id;
+    const userId = req.user._id.toString();
     const file = req.file;
 
     if (!file) {
@@ -80,8 +83,8 @@ router.post(
 );
 
 // Route to list all files in the user's folder
-router.get("/listFiles", authenticateUser, async (req, res) => {
-  const userId = req.user.id;
+router.get("/listFiles", checkClientAdiraAuth, async (req, res) => {
+  const userId = req.user._id.toString();
 
   try {
     const [files] = await bucket.getFiles({
@@ -100,64 +103,76 @@ router.get("/listFiles", authenticateUser, async (req, res) => {
 });
 
 // Route to download a file from the user's folder
-router.get("/downloadFile/:filename", authenticateUser, async (req, res) => {
-  const userId = req.user.id;
-  const { filename } = req.params;
+router.get(
+  "/downloadFile/:filename",
+  checkClientAdiraAuth,
+  async (req, res) => {
+    const userId = req.user._id.toString();
+    const { filename } = req.params;
 
-  const filePath = `${userId}/${filename}`;
-  const file = bucket.file(filePath);
+    const filePath = `${userId}/${filename}`;
+    const file = bucket.file(filePath);
 
-  try {
-    const [exists] = await file.exists();
-    if (!exists) {
-      return res.status(404).send("File not found.");
+    try {
+      const [exists] = await file.exists();
+      if (!exists) {
+        return res.status(404).send("File not found.");
+      }
+
+      res.setHeader("Content-Type", "application/octet-stream");
+      res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
+      file.createReadStream().pipe(res);
+    } catch (err) {
+      res.status(500).send({ message: err.message });
     }
-
-    res.setHeader("Content-Type", "application/octet-stream");
-    res.setHeader("Content-Disposition", `attachment; filename=${filename}`);
-    file.createReadStream().pipe(res);
-  } catch (err) {
-    res.status(500).send({ message: err.message });
   }
-});
+);
 
 // Route to delete a file from the user's folder
-router.delete("/deleteFile/:filename", authenticateUser, async (req, res) => {
-  const userId = req.user.id;
-  const { filename } = req.params;
+router.delete(
+  "/deleteFile/:filename",
+  checkClientAdiraAuth,
+  async (req, res) => {
+    const userId = req.user._id.toString();
+    const { filename } = req.params;
 
-  const filePath = `${userId}/${filename}`;
-  const file = bucket.file(filePath);
+    const filePath = `${userId}/${filename}`;
+    const file = bucket.file(filePath);
 
-  try {
-    await file.delete();
-    res.status(200).send({ message: "File deleted successfully!" });
-  } catch (err) {
-    res.status(500).send({ message: err.message });
+    try {
+      await file.delete();
+      res.status(200).send({ message: "File deleted successfully!" });
+    } catch (err) {
+      res.status(500).send({ message: err.message });
+    }
   }
-});
+);
 
 // Route to create a new folder in the user's directory
-router.post("/createFolder/:folderName", authenticateUser, async (req, res) => {
-  const userId = req.user.id;
-  const { folderName } = req.params;
+router.post(
+  "/createFolder/:folderName",
+  checkClientAdiraAuth,
+  async (req, res) => {
+    const userId = req.user._id.toString();
+    const { folderName } = req.params;
 
-  // Create a "dummy" file to create a folder in GCS
-  const folderPath = `${userId}/${folderName}`;
-  const file = bucket.file(folderPath);
+    // Create a "dummy" file to create a folder in GCS
+    const folderPath = `${userId}/${folderName}`;
+    const file = bucket.file(folderPath);
 
-  try {
-    await file.save("");
-    res.status(200).send({ message: "Folder created successfully!" });
-  } catch (err) {
-    res.status(500).send({ message: err.message });
+    try {
+      await file.save("");
+      res.status(200).send({ message: "Folder created successfully!" });
+    } catch (err) {
+      res.status(500).send({ message: err.message });
+    }
   }
-});
+);
 
 // Route to rename a file in the user's folder
-router.post("/renameFile", authenticateUser, async (req, res) => {
+router.post("/renameFile", checkClientAdiraAuth, async (req, res) => {
   const { oldFilename, newFilename } = req.body;
-  const userId = req.user.id;
+  const userId = req.user._id.toString();
 
   const oldFilePath = `${userId}/${oldFilename}`;
   const newFilePath = `${userId}/${newFilename}`;
@@ -184,9 +199,9 @@ router.post("/renameFile", authenticateUser, async (req, res) => {
 });
 
 // Route to rename a folder in the user's directory
-router.post("/renameFolder", authenticateUser, async (req, res) => {
+router.post("/renameFolder", checkClientAdiraAuth, async (req, res) => {
   const { oldFolderName, newFolderName } = req.body;
-  const userId = req.user.id;
+  const userId = req.user._id.toString();
 
   const oldFolderPath = `${userId}/${oldFolderName}/`;
   const newFolderPath = `${userId}/${newFolderName}/`;

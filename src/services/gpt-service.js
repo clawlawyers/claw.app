@@ -1704,6 +1704,29 @@ async function deleteSessions(mongoId, modelName) {
   }
 }
 
+async function cancelSubscription(mongoId, planName) {
+  try {
+    const userPlan = await prisma.newUserPlan.findUnique({
+      where: {
+        userId_planName: { userId: mongoId, planName },
+      },
+    });
+    if (userPlan) {
+      await prisma.newUserPlan.delete({
+        where: {
+          userId_planName: { userId: mongoId, planName },
+        },
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while fetching user",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 module.exports = {
   createMessage,
   createSession,
@@ -1746,4 +1769,5 @@ module.exports = {
   appendFeedbackMessageByMessageId,
   updateIsAmbassadorBenifined,
   updateUserPlanPayment,
+  cancelSubscription,
 };

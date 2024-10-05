@@ -1,5 +1,11 @@
 const mongoose = require("mongoose");
 
+const sessionSchema = new mongoose.Schema({
+  sessionId: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now }, // Track session creation
+  lastActive: { type: Date, default: Date.now }, // Track session activity (heartbeat/ping)
+});
+
 const clientSchema = new mongoose.Schema(
   {
     email: { type: String, trim: true },
@@ -27,6 +33,7 @@ const clientSchema = new mongoose.Schema(
         default: 0,
       },
     },
+    sessions: [sessionSchema], // Store multiple session information with timestamps
   },
   { timestamps: true }
 );

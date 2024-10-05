@@ -15,6 +15,8 @@ const { createToken, verifyToken } = require("../utils/common/auth");
 const TrialCourtroomCoupon = require("../models/trialCourtroomCoupon");
 const prisma = require("../config/prisma-client");
 const { createNewUser } = require("../services/common-service");
+const ClientAdiraUser = require("../models/cleintAdiraUser");
+const { sendConfirmationEmailForAmbas } = require("../utils/common/sendEmail");
 
 async function deleteTrialCoupon(req, res) {
   try {
@@ -1779,6 +1781,8 @@ async function createReferralCodes(req, res) {
       return firstName?.substr(0, 3) + Math.floor(100 + Math.random() * 900);
     };
 
+    await sendConfirmationEmailForAmbas(email, firstName + " " + lastName);
+
     if (checkCodeAlreadyExist(rCode)) {
       const referralCode = await GptServices.createReferralCode(_id, rCode);
       return res.status(StatusCodes.OK).json(
@@ -1821,6 +1825,8 @@ async function bookClientAdira(req, res) {
     const { name, phoneNumber, email, Domain, startDate, endDate, totalHours } =
       req.body;
 
+    console.log(req.body);
+
     // Input validation (basic example, can be extended as per requirements)
     if (
       !name ||
@@ -1856,7 +1862,7 @@ async function bookClientAdira(req, res) {
       .status(201)
       .json({ message: "Adira client booked successfully", respo });
   } catch (error) {
-    const errorResponse = ErrorResponse({}, error);
+    const errorResponse = ErrorResponse({}, error.message);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(errorResponse);
