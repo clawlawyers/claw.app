@@ -34,24 +34,31 @@ const htmlTemplate = `
         margin: 0;
         padding: 0;
         background-color: #f4f4f4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
       .container {
-        max-width: 600px;
-        margin: 0 auto;
+        max-width: 100%;
+        /* margin: 0 auto; */
         background-color: #ffffff;
-        padding: 20px;
+        /* padding: 20px; */
         border-radius: 10px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
       .header {
+        width: 100%;
         text-align: center;
-        background-color: #4caf50;
-        padding: 20px;
+        /* background-color: #4caf50; */
+        /* padding: 20px; */
         border-radius: 10px 10px 0 0;
       }
       .header h1 {
         color: #ffffff;
         margin: 0;
+      }
+      .header img {
+        width: 100%;
       }
       .content {
         padding: 20px;
@@ -65,7 +72,7 @@ const htmlTemplate = `
       }
       .cta-button {
         display: inline-block;
-        background-color: #4caf50;
+        background-color: rgb(0, 67, 67);
         color: white;
         text-decoration: none;
         padding: 15px 25px;
@@ -74,8 +81,8 @@ const htmlTemplate = `
         margin-top: 20px;
       }
       .footer {
+        width: 100%;
         text-align: center;
-        padding: 20px;
         color: #999999;
         font-size: 12px;
       }
@@ -83,12 +90,15 @@ const htmlTemplate = `
         color: #4caf50;
         text-decoration: none;
       }
+      .footer img {
+        width: 100%;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <h1>Welcome, Ambassador!</h1>
+        <img src="https://clawlaw-dev.netlify.app/welcome_h.png" />
       </div>
       <div class="content">
         <h2>Hi {{AmbassadorName}},</h2>
@@ -105,7 +115,9 @@ const htmlTemplate = `
           To start enjoying your free access, click the button below to visit
           your dashboard:
         </p>
-        <a href="https://www.clawlaw.in/leaders/dashboard" class="cta-button">Go to Dashboard</a>
+        <a href="https://www.clawlaw.in/leaders/dashboard" class="cta-button"
+          >Go to Dashboard</a
+        >
         <p>
           Thank you for being a part of our community. We’re excited to see the
           amazing things you'll accomplish as our Ambassador!
@@ -113,6 +125,7 @@ const htmlTemplate = `
       </div>
       <div class="footer">
         <p>&copy; 2024 CLAW LEGALTECH PRIVATE LIMITED. All rights reserved.</p>
+        <img src="https://clawlaw-dev.netlify.app/welcome_f.png" />
       </div>
     </div>
   </body>
@@ -164,95 +177,111 @@ const sendConfirmationEmailForAmbas = async (email, username) => {
 const htmlTemplateForPlan = `
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>1 Month Free Access Notification</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Ambassador Welcome Email</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-        .header {
-            text-align: center;
-            background-color: #007BFF;
-            padding: 20px;
-            border-radius: 10px 10px 0 0;
-        }
-        .header h1 {
-            color: #ffffff;
-            margin: 0;
-        }
-        .content {
-            padding: 20px;
-        }
-        .content h2 {
-            color: #333333;
-        }
-        .content p {
-            color: #666666;
-            line-height: 1.5;
-        }
-        .cta-button {
-            display: inline-block;
-            background-color: #007BFF;
-            color: white;
-            text-decoration: none;
-            padding: 15px 25px;
-            border-radius: 5px;
-            font-size: 16px;
-            margin-top: 20px;
-        }
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #999999;
-            font-size: 12px;
-        }
-        .footer a {
-            color: #007BFF;
-            text-decoration: none;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .container {
+        max-width: 100%;
+        /* margin: 0 auto; */
+        background-color: #ffffff;
+        /* padding: 20px; */
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        width: 100%;
+        text-align: center;
+        /* background-color: #4caf50; */
+        /* padding: 20px; */
+        border-radius: 10px 10px 0 0;
+      }
+      .header h1 {
+        color: #ffffff;
+        margin: 0;
+      }
+      .header img {
+        width: 100%;
+      }
+      .content {
+        padding: 20px;
+      }
+      .content h2 {
+        color: #333333;
+      }
+      .content p {
+        color: #666666;
+        line-height: 1.5;
+      }
+      .cta-button {
+        display: inline-block;
+        background-color: rgb(0, 67, 67);
+        color: white;
+        text-decoration: none;
+        padding: 15px 25px;
+        border-radius: 5px;
+        font-size: 16px;
+        margin-top: 20px;
+      }
+      .footer {
+        width: 100%;
+        text-align: center;
+        color: #999999;
+        font-size: 12px;
+      }
+      .footer a {
+        color: #4caf50;
+        text-decoration: none;
+      }
+      .footer img {
+        width: 100%;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <h1>Congratulations!</h1>
-        </div>
-        <div class="content">
-            <h2>You've Received 1 Month of Free Access!</h2>
-            <p>
-                Hi {{AmbassadorName}},
-            </p>
-            <p>
-                We are excited to inform you that you have been granted <strong>1 month of free access</strong> to all our premium features at <strong>clawlaw.in</strong>! 🎉
-            </p>
-            <p>
-                Make sure to visit your dashboard to explore all the amazing tools and resources we have in store for you.
-            </p>
-                <a href="https://www.clawlaw.in/leaders/dashboard" class="cta-button">Go to Dashboard</a>
-            <p>
-                Thank you for being a valued ambassador. We look forward to supporting your journey!
-            </p>
-        </div>
-        <div class="footer">
+      <div class="header">
+        <img src="https://clawlaw-dev.netlify.app/access_h.png" />
+      </div>
+      <div class="content">
+        <h2>You've Received 1 Month of Free Access!</h2>
+        <p>Hi {{AmbassadorName}},</p>
+        <p>
+          We are excited to inform you that you have been granted
+          <strong>1 month of free access</strong> to all our premium features at
+          <strong>clawlaw.in</strong>! 🎉
+        </p>
+        <p>
+          Make sure to visit your dashboard to explore all the amazing tools and
+          resources we have in store for you.
+        </p>
+        <a href="https://www.clawlaw.in/leaders/dashboard" class="cta-button"
+          >Go to Dashboard</a
+        >
+        <p>
+          Thank you for being a valued ambassador. We look forward to supporting
+          your journey!
+        </p>
+      </div>
+      <div class="footer">
         <p>&copy; 2024 CLAW LEGALTECH PRIVATE LIMITED. All rights reserved.</p>
-        </div>
+        <img src="https://clawlaw-dev.netlify.app/access_f.png" />
+      </div>
     </div>
-</body>
+  </body>
 </html>
+
 `;
 
 const templateForPlan = handlebars.compile(htmlTemplateForPlan);

@@ -40,13 +40,29 @@ async function checkClientAuth(req, res, next) {
     }
     const response = verifyToken(token);
     const client = await ClientService.getClientById(response.id);
+
+    console.log(client);
+
+    // Find the session and update its activity timestamp
+    const session = client.sessions.find(
+      (session) => session.sessionId === response.sessionId
+    );
+    if (!session) {
+      return res.status(401).send("Invalid session");
+    }
+
+    session.lastActive = Date.now(); // Update last active time
+    await client.save();
+
+    console.log(client);
+
     if (!client) {
       throw new AppError("No user found", StatusCodes.NOT_FOUND);
     }
     req.body.client = client;
     next();
   } catch (error) {
-    const errorResponse = ErrorResponse({}, error);
+    const errorResponse = ErrorResponse({}, error.message);
     return res.status(StatusCodes.UNAUTHORIZED).json(errorResponse);
   }
 }

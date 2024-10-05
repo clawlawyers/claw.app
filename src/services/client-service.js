@@ -7,15 +7,21 @@ const {
   verifyToken,
 } = require("../utils/common/auth");
 const CourtRoomBooking = require("../models/courtRoomBooking");
+const { default: mongoose } = require("mongoose");
 
 const clientRepository = new ClientRepository();
 
 async function createClient(data) {
   try {
     const client = await clientRepository.create(data);
+
+    // Create new JWT and session ID
+    const sessionId = new mongoose.Types.ObjectId().toString();
+
     const { jwt, expiresAt } = createToken({
       id: client.id,
       phoneNumber: client.phoneNumber,
+      sessionId,
     });
     return {
       client,
