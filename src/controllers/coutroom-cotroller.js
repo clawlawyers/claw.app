@@ -1220,6 +1220,7 @@ async function AddContactUsQuery(req, res) {
     preferredContactMode,
     businessName,
     query,
+    from,
   } = req.body;
 
   try {
@@ -1230,7 +1231,8 @@ async function AddContactUsQuery(req, res) {
       phoneNumber,
       preferredContactMode,
       businessName,
-      query
+      query,
+      from
     );
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ queryResponse }));

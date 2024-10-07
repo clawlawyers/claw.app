@@ -116,7 +116,8 @@ async function addContactUsQuery(
   phoneNumber,
   preferredContactMode,
   businessName,
-  query
+  query,
+  from
 ) {
   try {
     // Create a new contact us query
@@ -128,6 +129,7 @@ async function addContactUsQuery(
       preferredContactMode,
       businessName,
       query,
+      from,
       queryPushedToEmail: true, // Flag to indicate if the query was pushed to the email
     });
 
@@ -142,6 +144,7 @@ async function addContactUsQuery(
       preferredContactMode,
       businessName,
       query,
+      from,
     });
 
     console.log(newContactUsQuery);

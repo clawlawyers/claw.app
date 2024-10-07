@@ -192,7 +192,7 @@ async function sendAdminContactUsNotification(contactDetails) {
               <div class="container">
                   <h1>New Contact Us Query Received</h1>
                   <p>Dear Administrator,</p>
-                  <p>A new contact us query has been submitted. Below are the details:</p>
+                  <p>A new contact us query has been submitted from ${contactDetails.from}. Below are the details:</p>
                   <p><strong>First Name:</strong> ${contactDetails.firstName}</p>
                   <p><strong>Last Name:</strong> ${contactDetails.lastName}</p>
                   <p><strong>Email:</strong> ${contactDetails.email}</p>
