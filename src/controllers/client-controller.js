@@ -142,9 +142,13 @@ async function verify(req, res) {
 
     let maxSession = 0;
 
-    existingPlan.forEach((plan) => {
-      maxSession = Math.max(maxSession, plan?.plan?.session);
-    });
+    if (existingPlan.length == 0) {
+      maxSession = 1;
+    } else {
+      existingPlan.forEach((plan) => {
+        maxSession = Math.max(maxSession, plan?.plan?.session);
+      });
+    }
 
     console.log(maxSession);
 
