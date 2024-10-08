@@ -22,6 +22,8 @@ model ReferralCode {
   redeemedAndPayBy  User[]   @relation("RedeemedAndPayByUser") // Updated to allow multiple users
 
   newUserPlans     NewUserPlan[] // Refers to related NewUserPlan
+
+  UserPurchases UserPurchases[]
 }
 
 model Plan {
@@ -75,6 +77,8 @@ model User {
   feedbacks              Feedback[]    @relation("UserFeedback") // New relation field for Feedback
   isambassadorBenifined    Boolean? 
 
+
+  UserPurchases UserPurchases[]
 }
 
 model UserPlan {
@@ -124,7 +128,26 @@ model NewPlan {
   users     User[]
   planUsers           NewUserPlan[]
  
+
+  UserPurchases UserPurchases[]
 }
+model UserPurchases {
+  userId         String
+  planName       String
+  user           User        @relation(fields: [userId], references: [mongoId], onDelete: Cascade)
+  plan           NewPlan     @relation(fields: [planName], references: [name], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @default(now())
+  subscriptionId String      @default("")
+  expiresAt      DateTime?
+  referralCodeId String?     // This will store the referral code string
+  referralCode   ReferralCode? @relation(fields: [referralCodeId], references: [referralCode], onDelete: SetNull) // Relation to ReferralCode
+  Paidprice      Int         @default(0)
+  isCouponCode   String      @default("")
+
+  @@id([userId, planName]) // Composite primary key
+}
+
 
 
 

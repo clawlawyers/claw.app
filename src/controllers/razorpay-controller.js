@@ -155,6 +155,18 @@ async function verifyPayment(req, res) {
         expiresAt,
         amount
       );
+      // insert it into user purchase
+
+      await GptServices.insertIntoUserPurchase(
+        placedOrder.user.toString(),
+        placedOrder.plan,
+        createdAt,
+        razorpay_order_id,
+        expiresAt,
+        refferalCode,
+        amount,
+        couponCode
+      );
 
       console.log(rs);
     } catch (error) {
@@ -429,6 +441,18 @@ async function createPaymentLink(req, res) {
       expiresAt,
       price
     );
+
+    await GptServices.insertIntoUserPurchase(
+      userId,
+      planName,
+      createdAt,
+      paymentLink.short_url,
+      expiresAt,
+      refferalCode,
+      price,
+      couponCode
+    );
+
     res.status(200).json({
       success: true,
       paymentLink: paymentLink.short_url, // send the payment link in the response
@@ -468,11 +492,19 @@ async function rezorpayWebhook(req, res) {
       const price = paymentDetails.notes.price;
       const amountPaid = paymentDetails.amount_paid;
 
-      const updatePlan = await GptServices.updateUserPlanPayment(
+      const payment_link = await GptServices.updateUserPlanPayment(
         userId,
         planName,
         paymentId,
         price
+      );
+
+      await GptServices.UpdatetoUserPurchase(
+        userId,
+        planName,
+        paymentId,
+        price,
+        payment_link
       );
 
       // Update the database with payment details

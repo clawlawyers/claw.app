@@ -1162,6 +1162,8 @@ async function updateUserPlanPayment(mongoId, planName, paymentId, amountPaid) {
       },
     });
 
+    const payment_link = userPlan.subscriptionId;
+
     const dateToExpire = userPlan.expiresAt;
     let newDate = new Date(dateToExpire);
     newDate.setDate(dateToExpire.getDate() + duration);
@@ -1194,11 +1196,95 @@ async function updateUserPlanPayment(mongoId, planName, paymentId, amountPaid) {
       });
     }
 
+    return payment_link;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while updating user plan",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function UpdatetoUserPurchase(
+  mongoId,
+  planName,
+  paymentId,
+  amountPaid,
+  payment_link
+) {
+  console.log(mongoId, planName, paymentId, amountPaid);
+  try {
+    const planduration = planName.split("_")[1];
+    let duration = planduration === "M" ? 30 : 365;
+
+    const userPlan = await prisma.userPurchases.findFirst({
+      where: {
+        userId: mongoId,
+        planName: planName,
+        subscriptionId: payment_link,
+      },
+    });
+
+    const dateToExpire = userPlan.expiresAt;
+    let newDate = new Date(dateToExpire);
+    newDate.setDate(dateToExpire.getDate() + duration);
+
+    const userPlanUpdate = await prisma.userPurchases.update({
+      where: {
+        userId_planName: {
+          userId: mongoId,
+          planName: planName,
+        },
+      },
+      data: {
+        subscriptionId: paymentId,
+        expiresAt: newDate,
+        Paidprice: parseInt(amountPaid),
+      },
+    });
+
     return userPlanUpdate;
   } catch (error) {
     console.error(error);
     throw new AppError(
       "Error while updating user plan",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function insertIntoUserPurchase(
+  userId,
+  planName,
+  createdAt,
+  subscriptionId,
+  expiresAt,
+  referralCodeId,
+  Paidprice,
+  isCouponCode
+) {
+  try {
+    // Insert into the UserPurchases table
+    const updatePurchase = await prisma.userPurchases.create({
+      data: {
+        userId: userId,
+        planName: planName,
+        createdAt: createdAt,
+        subscriptionId: subscriptionId,
+        expiresAt: expiresAt,
+        referralCodeId: referralCodeId,
+        Paidprice: Paidprice,
+        isCouponCode: isCouponCode,
+      },
+    });
+
+    // Return the inserted data or success response
+    return updatePurchase;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while inserting into user purchase",
       StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
@@ -1727,6 +1813,28 @@ async function cancelSubscription(mongoId, planName) {
   }
 }
 
+async function getPurchaseHistory(id) {
+  try {
+    const purchaseHistory = await prisma.userPurchases.findMany({
+      where: { userId: id },
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        plan: true,
+      },
+    });
+
+    return purchaseHistory;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while fetching purchase history",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 module.exports = {
   createMessage,
   createSession,
@@ -1770,4 +1878,7 @@ module.exports = {
   updateIsAmbassadorBenifined,
   updateUserPlanPayment,
   cancelSubscription,
+  insertIntoUserPurchase,
+  UpdatetoUserPurchase,
+  getPurchaseHistory,
 };

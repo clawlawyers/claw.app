@@ -56,6 +56,8 @@ router.post("/cancelSubscription", GptController.cancelSubscription);
 
 router.post("/api/read_aloud", GptController.readAloud);
 
+router.post("/getPurchaseHistory", GptController.getPurchaseHistory);
+
 // router.post("/dummy", GptController.caseSearchOn);
 // router.post("/dummyCheckbox", GptController.caseSearchOnCheck);
 // router.post("/funny", GptController.funPlan);

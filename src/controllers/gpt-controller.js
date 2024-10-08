@@ -933,6 +933,19 @@ async function readAloud(req, res) {
   }
 }
 
+async function getPurchaseHistory(req, res) {
+  try {
+    const { _id } = req.body.client;
+    const history = await GptServices.getPurchaseHistory(_id);
+    return res.status(StatusCodes.OK).json(SuccessResponse({ history }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
 async function fetchReadAloud({ input_text }) {
   try {
     // Dynamically import node-fetch
@@ -1002,4 +1015,5 @@ module.exports = {
   feedBack,
   cancelSubscription,
   readAloud,
+  getPurchaseHistory,
 };
