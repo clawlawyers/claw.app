@@ -44,6 +44,58 @@ const authenticateUser = (req, res, next) => {
   next();
 };
 
+router.post(
+  "/uploadFileWithExpiration",
+  authenticateUser,
+  upload.single("file"),
+  async (req, res) => {
+    const userId = req.user.id;
+    const file = req.file;
+    const expirationInDays = 30; // Set the expiration time for 30 days (example)
+
+    if (!file) {
+      return res.status(400).send("No file uploaded.");
+    }
+
+    // File path in the bucket: userId/filename
+    const filePath = `${userId}/${file.originalname}`;
+
+    try {
+      const blob = bucket.file(filePath);
+      const blobStream = blob.createWriteStream({
+        resumable: false,
+        contentType: file.mimetype,
+      });
+
+      blobStream.on("error", (err) => {
+        return res.status(500).send({ message: err.message });
+      });
+
+      blobStream.on("finish", async () => {
+        // After file upload, set the expiration time
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + expirationInDays);
+
+        await blob.setMetadata({
+          metadata: {
+            customTime: expirationDate.toISOString(), // Custom expiration time in ISO format
+          },
+        });
+
+        res
+          .status(200)
+          .send({
+            message: "File uploaded and expiration time set successfully!",
+          });
+      });
+
+      blobStream.end(file.buffer);
+    } catch (err) {
+      res.status(500).send({ message: err.message });
+    }
+  }
+);
+
 // Route to upload a file to the user's folder
 router.post(
   "/uploadFile",

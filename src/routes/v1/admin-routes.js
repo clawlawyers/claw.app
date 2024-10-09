@@ -56,6 +56,7 @@ const {
   removeUser,
   createReferralCodes,
   bookClientAdira,
+  userPlanDist,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -208,5 +209,9 @@ router.delete("/trial-coupon", deleteTrialCoupon);
 // client Adira
 
 router.post("/client/book-adira", bookClientAdira);
+
+// userPlan Distibution
+
+router.get("/user-plan-distibution", userPlanDist);
 
 module.exports = router;

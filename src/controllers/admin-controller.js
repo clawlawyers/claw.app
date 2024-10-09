@@ -18,6 +18,38 @@ const { createNewUser } = require("../services/common-service");
 const ClientAdiraUser = require("../models/cleintAdiraUser");
 const { sendConfirmationEmailForAmbas } = require("../utils/common/sendEmail");
 
+async function userPlanDist(req, res) {
+  try {
+    const totalActiveUserPlan = await prisma.newUserPlan.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        planName: true,
+      },
+    });
+    console.log(totalActiveUserPlan);
+    // Group the plan names and count occurrences
+    const groupedPlans = totalActiveUserPlan.reduce((acc, plan) => {
+      acc[plan.planName] = (acc[plan.planName] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Convert the grouped plans into the desired format with planName as name
+    const data = Object.keys(groupedPlans).map((planName) => ({
+      name: planName,
+      value: groupedPlans[planName],
+    }));
+    console.log(data);
+    return res.status(201).json(SuccessResponse({ data: data }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
 async function deleteTrialCoupon(req, res) {
   try {
     const { id } = req.body;
@@ -1925,4 +1957,5 @@ module.exports = {
   removeUser,
   createReferralCodes,
   bookClientAdira,
+  userPlanDist,
 };
