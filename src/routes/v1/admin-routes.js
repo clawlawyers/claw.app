@@ -42,6 +42,7 @@ const {
   getClientCourtroomBookings,
   deleteClientCourtroomBookings,
   addNewAdmin,
+  deleteAdmin,
   adminLogin,
   verifyAdminUser,
   getAllAdminNumbers,
@@ -199,6 +200,7 @@ router.post("/add-new-admin", addNewAdmin);
 router.post("/login", adminLogin);
 router.post("/verify", verifyAdminUser);
 router.get("/getAllUsers", getAllAdminNumbers);
+router.delete("/delete-admin", deleteAdmin);
 
 // trial courtroom coupon routes
 

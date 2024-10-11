@@ -116,12 +116,34 @@ async function getAllAdminNumbers(req, res) {
 
 async function addNewAdmin(req, res) {
   const { name, phoneNumber } = req.body;
+  console.log(phoneNumber);
   try {
+    const existing = await AdminUser.findOne({ phoneNumber: phoneNumber });
+    console.log(existing);
+    if (existing) {
+      return res.status(400).json(SuccessResponse("Admin already exists"));
+    }
     const newAdmin = new AdminUser({ name, phoneNumber });
     await newAdmin.save();
     return res
       .status(StatusCodes.OK)
-      .json(SuccessResponse("Admin added successfully"));
+      .json(SuccessResponse("Admin already successfully"));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error));
+  }
+}
+async function deleteAdmin(req, res) {
+  const { phoneNumber } = req.body;
+  console.log(phoneNumber);
+  try {
+    const existing = await AdminUser.findByIdAndDelete(phoneNumber);
+
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse("Admin deleted successfully"));
   } catch (error) {
     console.log(error);
     res
@@ -1944,6 +1966,7 @@ module.exports = {
   getClientCourtroomBookings,
   deleteClientCourtroomBookings,
   addNewAdmin,
+  deleteAdmin,
   adminLogin,
   verifyAdminUser,
   getAllAdminNumbers,
