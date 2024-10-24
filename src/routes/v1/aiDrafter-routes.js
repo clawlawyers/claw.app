@@ -3,10 +3,13 @@ const router = express.Router();
 
 const multer = require("multer");
 const { AiDrafter } = require("../../controllers");
+const { authMiddleware } = require("../../middlewares");
 
 // Set up Multer for file upload
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+
+router.use(authMiddleware.checkClientAuth);
 
 router.post(
   "/upload_document",
