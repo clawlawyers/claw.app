@@ -11,6 +11,7 @@ const {
 const {
   sendConfirmationEmailForAmbasForFreePlan,
 } = require("../utils/common/sendEmail");
+const FormData = require("form-data");
 
 const { FLASK_API_ENDPOINT } = process.env;
 
@@ -983,6 +984,66 @@ async function fetchReadAloud({ input_text }) {
   }
 }
 
+async function upload(req, res) {
+  try {
+    const files = req.files;
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded" });
+    }
+
+    const { language } = req.body;
+    const formData = new FormData();
+
+    console.log(files);
+
+    // Append each file to the form-data with its buffer, filename, and content type
+    for (const key of Object.keys(files)) {
+      const file = files[key][0];
+      console.log(file);
+      formData.append("file", file.buffer, {
+        filename: file.originalname,
+        contentType: file.mimetype,
+      });
+    }
+
+    console.log(formData);
+
+    formData.append("language", language);
+
+    const fetchUploaded = await fetchUpload(formData);
+
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchUploaded }));
+  } catch (error) {
+    console.error(error);
+    res.status(error.statusCode || 500).json({ error: error.message });
+  }
+}
+
+async function fetchUpload(formData) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+
+    const response = await fetch(`${FLASK_API_ENDPOINT}/upload`, {
+      method: "POST",
+      body: formData,
+      headers: formData.getHeaders(),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `HTTP error! status: ${response.status}, message: ${errorText}`
+      );
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
 module.exports = {
   startSession,
   getUserSessions,
@@ -1016,4 +1077,5 @@ module.exports = {
   cancelSubscription,
   readAloud,
   getPurchaseHistory,
+  upload,
 };

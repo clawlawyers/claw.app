@@ -2,6 +2,11 @@ const express = require("express");
 const { GptController } = require("../../controllers/index");
 const { authMiddleware } = require("../../middlewares");
 const router = express.Router();
+const multer = require("multer");
+
+// Set up Multer for file upload
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 // routes to manage models for prompt generation
 // router.get('/model/:modelId');
@@ -12,7 +17,7 @@ const router = express.Router();
 // router.delete('/model')
 
 // routes to create/manage sessions
-router.use(authMiddleware.checkClientAuth);
+// router.use(authMiddleware.checkClientAuth);
 router.get("/user", GptController.fetchGptUser);
 router.post("/case/related/:sessionId", GptController.getRelatedCases);
 router.get("/case/:folderId/:caseId", GptController.fetchCaseDetails);
@@ -57,6 +62,17 @@ router.post("/cancelSubscription", GptController.cancelSubscription);
 router.post("/api/read_aloud", GptController.readAloud);
 
 router.post("/getPurchaseHistory", GptController.getPurchaseHistory);
+
+router.post(
+  "/upload",
+  upload.fields([
+    { name: "file" },
+    { name: "file1" },
+    { name: "file2" },
+    { name: "file3" },
+  ]),
+  GptController.upload
+);
 
 // router.post("/dummy", GptController.caseSearchOn);
 // router.post("/dummyCheckbox", GptController.caseSearchOnCheck);
