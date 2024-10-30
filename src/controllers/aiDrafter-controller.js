@@ -12,7 +12,7 @@ async function uploadDocument(req, res) {
     var file = req.file;
     const doc_id = req.body.doc_id;
     console.log(doc_id);
-    console.log("filedata1234");
+    
 
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -1005,7 +1005,7 @@ async function AiDrafterUploadInputDocument(req, res) {
     const response = await FetchAiDrafterUploadInputDocument(formData);
     return res.status(StatusCodes.OK).json({ response });
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     const errorResponse = ErrorResponse({}, error.message);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
