@@ -1005,7 +1005,7 @@ async function AiDrafterUploadInputDocument(req, res) {
     const response = await FetchAiDrafterUploadInputDocument(formData);
     return res.status(StatusCodes.OK).json({ response });
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     const errorResponse = ErrorResponse({}, error.message);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)

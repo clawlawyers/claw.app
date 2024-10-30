@@ -50,35 +50,35 @@ async function validateClientUpdateRequest(req, res, next) {
 }
 
 async function validateClientVerifyRequest(req, res, next) {
-    console.log("asdddddddddddddasdasdasdsadwdwddadad")
+    // console.log("asdddddddddddddasdasdasdsadwdwddadad")
 
-    try {
-        const token = req.header("auth-token");
-        if (!token) {
-            res.status(401).send({ error: "Please authenticate using a valid token" });
-          }
-        const data = jwt.verify(token, JWT_SECRET);
-        if(data.verified){
-        await clientVerifySchema.validateAsync(req.body);
-        next();
+    // try {
+    //     const token = req.header("auth-token");
+    //     if (!token) {
+    //         res.status(401).send({ error: "Please authenticate using a valid token" });
+    //       }
+    //     const data = jwt.verify(token, JWT_SECRET);
+    //     if(data.verified){
+    //     await clientVerifySchema.validateAsync(req.body);
+    //     next();
 
-    }
+    // }
       
   
-    } catch (error) {
-      res.status(401).send({ error: "Please authenticate using a valid token" });
-    }
+    // } catch (error) {
+    //   res.status(401).send({ error: "Please authenticate using a valid token" });
+    // }
     
-//     try {
-//         if (req.verified) {
-//             req.verified = req.verified.toLowerCase() === 'true' ? true : false;
-//         }
-//         await clientVerifySchema.validateAsync(req.body);
-//         next()
-//     } catch (error) {
-//         const errorResponse = ErrorResponse({}, error);
-//         res.status(StatusCodes.BAD_REQUEST).json(errorResponse);
-//     }
+    try {
+        if (req.verified) {
+            req.verified = req.verified.toLowerCase() === 'true' ? true : false;
+        }
+        await clientVerifySchema.validateAsync(req.body);
+        next()
+    } catch (error) {
+        const errorResponse = ErrorResponse({}, error);
+        res.status(StatusCodes.BAD_REQUEST).json(errorResponse);
+    }
 }
 
 async function validateLawyerVerifyRequest(req, res, next) {
