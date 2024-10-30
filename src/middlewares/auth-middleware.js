@@ -38,6 +38,7 @@ async function checkClientAuth(req, res, next) {
     if (!token) {
       throw new AppError("Missing jwt token", StatusCodes.BAD_REQUEST);
     }
+    console.log(token)
     const response = verifyToken(token);
     const client = await ClientService.getClientById(response.id);
 

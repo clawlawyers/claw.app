@@ -10,6 +10,9 @@ const clientRegisterSchema = require("../schema/clientRegisterSchema");
 const createPaymentSchema = require('../schema/createPaymentSchema');
 const AppError = require('../utils/errors/app-error');
 const { ErrorResponse } = require('../utils/common');
+var jwt = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET;
+
 
 
 async function validateCreatePaymentRequest(req, res, next) {
@@ -47,16 +50,35 @@ async function validateClientUpdateRequest(req, res, next) {
 }
 
 async function validateClientVerifyRequest(req, res, next) {
+    console.log("asdddddddddddddasdasdasdsadwdwddadad")
+
     try {
-        if (req.verified) {
-            req.verified = req.verified.toLowerCase() === 'true' ? true : false;
-        }
+        const token = req.header("auth-token");
+        if (!token) {
+            res.status(401).send({ error: "Please authenticate using a valid token" });
+          }
+        const data = jwt.verify(token, JWT_SECRET);
+        if(data.verified){
         await clientVerifySchema.validateAsync(req.body);
-        next()
-    } catch (error) {
-        const errorResponse = ErrorResponse({}, error);
-        res.status(StatusCodes.BAD_REQUEST).json(errorResponse);
+        next();
+
     }
+      
+  
+    } catch (error) {
+      res.status(401).send({ error: "Please authenticate using a valid token" });
+    }
+    
+//     try {
+//         if (req.verified) {
+//             req.verified = req.verified.toLowerCase() === 'true' ? true : false;
+//         }
+//         await clientVerifySchema.validateAsync(req.body);
+//         next()
+//     } catch (error) {
+//         const errorResponse = ErrorResponse({}, error);
+//         res.status(StatusCodes.BAD_REQUEST).json(errorResponse);
+//     }
 }
 
 async function validateLawyerVerifyRequest(req, res, next) {
