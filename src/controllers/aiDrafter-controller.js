@@ -865,7 +865,6 @@ async function fetchGetModifiedDoc({ doc_id }) {
   }
 }
 
-
 async function getpdf(req, res) {
   const { document } = req.body;
 
@@ -880,23 +879,33 @@ async function getpdf(req, res) {
     .replaceAll('"', "")
     .replaceAll(":", " :")
     .replaceAll("#", "")
-    .replaceAll("\"", "");
+    .replaceAll('"', "");
 
   console.log(cleanedDocument);
   try {
     console.log("Loading fonts...");
-    const regularFontPath = path.join(__dirname, "..", "fonts", "NotoSans-Regular.ttf");
-    const boldFontPath = path.join(__dirname, "..", "fonts", "NotoSans-Bold.ttf");
+    const regularFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Regular.ttf"
+    );
+    const boldFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Bold.ttf"
+    );
 
     const doc = new PDFDocument();
     doc.registerFont("NotoSans", regularFontPath);
     doc.registerFont("NotoSans-Bold", boldFontPath);
-    
+
     const textLines = cleanedDocument.split("\n");
     for (let line of textLines) {
       // Split the line based on the bold marker '**'
       const parts = line.split(/\*\*(.*?)\*\*/); // Regex to capture text between `**`
-      
+
       for (let i = 0; i < parts.length; i++) {
         if (i % 2 === 1) {
           // If index is odd, it's the text inside '**', so make it bold
@@ -929,7 +938,8 @@ async function getpdf(req, res) {
       pages.forEach((page) => {
         const { width, height } = page.getSize();
         const imageWidth = 400; // Adjust size as needed
-        const imageHeight = (imageWidth / watermarkImage.width) * watermarkImage.height; // Maintain aspect ratio
+        const imageHeight =
+          (imageWidth / watermarkImage.width) * watermarkImage.height; // Maintain aspect ratio
         const xPosition = (width - imageWidth) / 2;
         const yPosition = (height - imageHeight) / 2;
 
@@ -956,6 +966,74 @@ async function getpdf(req, res) {
   }
 }
 
+async function AiDrafterUploadInputDocument(req, res) {
+  try {
+    const files = req.files;
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded" });
+    }
+
+    const { doc_id } = req.body;
+
+    // Rename only the first file and prepare the data object for getOverview
+    const formData = new FormData();
+
+    console.log(formData);
+
+    // const fileBody = {};
+
+    // Rename the first file to `file`
+    const fileKeys = Object.keys(files);
+    fileKeys.forEach((key, index) => {
+      const file = files[key][0]; // Get the first file from each key
+
+      console.log(file.originalname);
+      const extension = path.extname(file.originalname);
+      const newFilename = `${doc_id}${extension}`; // Rename the first file
+
+      // Create a renamed file object with buffer data
+      const renamedFile = {
+        ...file,
+        originalname: newFilename,
+      };
+
+      formData.append("file", file.buffer, {
+        filename: renamedFile.originalname,
+        contentType: renamedFile.mimetype,
+      });
+    });
+    const response = await FetchAiDrafterUploadInputDocument(formData);
+    return res.status(StatusCodes.OK).json({ response });
+  } catch (error) {
+    console.error(error);
+    const errorResponse = ErrorResponse({}, error.message);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
+async function FetchAiDrafterUploadInputDocument(formData) {
+  try {
+    console.log(formData);
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/upload_input_document`, {
+      method: "POST",
+      body: formData,
+      headers: formData.getHeaders(),
+    });
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(`message: ${errorText}`);
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
 
 module.exports = {
   uploadDocument,
@@ -980,4 +1058,5 @@ module.exports = {
   apiGetModifiedDoc,
   getpdf,
   getDocumentPromptRequirements,
+  AiDrafterUploadInputDocument,
 };
