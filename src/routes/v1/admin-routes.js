@@ -58,6 +58,7 @@ const {
   createReferralCodes,
   bookClientAdira,
   userPlanDist,
+  getFeedback,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -75,7 +76,6 @@ router.get("/subscribed-user", getSubscribedUsers);
 router.get("/model", getModels);
 router.get("/session", getSessions);
 router.get("/message", getMessages);
-router.get("/feedback", getFeedbacks);
 router.get("/topusers", getTopUsers);
 router.post("/create", createCoupon);
 router.post("/validate", validateCoupon);
@@ -216,7 +216,10 @@ router.post("/client/book-adira", bookClientAdira);
 
 router.get("/user-plan-distibution", userPlanDist);
 
+// feedback of legal GPT
 
-//
+router.get("/feedback", getFeedback);
+
+// user tracking
 
 module.exports = router;

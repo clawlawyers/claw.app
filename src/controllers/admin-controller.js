@@ -18,6 +18,51 @@ const { createNewUser } = require("../services/common-service");
 const ClientAdiraUser = require("../models/cleintAdiraUser");
 const { sendConfirmationEmailForAmbas } = require("../utils/common/sendEmail");
 
+async function getFeedback(req, res) {
+  try {
+    const allFeedback = await prisma.feedback.findMany({
+      include: {
+        user: {
+          select: {
+            mongoId: true,
+            phoneNumber: true,
+            createdAt: true,
+            updatedAt: true,
+            // Add any other user fields you need
+          },
+        },
+        message: {
+          select: {
+            id: true,
+            text: true,
+            createdAt: true,
+            updatedAt: true,
+            // Add any other message fields you need
+          },
+        },
+      },
+    });
+
+    // Transform the response to include user and message details
+    const feedbackWithDetails = allFeedback.map((feedback) => ({
+      id: feedback.id,
+      impression: feedback.impression,
+      feedbackType: feedback.feedbackType,
+      feedbackMessage: feedback.feedbackMessage,
+      createdAt: feedback.createdAt,
+      phoneNumber: feedback.user.phoneNumber, // User details
+      Response: feedback.message.text, // Message details
+    }));
+
+    return res.status(200).json(SuccessResponse({ feedbackWithDetails }));
+  } catch (error) {
+    console.error(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
 async function userPlanDist(req, res) {
   try {
     const totalActiveUserPlan = await prisma.newUserPlan.findMany({
@@ -976,15 +1021,6 @@ async function getMessages(req, res) {
   }
 }
 
-async function getFeedbacks(req, res) {
-  try {
-    const feedback = await prisma.feedback.findMany();
-    res.json(feedback);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-}
-
 // Create a new coupon
 async function createCoupon(req, res) {
   try {
@@ -1931,7 +1967,6 @@ module.exports = {
   getModels,
   getSessions,
   getMessages,
-  getFeedbacks,
   getTopUsers,
   generateReferralCode,
   createCoupon,
@@ -1981,4 +2016,5 @@ module.exports = {
   createReferralCodes,
   bookClientAdira,
   userPlanDist,
+  getFeedback,
 };
