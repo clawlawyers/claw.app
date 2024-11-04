@@ -1044,6 +1044,22 @@ async function fetchUpload(formData) {
   }
 }
 
+async function translate(req, res) {
+  try {
+    const { context, language } = req.body;
+    const translatedText = await GptServices.Fetchingtranslate(
+      context,
+      language
+    );
+    return res.status(StatusCodes.OK).json(SuccessResponse({ translatedText }));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
 module.exports = {
   startSession,
   getUserSessions,
@@ -1078,4 +1094,5 @@ module.exports = {
   readAloud,
   getPurchaseHistory,
   upload,
+  translate,
 };

@@ -2,6 +2,7 @@
 const prisma = require("../config/prisma-client");
 const AppError = require("../utils/errors/app-error");
 const { StatusCodes } = require("http-status-codes");
+const { FLASK_API_ENDPOINT } = process.env;
 
 async function fetchContext(sessionId) {
   try {
@@ -1835,6 +1836,33 @@ async function getPurchaseHistory(id) {
   }
 }
 
+async function Fetchingtranslate(context, language) {
+  try {
+    const fetchedTranslations = await fetch(
+      `${FLASK_API_ENDPOINT}/gpt/translate`,
+      {
+        method: "POST",
+        body: JSON.stringify({ context, language }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    if (!fetchedTranslations.ok) {
+      throw new Error("Failed to fetch translations");
+    }
+
+    const translations = await fetchedTranslations.json();
+    return translations;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while fetching purchase history",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 module.exports = {
   createMessage,
   createSession,
@@ -1881,4 +1909,5 @@ module.exports = {
   insertIntoUserPurchase,
   UpdatetoUserPurchase,
   getPurchaseHistory,
+  Fetchingtranslate,
 };

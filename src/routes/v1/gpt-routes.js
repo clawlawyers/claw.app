@@ -74,6 +74,8 @@ router.post(
   GptController.upload
 );
 
+router.post("/translate", GptController.translate);
+
 // router.post("/dummy", GptController.caseSearchOn);
 // router.post("/dummyCheckbox", GptController.caseSearchOnCheck);
 // router.post("/funny", GptController.funPlan);
