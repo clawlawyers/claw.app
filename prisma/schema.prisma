@@ -40,6 +40,11 @@ model Plan {
 
 }
 
+model Admin{
+    id         String  @id @default(cuid())
+    users      User[]       @relation("AdminUsers")
+
+}
 
 model User {
   mongoId                 String        @id
@@ -47,9 +52,17 @@ model User {
   planName                String        @default("free")
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
+  tokenUsed               Float         @default(0.0)
+  gptTokenUsed            Int           @default(0)
+  caseSearchTokenUsed     Int           @default(0)
+  totalTokenUsed          Float         @default(0.0)
+  totalGptTokens          Int           @default(0)
+  totalCaseSearchTokens   Int           @default(0)
+  duration                Int           @default(0)
   StateLocation           String        @default("")
   generatedReferralCodeId String?
   redeemedReferralCodeId  String?
+  adminUserId  String?
   generatedReferralCode   ReferralCode? @relation("GeneratedByUser")
   sessions                Session[]
   numberOfSessions        Int           @default(1)
@@ -57,6 +70,8 @@ model User {
   plans                   UserPlan[]
   newplans                NewUserPlan[]
   redeemedReferralCode    ReferralCode? @relation("RedeemedByUser", fields: [redeemedReferralCodeId], references: [referralCode])
+  adminUser                Admin?        @relation("AdminUsers", fields: [adminUserId], references: [id])
+  isCasesearch  Boolean  @default(true)  
   NewPlan NewPlan[]
   redeemedAndPayByCodes   ReferralCode[] @relation("RedeemedAndPayByUser") // Tracks multiple redeemed and paid referrals
   feedbacks              Feedback[]    @relation("UserFeedback") // New relation field for Feedback
@@ -161,8 +176,9 @@ model Session {
 model Message {
   id        String    @id @default(uuid())
   text      String
-  referenceMessageId  String?  // Foreign key for the reference message
-  referenceMessage    Message? @relation("MessageReference", fields: [referenceMessageId], references: [id]) // Self-referential relation  isUser    Boolean
+  textArray String[]  @default([]) // Required list with default empty array.
+
+  isUser    Boolean
   sessionId String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -170,7 +186,6 @@ model Message {
   session   Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
-  Message Message[] @relation("MessageReference")
 }
 
 model Feedback {
