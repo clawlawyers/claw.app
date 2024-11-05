@@ -531,6 +531,8 @@ async function fetchGptUser(mongoId) {
       },
     });
 
+    console.log(plans);
+
     // This free plan only for some occasionally
 
     // if (plans.length === 0) {
