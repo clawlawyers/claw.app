@@ -481,7 +481,7 @@ async function fetchGptUserByPhoneNumbers(phoneNumbers) {
       createdAt: user.createdAt,
       phoneNumber: user.phoneNumber,
       plan: user.planName, // Assuming user.planName exists on your user model
-      token: { used: user.tokenUsed, total: user.plan.token }, // Assuming user.plan.token exists on your plan model
+      // token: { used: user.tokenUsed, total: user.plan.token }, // Assuming user.plan.token exists on your plan model
     }));
 
     return formattedUsers;
