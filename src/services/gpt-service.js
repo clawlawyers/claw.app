@@ -518,13 +518,6 @@ async function fetchGptUser(mongoId) {
       where: {
         mongoId,
       },
-      include: {
-        plan: {
-          select: {
-            token: true,
-          },
-        },
-      },
     });
 
     console.log(user);
