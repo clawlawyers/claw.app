@@ -522,6 +522,8 @@ async function fetchGptUser(mongoId) {
 
     console.log(user);
 
+    console.log("Here is the last user");
+
     let plans = await prisma.newUserPlan.findMany({
       where: {
         userId: mongoId,
