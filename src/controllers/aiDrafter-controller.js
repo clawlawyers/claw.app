@@ -6,6 +6,8 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
+const AdiraAdmin = require("../models/adiraAdmin")
+const bcrypt = require("bcrypt")
 
 async function uploadDocument(req, res) {
   try {
@@ -55,6 +57,7 @@ async function FetchupdateDocument({ file }) {
       body: formData,
       headers: formData.getHeaders(), // Ensure correct headers are set
     });
+    
 
     if (!response.ok) {
       const errorText = await response.text(); // Get the error message from the response
@@ -64,6 +67,8 @@ async function FetchupdateDocument({ file }) {
     }
 
     const responseData = await response.json();
+    console.log(responseData)
+    console.log("responseData")
     return responseData;
   } catch (error) {
     console.error(error);
@@ -1035,6 +1040,29 @@ async function FetchAiDrafterUploadInputDocument(formData) {
   }
 }
 
+async function AddAdiraAdmin(req,res){
+  try{
+
+    
+    const {username , password} = req.body
+    const salt = await bcrypt.genSalt(10);
+    const encryptedPassword =await  bcrypt.hash(password,salt)
+    
+    const newAdmin =  AdiraAdmin.create({
+      "username":username,
+      "password":encryptedPassword
+    })
+
+    return res.status(200).json({newAdmin})
+  }
+  catch(e){
+    console.log(e)
+    return res.status(400)
+  }
+
+
+}
+
 module.exports = {
   uploadDocument,
   createDocument,
@@ -1059,4 +1087,5 @@ module.exports = {
   getpdf,
   getDocumentPromptRequirements,
   AiDrafterUploadInputDocument,
+  AddAdiraAdmin
 };
