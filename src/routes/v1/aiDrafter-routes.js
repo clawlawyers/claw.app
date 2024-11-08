@@ -9,7 +9,7 @@ const { authMiddleware } = require("../../middlewares");
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-router.use(authMiddleware.checkClientAuth);
+// router.use(authMiddleware.checkClientAuth);
 
 router.post(
   "/upload_document",
