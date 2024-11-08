@@ -14,7 +14,7 @@ const upload = multer({ storage: storage });
 router.post(
   "/upload_document",
   upload.single("file"),
-  AiDrafter.uploadDocument
+  AiDrafter.uploadDocument  
 );
 
 router.get("/create_document", AiDrafter.createDocument);
@@ -52,5 +52,14 @@ router.post(
   ]),
   AiDrafter.AiDrafterUploadInputDocument
 );
+
+
+
+// Adira Admin routes
+
+// router.get("/addAdmin")
+router.post("/addAdmin", AiDrafter.AddAdiraAdmin)
+// router.put("/updateAdmin")
+// router.delete("/deleteAdmin")
 
 module.exports = router;
