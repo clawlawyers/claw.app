@@ -48,6 +48,7 @@ router.post("/verifyReferralCode", GptController.verifyReferralCode);
 // router.post('/conversation', GptController.generateGptResponse);
 router.post("/session", GptController.startSession);
 router.post("/session/prompt", GptController.appendMessage);
+router.post("/session/appendMessage", GptController.appendMessageByScocket);
 router.post("/session/judgement", GptController.judgement);
 router.post("/session/relevantAct", GptController.relevantAct);
 

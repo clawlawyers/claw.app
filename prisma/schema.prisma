@@ -177,6 +177,9 @@ model Message {
   id        String    @id @default(uuid())
   text      String
   textArray String[]  @default([]) // Required list with default empty array.
+  isDocument  String?
+  contextId  String?
+  contextMessage Message? @relation("MessageContext", fields: [contextId], references: [id])
 
   isUser    Boolean
   sessionId String
@@ -186,6 +189,7 @@ model Message {
   session   Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
+  Message       Message[] @relation("MessageContext")
 }
 
 model Feedback {
