@@ -1090,7 +1090,7 @@ const generateInvoice = async (req, res) => {
 
   try {
     // Generate the invoice PDF using the service function
-    const pdfBuffer = await generateInvoicePDF(purchaseId);
+    const pdfBuffer = await GptServices.generateInvoicePDF(purchaseId);
 
     // Set headers for PDF response
     res.setHeader('Content-Type', 'application/pdf');
