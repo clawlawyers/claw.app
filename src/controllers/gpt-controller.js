@@ -1081,21 +1081,37 @@ async function translate(req, res) {
 
 
 const generateInvoice = async (req, res) => {
+  const { _id } = req.body.client;
+    const { planName } = req.body;
+
+  // Validate required parameters
+  if (!_id|| !planName) {
+    return res.status(400).json({ error: 'userId and planName are required' });
+  }
+
   try {
-      const { userId, orderId } = req.body;
+    // Generate the invoice PDF buffer
+    const pdfBuffer = await GptServices.generateInvoicePDF(_id, planName);
 
-      // Call the service to generate the invoice PDF
-      const pdfBuffer = await GptServices.generateInvoicePDF(userId, orderId);
+    // Check if PDF generation was successful
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      return res.status(404).json({ error: 'Failed to generate invoice PDF' });
+    }
 
-      // Set the response headers and send the PDF buffer
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'inline; filename="invoice.pdf"');
-      res.send(pdfBuffer);
+    // Set headers for PDF response
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="invoice.pdf"');
+
+    // Send the PDF buffer as the response
+    return res.send(pdfBuffer);
   } catch (error) {
-      console.error(error);
-      res.status(500).json({ error: 'An error occurred while generating the invoice' });
+    console.error('Error generating invoice:', error.message);
+
+    // Send error response for failed PDF generation
+    return res.status(500).json({ error: 'An error occurred while generating the invoice' });
   }
 };
+
 
 module.exports = {
   startSession,
