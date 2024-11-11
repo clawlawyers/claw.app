@@ -1080,29 +1080,26 @@ async function translate(req, res) {
 }
 
 
-const generateInvoice = async (req, res) => {
-  const { purchaseId } = req.body;
-
-  // Validate the required parameter
-  if (!purchaseId) {
-    return res.status(400).json({ error: 'purchaseId is required' });
-  }
-
+// Controller to generate invoice PDF
+async function generateInvoice(req, res) {
   try {
-    // Generate the invoice PDF using the service function
-    const pdfBuffer = await GptServices.generateInvoicePDF(purchaseId);
+    // Get userId from token, which would have been validated in the middleware
+    const { userId } = req.body.client;  // Assuming client is set by authentication middleware
+    const { planName } = req.body;  // planName should be passed in the request body
 
-    // Set headers for PDF response
+    // Call service to generate the invoice PDF
+    const pdfBuffer = await GptServices.generateI
+    nvoicePDF(userId, planName);
+
+    // Set the response headers and send the PDF buffer as a response
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'inline; filename="invoice.pdf"');
-
-    // Send the PDF buffer as the response
-    return res.send(pdfBuffer);
+    res.send(pdfBuffer);
   } catch (error) {
-    console.error('Error generating invoice:', error.message);
-    return res.status(500).json({ error: 'An error occurred while generating the invoice' });
+    console.error(error);
+    res.status(500).json({ error: 'An error occurred while generating the invoice' });
   }
-};
+}
 
 module.exports = {
   startSession,
