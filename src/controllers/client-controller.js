@@ -149,8 +149,8 @@ async function verify(req, res) {
         maxSession = Math.max(maxSession, plan?.plan?.session);
       });
     }
-
-    console.log(maxSession);
+  
+   
 
     // console.log(JSON.stringify(existingPlan));
     // console.log(existingPlan);
