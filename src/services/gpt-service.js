@@ -1866,32 +1866,28 @@ async function Fetchingtranslate(context, language) {
   }
 }
 
-const generateInvoicePDF = async (mongoId, planName) => {
-  // Fetch user and subscription details from Prisma
-  const user = await prisma.user.findUnique({
-    where: {  userId:mongoId },
+
+const generateInvoicePDF = async (purchaseId) => {
+  // Fetch the specific purchase and associated user and plan details
+  const purchase = await prisma.userPurchases.findUnique({
+    where: { id: purchaseId },
     include: {
-      plans: {
-        where: { planName },
-      },
+      user: true,
+      plan: true,
     },
   });
 
-  if (!user || user.plans.length === 0) {
-    throw new Error('User or Plan not found');
+  if (!purchase) {
+    throw new Error('Purchase not found');
   }
 
-  const order = user.plans[0]; // Access the order details
-  const plan = await prisma.plan.findUnique({
-    where: { name: order.planName },
-  });
-
-  const discountPercentage = order.discount || 0;
+  const { user, plan } = purchase;
+  const discountPercentage = purchase.discount || 0;
   const planPrice = plan.token || 0;
   const discountAmount = (discountPercentage / 100) * planPrice;
   const totalAmount = planPrice - discountAmount;
 
-  // Create PDF document
+  // Create the PDF document
   const doc = new PDFDocument();
   let pdfBuffer = [];
   doc.on('data', chunk => pdfBuffer.push(chunk));
@@ -1911,14 +1907,14 @@ const generateInvoicePDF = async (mongoId, planName) => {
   doc.moveDown().fontSize(14).text('Plan Details');
   doc.fontSize(10)
     .text(`Plan Name: ${plan.name}`, 50, 180)
-    .text(`Plan Start Date: ${order.createdAt.toLocaleDateString()}`, 50, 200)
-    .text(`Plan End Date: ${new Date(order.expiresAt).toLocaleDateString()}`, 50, 220)
+    .text(`Plan Start Date: ${purchase.createdAt.toLocaleDateString()}`, 50, 200)
+    .text(`Plan End Date: ${new Date(purchase.expiresAt).toLocaleDateString()}`, 50, 220)
     .text(`Sessions: ${plan.session}`, 50, 240)
     .text(`Rate: ₹${planPrice.toFixed(2)} /-`, 400, 240);
 
   // Discount and Total
   doc.text(`Discount Percentage: ${discountPercentage}%`, 50, 270)
-    .text(`Coupon Code: ${order.isCouponCode || 'N/A'}`, 50, 290)
+    .text(`Coupon Code: ${purchase.isCouponCode || 'N/A'}`, 50, 290)
     .text(`Discount: ₹${discountAmount.toFixed(2)} /-`, 400, 270);
 
   // Total Amount
@@ -1931,9 +1927,10 @@ const generateInvoicePDF = async (mongoId, planName) => {
 
   doc.end();
 
-  // Return PDF buffer
+  // Return the PDF buffer
   return Buffer.concat(pdfBuffer);
 };
+
 module.exports = {
   createMessage,
   createSession,
