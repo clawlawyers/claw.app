@@ -1081,22 +1081,16 @@ async function translate(req, res) {
 
 
 const generateInvoice = async (req, res) => {
-  const { _id } = req.body.client;
-    const { planName } = req.body;
+  const { purchaseId } = req.body;
 
-  // Validate required parameters
-  if (!_id|| !planName) {
-    return res.status(400).json({ error: 'userId and planName are required' });
+  // Validate the required parameter
+  if (!purchaseId) {
+    return res.status(400).json({ error: 'purchaseId is required' });
   }
 
   try {
-    // Generate the invoice PDF buffer
-    const pdfBuffer = await GptServices.generateInvoicePDF(_id, planName);
-
-    // Check if PDF generation was successful
-    if (!pdfBuffer || pdfBuffer.length === 0) {
-      return res.status(404).json({ error: 'Failed to generate invoice PDF' });
-    }
+    // Generate the invoice PDF using the service function
+    const pdfBuffer = await GptServices.generateInvoicePDF(purchaseId);
 
     // Set headers for PDF response
     res.setHeader('Content-Type', 'application/pdf');
@@ -1106,12 +1100,9 @@ const generateInvoice = async (req, res) => {
     return res.send(pdfBuffer);
   } catch (error) {
     console.error('Error generating invoice:', error.message);
-
-    // Send error response for failed PDF generation
     return res.status(500).json({ error: 'An error occurred while generating the invoice' });
   }
 };
-
 
 module.exports = {
   startSession,
