@@ -1,5 +1,6 @@
 const { StatusCodes } = require('http-status-codes');
 const Joi = require('joi');
+const bcrypt = require("bcrypt")
 
 const lawyerRegisterSchema = require('../schema/lawyerRegisterSchema');
 const lawyerVerifySchema = require('../schema/lawyerVerifySchema');
@@ -11,6 +12,7 @@ const createPaymentSchema = require('../schema/createPaymentSchema');
 const AppError = require('../utils/errors/app-error');
 const { ErrorResponse } = require('../utils/common');
 var jwt = require("jsonwebtoken");
+const AdiraAdmin = require('../models/adiraAdmin');
 const JWT_SECRET = process.env.JWT_SECRET;
 
 
@@ -51,10 +53,11 @@ async function validateClientUpdateRequest(req, res, next) {
 
 async function validateClientVerifyRequest(req, res, next) {
     // console.log("asdddddddddddddasdasdasdsadwdwddadad")
+    console.log("pass")
 
     // try {
     //     const token = req.header("auth-token");
-    //     if (!token) {
+    //     if (!token) {    
     //         res.status(401).send({ error: "Please authenticate using a valid token" });
     //       }
     //     const data = jwt.verify(token, JWT_SECRET);
@@ -73,12 +76,18 @@ async function validateClientVerifyRequest(req, res, next) {
     //     console.log(req.body?.Password)
     // }
     if(req.body.Password){
-       if(req.body.Password=="Adira@123"
-       ){
-        next()
-        return
-       }
-         
+        console.log(req.body.Password)
+        
+        const user = await AdiraAdmin.findOne({username:req.body.username})
+        console.log(user)
+           if(await bcrypt.compare(req.body.Password, user.password)) {
+
+               next()
+               return
+        }
+        return res.status(400).json({"messgae":"bad authetiction"})
+        
+        
     }
     try {
         if (req.verified) {

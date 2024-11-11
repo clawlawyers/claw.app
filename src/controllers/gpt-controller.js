@@ -79,6 +79,25 @@ async function startSession(req, res) {
   }
 }
 
+async function appendMessageByScocket(req, res) {
+  const { text, isDocument, contextId, isUser, sessionId } = req.body;
+  try {
+    const newMessage = await prisma.message.create({
+      data: {
+        text,
+        isDocument,
+        contextId, // Can be null if no context
+        isUser,
+        sessionId,
+      },
+    });
+    return res.status(StatusCodes.OK).json(SuccessResponse(newMessage));
+  } catch (error) {
+    console.log(error);
+    res.status(error.statusCode).json(ErrorResponse({}, error.message));
+  }
+}
+
 async function funPlan(req, res) {
   try {
     const { userId, newPlan } = req.body;
@@ -1080,6 +1099,7 @@ const generateInvoice = async (req, res) => {
 
 module.exports = {
   startSession,
+  appendMessageByScocket,
   getUserSessions,
   appendMessage,
   getSessionMessages,
