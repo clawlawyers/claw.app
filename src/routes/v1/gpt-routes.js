@@ -76,6 +76,9 @@ router.post(
 
 router.post("/translate", GptController.translate);
 
+//for genrating invoice pdf
+router.post('/generate-invoice', GptController.generateInvoice);
+
 // router.post("/dummy", GptController.caseSearchOn);
 // router.post("/dummyCheckbox", GptController.caseSearchOnCheck);
 // router.post("/funny", GptController.funPlan);
