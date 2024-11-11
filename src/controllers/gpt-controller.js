@@ -1079,6 +1079,24 @@ async function translate(req, res) {
   }
 }
 
+
+const generateInvoice = async (req, res) => {
+  try {
+      const { userId, orderId } = req.body;
+
+      // Call the service to generate the invoice PDF
+      const pdfBuffer = await GptServices.generateInvoicePDF(userId, orderId);
+
+      // Set the response headers and send the PDF buffer
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="invoice.pdf"');
+      res.send(pdfBuffer);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'An error occurred while generating the invoice' });
+  }
+};
+
 module.exports = {
   startSession,
   appendMessageByScocket,
@@ -1115,4 +1133,5 @@ module.exports = {
   getPurchaseHistory,
   upload,
   translate,
+  generateInvoice
 };
