@@ -1919,16 +1919,17 @@ async function generateInvoicePDF(userId, planName) {
 
     // User details
     doc.moveDown().fillColor('#333333').fontSize(12).text('User Details', { underline: true });
-    doc.fontSize(10).text(`Name / Mobile No.: ${displayName}`, 50, 120);
-    doc.text(`Invoice Date: ${new Date().toLocaleDateString()}`, 50, 135);
+    doc.fontSize(10).font('Helvetica-Bold').text(`Name / Mobile No.: ${displayName}`, 50, 120, { fillColor: '#000000' });
+    doc.font('Helvetica').text(`Invoice Date: ${new Date().toLocaleDateString()}`, 50, 135);
 
-    // Plan details
+    // Plan details header
     doc.moveDown().fillColor('#FFFFFF').rect(50, 160, 500, 20).fill('#004D40');
     doc.fillColor('#FFFFFF').fontSize(12).text('Plan Details', 60, 165);
 
+    // Plan information
     doc.moveDown().fillColor('#333333').fontSize(10);
-    doc.text(`Plan Name: ${planName}`, 50, 200);
-    doc.text(`Plan Start Date: ${createdAt.toLocaleDateString()}`, 50, 215);
+    doc.font('Helvetica-Bold').fillColor('#000000').text(`Plan Name: ${planName}`, 50, 200);
+    doc.font('Helvetica').text(`Plan Start Date: ${createdAt.toLocaleDateString()}`, 50, 215);
     doc.text(`Plan End Date: ${expiresAt ? new Date(expiresAt).toLocaleDateString() : 'N/A'}`, 50, 230);
     doc.text(`Rate: Rs.${Paidprice.toFixed(2)} /-`, 400, 215);
 
@@ -1936,10 +1937,10 @@ async function generateInvoicePDF(userId, planName) {
       doc.text(`Coupon Code: ${isCouponCode}`, 50, 255);
     }
 
-    // Total amount
+    // Total amount section
     doc.moveDown().fillColor('#004D40').rect(50, 275, 500, 20).fill();
     doc.fillColor('#FFFFFF').fontSize(12).text('Total', 60, 280);
-    doc.text(`Rs.${Paidprice.toFixed(2)} /-`, 400, 280); // Set text to white
+    doc.text(`Rs.${Paidprice.toFixed(2)} /-`, 400, 280);
 
     if (referralCode) {
       doc.moveDown().fillColor('#333333').fontSize(10).text(`Referral Code: ${referralCode.referralCode}`, 50, 310);
