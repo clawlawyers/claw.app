@@ -1083,21 +1083,36 @@ async function translate(req, res) {
 // Controller to generate invoice PDF
 async function generateInvoice(req, res) {
   try {
-    // Log the incoming request body to see the structure
+    // Log the incoming request body to understand the structure
     console.log('Request Body:', req.body);
 
-    // Extract userId from req.body.client._id
-    const {_id } = req.body.client;  // userId is in the client object
+    // Extract userId from req.body.client._id and log the extracted userId
+    const { _id } = req.body.client;  // userId is in the client object
+    console.log('Extracted userId:', _id);
 
-    // Extract planName from the request body
+    // Extract planName from the request body and log it
     const { planName } = req.body;
+    console.log('Extracted planName:', planName);
 
     // Call service to generate the invoice PDF
+    console.log('Generating PDF for userId:', _id, 'and planName:', planName);
     const pdfBuffer = await GptServices.generateInvoicePDF(_id, planName);
+
+    // Check if the PDF buffer is empty or null
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      console.error('Generated PDF buffer is empty.');
+      return res.status(500).json({ error: 'Failed to generate PDF, empty buffer.' });
+    }
+
+    // Log the buffer size to ensure it's a valid PDF
+    console.log('Generated PDF buffer size:', pdfBuffer.length);
 
     // Set the response headers and send the PDF buffer as a response
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'inline; filename="invoice.pdf"');
+    
+    // Send the PDF as the response
+    console.log('Sending the generated PDF...');
     res.send(pdfBuffer);
   } catch (error) {
     console.error('Error while generating invoice:', error);  // Enhanced logging
