@@ -62,4 +62,9 @@ router.post("/addAdmin", AiDrafter.AddAdiraAdmin)
 // router.put("/updateAdmin")
 // router.delete("/deleteAdmin")
 
+
+// Define the route for file upload
+router.post('/uploadPrompt', upload.single('file'), AiDrafter.handleFileUpload);
+
+
 module.exports = router;
