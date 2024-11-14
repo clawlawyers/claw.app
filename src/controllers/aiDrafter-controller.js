@@ -9,6 +9,8 @@ const axios = require("axios");
 const AdiraAdmin = require("../models/adiraAdmin")
 const bcrypt = require("bcrypt")
 
+
+
 async function uploadDocument(req, res) {
   try {
     var file = req.file;
@@ -1063,6 +1065,40 @@ async function AddAdiraAdmin(req,res){
 
 }
 
+
+async function handleFileUpload(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).send('No file uploaded');
+    }
+
+    const fileBuffer = req.file.buffer; // Get the file data from memory
+    const query = req.body.query;
+
+    const formData = new FormData();
+    formData.append('file', fileBuffer, {
+      filename: req.file.originalname,
+      contentType: req.file.mimetype
+    });
+    formData.append('query', query);
+
+    // Prepare headers with the correct content type for multipart/form-data
+    const headers = {
+      'Content-Type': 'multipart/form-data',
+      ...formData.getHeaders(),
+    };
+
+    // Send the file and query to the external server
+    const response = await axios.post('http://20.40.42.224/upload_prompt_document', formData, { headers });
+
+    // Send the response from the external server back to the client
+    res.send(response.data);
+  } catch (error) {
+    console.error('Error in file upload:', error);
+    res.status(500).send('Error uploading file');
+  }
+}
+
 module.exports = {
   uploadDocument,
   createDocument,
@@ -1087,5 +1123,6 @@ module.exports = {
   getpdf,
   getDocumentPromptRequirements,
   AiDrafterUploadInputDocument,
-  AddAdiraAdmin
+  AddAdiraAdmin,
+  handleFileUpload
 };
