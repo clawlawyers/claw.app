@@ -3,9 +3,9 @@ const prisma = require("../config/prisma-client");
 const AppError = require("../utils/errors/app-error");
 const { StatusCodes } = require("http-status-codes");
 const { FLASK_API_ENDPOINT } = process.env;
-const PDFDocument = require('pdfkit');
-const User = require('../models/user');
-const Order = require('../models/order');
+const PDFDocument = require("pdfkit");
+const User = require("../models/user");
+const Order = require("../models/order");
 
 async function fetchContext(sessionId) {
   try {
@@ -341,6 +341,33 @@ async function createMessage(sessionId, prompt, isUser, mongoId) {
       });
       return { messageId: newMessage.id, message: newMessage.text };
     }
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while creating new message",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function createSocketMessage(
+  text,
+  isDocument,
+  contextId, // Can be null if no context
+  isUser,
+  sessionId
+) {
+  try {
+    const newMessage = await prisma.message.create({
+      data: {
+        text,
+        isDocument,
+        contextId, // Can be null if no context
+        isUser,
+        sessionId,
+      },
+    });
+    return newMessage;
   } catch (error) {
     console.log(error);
     throw new AppError(
@@ -1866,10 +1893,14 @@ async function Fetchingtranslate(context, language) {
   }
 }
 
-
 async function generateInvoicePDF(userId, planName) {
   try {
-    console.log('Generating PDF for userId:', userId, 'and planName:', planName);
+    console.log(
+      "Generating PDF for userId:",
+      userId,
+      "and planName:",
+      planName
+    );
 
     // Fetch user plan details from the database
     const userPlan = await prisma.newUserPlan.findUnique({
@@ -1883,15 +1914,24 @@ async function generateInvoicePDF(userId, planName) {
       },
     });
 
-    console.log('Fetched userPlan:', userPlan);
+    console.log("Fetched userPlan:", userPlan);
 
     if (!userPlan) {
-      console.error(`User plan not found for userId: ${userId}, planName: ${planName}`);
-      throw new Error('User plan not found');
+      console.error(
+        `User plan not found for userId: ${userId}, planName: ${planName}`
+      );
+      throw new Error("User plan not found");
     }
 
     // Extract data
-    const { user, referralCode, isCouponCode, createdAt, expiresAt, Paidprice } = userPlan;
+    const {
+      user,
+      referralCode,
+      isCouponCode,
+      createdAt,
+      expiresAt,
+      Paidprice,
+    } = userPlan;
     const { name: userName, phoneNumber } = user;
 
     // Determine whether to show name or phone number
@@ -1902,35 +1942,68 @@ async function generateInvoicePDF(userId, planName) {
     let pdfBuffer = [];
 
     // Collect PDF data chunks
-    doc.on('data', (chunk) => {
-      console.log('PDF chunk received');
+    doc.on("data", (chunk) => {
+      console.log("PDF chunk received");
       pdfBuffer.push(chunk);
     });
 
-    doc.on('end', () => {
-      console.log('PDF generation completed');
+    doc.on("end", () => {
+      console.log("PDF generation completed");
     });
 
     // Add content to the PDF
-    doc.fillColor('#1E88E5').fontSize(20).text('Claw Legaltech', { align: 'left' });
-    doc.fillColor('#333333').fontSize(10).text('www.clawlaw.in', { align: 'right' });
+    doc
+      .fillColor("#1E88E5")
+      .fontSize(20)
+      .text("Claw Legaltech", { align: "left" });
+    doc
+      .fillColor("#333333")
+      .fontSize(10)
+      .text("www.clawlaw.in", { align: "right" });
 
-    doc.moveTo(50, 90).lineTo(550, 90).strokeColor('#1E88E5').lineWidth(2).stroke();
+    doc
+      .moveTo(50, 90)
+      .lineTo(550, 90)
+      .strokeColor("#1E88E5")
+      .lineWidth(2)
+      .stroke();
 
     // User details
-    doc.moveDown().fillColor('#333333').fontSize(12).text('User Details', { underline: true });
-    doc.fontSize(10).font('Helvetica-Bold').text(`Name / Mobile No.: ${displayName}`, 50, 120, { fillColor: '#000000' });
-    doc.font('Helvetica').text(`Invoice Date: ${new Date().toLocaleDateString()}`, 50, 135);
+    doc
+      .moveDown()
+      .fillColor("#333333")
+      .fontSize(12)
+      .text("User Details", { underline: true });
+    doc
+      .fontSize(10)
+      .font("Helvetica-Bold")
+      .text(`Name / Mobile No.: ${displayName}`, 50, 120, {
+        fillColor: "#000000",
+      });
+    doc
+      .font("Helvetica")
+      .text(`Invoice Date: ${new Date().toLocaleDateString()}`, 50, 135);
 
     // Plan details header
-    doc.moveDown().fillColor('#FFFFFF').rect(50, 160, 500, 20).fill('#004D40');
-    doc.fillColor('#FFFFFF').fontSize(12).text('Plan Details', 60, 165);
+    doc.moveDown().fillColor("#FFFFFF").rect(50, 160, 500, 20).fill("#004D40");
+    doc.fillColor("#FFFFFF").fontSize(12).text("Plan Details", 60, 165);
 
     // Plan information
-    doc.moveDown().fillColor('#333333').fontSize(10);
-    doc.font('Helvetica-Bold').fillColor('#000000').text(`Plan Name: ${planName}`, 50, 200);
-    doc.font('Helvetica').text(`Plan Start Date: ${createdAt.toLocaleDateString()}`, 50, 215);
-    doc.text(`Plan End Date: ${expiresAt ? new Date(expiresAt).toLocaleDateString() : 'N/A'}`, 50, 230);
+    doc.moveDown().fillColor("#333333").fontSize(10);
+    doc
+      .font("Helvetica-Bold")
+      .fillColor("#000000")
+      .text(`Plan Name: ${planName}`, 50, 200);
+    doc
+      .font("Helvetica")
+      .text(`Plan Start Date: ${createdAt.toLocaleDateString()}`, 50, 215);
+    doc.text(
+      `Plan End Date: ${
+        expiresAt ? new Date(expiresAt).toLocaleDateString() : "N/A"
+      }`,
+      50,
+      230
+    );
     doc.text(`Rate: Rs.${Paidprice.toFixed(2)} /-`, 400, 215);
 
     if (isCouponCode) {
@@ -1938,40 +2011,55 @@ async function generateInvoicePDF(userId, planName) {
     }
 
     // Total amount section
-    doc.moveDown().fillColor('#004D40').rect(50, 275, 500, 20).fill();
-    doc.fillColor('#FFFFFF').fontSize(12).text('Total', 60, 280);
+    doc.moveDown().fillColor("#004D40").rect(50, 275, 500, 20).fill();
+    doc.fillColor("#FFFFFF").fontSize(12).text("Total", 60, 280);
     doc.text(`Rs.${Paidprice.toFixed(2)} /-`, 400, 280);
 
     if (referralCode) {
-      doc.moveDown().fillColor('#333333').fontSize(10).text(`Referral Code: ${referralCode.referralCode}`, 50, 310);
+      doc
+        .moveDown()
+        .fillColor("#333333")
+        .fontSize(10)
+        .text(`Referral Code: ${referralCode.referralCode}`, 50, 310);
     }
 
     // Watermark (CLAW)
-    doc.fontSize(80).fillColor('rgba(0, 0, 0, 0.1)').text('CLAW', 150, 300, {
+    doc.fontSize(80).fillColor("rgba(0, 0, 0, 0.1)").text("CLAW", 150, 300, {
       angle: 45, // Rotate the watermark
       opacity: 0.1, // Light opacity
-      font: 'Helvetica-Bold'
+      font: "Helvetica-Bold",
     });
 
     // Note and footer (left aligned)
-    doc.moveDown().fontSize(8).fillColor('#333333')
-      .text('NOTE: This Invoice Is Generated By Claw Legaltech Website.', 50, 650)
-      .text('If You Have Any Queries, Kindly Contact Administrator.', 50, 665);
+    doc
+      .moveDown()
+      .fontSize(8)
+      .fillColor("#333333")
+      .text(
+        "NOTE: This Invoice Is Generated By Claw Legaltech Website.",
+        50,
+        650
+      )
+      .text("If You Have Any Queries, Kindly Contact Administrator.", 50, 665);
 
-    doc.moveTo(50, 750).lineTo(550, 750).strokeColor('#1E88E5').lineWidth(1).stroke();
+    doc
+      .moveTo(50, 750)
+      .lineTo(550, 750)
+      .strokeColor("#1E88E5")
+      .lineWidth(1)
+      .stroke();
 
     // End the document
     doc.end();
 
     // Wait for the document to end, then send the PDF buffer
-    await new Promise((resolve) => doc.on('end', resolve));
+    await new Promise((resolve) => doc.on("end", resolve));
 
     // Convert the PDF chunks into a complete buffer and return it
     return Buffer.concat(pdfBuffer);
-
   } catch (error) {
-    console.error('Error in generateInvoicePDF service:', error);
-    throw new Error('Error while generating invoice');
+    console.error("Error in generateInvoicePDF service:", error);
+    throw new Error("Error while generating invoice");
   }
 }
 
@@ -2022,5 +2110,6 @@ module.exports = {
   UpdatetoUserPurchase,
   getPurchaseHistory,
   Fetchingtranslate,
-  generateInvoicePDF
+  generateInvoicePDF,
+  createSocketMessage,
 };
