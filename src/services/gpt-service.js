@@ -100,25 +100,32 @@ async function createGptUser(phoneNumber, mongoId) {
       },
     });
 
+    const plan = await getUserPlan(mongoId); // it can be open
+    console.log(plan.length);
+    console.log(new Date());
+
     // This free plan only for some occasionally
 
-    // const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
+    if (plan.length === 0) {
+      console.log("user do not have any plan. plan will be creating");
 
-    // const newPlan = await prisma.userPlan.create({
-    //   data: {
-    //     userId: mongoId,
-    //     planName: "free",
-    //     expiresAt: expiresAt,
-    //   },
-    // });
+      const createAt = new Date();
+      const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    // console.log(newPlan);
-    // let newPlan;
-    // if (Date.now() < expiresAt) {
-    //   newPlan = await updateUserPlan(mongoId, "free", expiresAt); // it will be open in few ocations
-    // }
+      await updateUserPlan(
+        mongoId,
+        "FREE_M",
+        "EVENT_OCCATION_FREE",
+        "",
+        createAt,
+        null,
+        "",
+        expiresAt,
+        0
+      );
 
-    // console.log(newPlan);
+      console.log("plan created");
+    }
 
     return newUser;
   } catch (error) {
@@ -527,7 +534,7 @@ async function fetchGptUserByPhoneNumbers(phoneNumbers) {
 
 async function getUserPlan(mongoId) {
   try {
-    const plans = await prisma.userPlan.findMany({
+    const plans = await prisma.newUserPlan.findMany({
       where: {
         userId: mongoId,
       },
@@ -569,55 +576,38 @@ async function fetchGptUser(mongoId) {
       },
     });
 
+    const plan = await getUserPlan(mongoId); // it can be open
+    console.log(plan.length);
+    console.log(new Date());
+
     // This free plan only for some occasionally
 
-    // if (plans.length === 0) {
-    //   console.log("user do not have any plan. plan will be creating");
+    if (plan.length === 0) {
+      console.log("user do not have any plan. plan will be creating");
 
-    //   const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
-    //   console.log(new Date());
+      const createAt = new Date();
+      const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    //   if (Date.now() < expiresAt) {
-    //     await updateUserPlan(mongoId, "free", expiresAt);
-    //   }
+      await updateUserPlan(
+        updatedClient.id,
+        "FREE_M",
+        "EVENT_OCCATION_FREE",
+        "",
+        createAt,
+        null,
+        "",
+        expiresAt,
+        0
+      );
 
-    //   console.log("plan created");
-    //   plans = await prisma.userPlan.findMany({
-    //     where: {
-    //       userId: mongoId,
-    //     },
-    //   });
-    // }
-
-    // const plansData = await Promise.all(
-    //   plans.map(async (plan) => {
-    //     const Pdata = await prisma.plan.findUnique({
-    //       where: { name: plan.planName },
-    //     });
-
-    //     return Pdata;
-    //   })
-    // );
-
-    // const planNames = plansData.map((plan) => {
-    //   return plan.name;
-    // });
+      console.log("plan created");
+    }
 
     if (!user) return null;
     return {
       createdAt: user.createdAt,
       phoneNumber: user.phoneNumber,
       plan: plans,
-      // token: {
-      //   used: {
-      //     gptTokenUsed: user.gptTokenUsed,
-      //     caseSearchTokenUsed: user.caseSearchTokenUsed,
-      //   },
-      //   total: {
-      //     totalGptTokens: user.totalGptTokens,
-      //     totalCaseSearchTokens: user.totalCaseSearchTokens,
-      //   },
-      // },
     };
   } catch (error) {
     console.log(error);
@@ -1340,6 +1330,24 @@ async function updateUserPlan(
     // const createdAtDate = new Date(createdAt).setHours(0, 0, 0, 0); // Set time to 00:00:00
     // const today = new Date().setHours(0, 0, 0, 0); // Set today's date to 00:00:00
     let updatedUserPlan;
+
+    if (newPlan === "FREE_M") {
+      updatedUserPlan = await prisma.newUserPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          subscriptionId: razorpay_subscription_id,
+          isActive: true,
+          createdAt,
+          expiresAt,
+          Paidprice: amount,
+        },
+      });
+      return {
+        user: updatedUserPlan.mongoId,
+        plan: updatedUserPlan.planName,
+      };
+    }
 
     if (razorpay_subscription_id === "ambassador") {
       updatedUserPlan = await prisma.newUserPlan.create({

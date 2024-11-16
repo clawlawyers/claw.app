@@ -106,24 +106,32 @@ async function verify(req, res) {
       return res.status(StatusCodes.CREATED).json(successResponse);
     }
 
-    // const plan = await GptServices.getUserPlan(existing.id); // it can be open
-    // console.log(plan.length);
-    // console.log(new Date());
+    const plan = await GptServices.getUserPlan(existing.id); // it can be open
+    console.log(plan.length);
+    console.log(new Date());
 
-    // // This free plan only for some occasionally
+    // This free plan only for some occasionally
 
-    // if (plan.length === 0) {
-    //   console.log("user do not have any plan. plan will be creating");
+    if (plan.length === 0) {
+      console.log("user do not have any plan. plan will be creating");
 
-    //   const expiresAt = new Date(2024, 8, 30); // Month is 0-indexed, so 7 represents August
-    //   console.log(new Date());
+      const createAt = new Date();
+      const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    //   if (Date.now() < expiresAt) {
-    //     await GptServices.updateUserPlan(existing.id, "free", expiresAt);
-    //   }
+      await GptServices.updateUserPlan(
+        existing.id,
+        "FREE_M",
+        "EVENT_OCCATION_FREE",
+        "",
+        createAt,
+        null,
+        "",
+        expiresAt,
+        0
+      );
 
-    //   console.log("plan created");
-    // }
+      console.log("plan created");
+    }
 
     // fetch updated client
     const updatedClient = await ClientService.updateClient(existing.id, {
@@ -149,8 +157,6 @@ async function verify(req, res) {
         maxSession = Math.max(maxSession, plan?.plan?.session);
       });
     }
-  
-   
 
     // console.log(JSON.stringify(existingPlan));
     // console.log(existingPlan);
