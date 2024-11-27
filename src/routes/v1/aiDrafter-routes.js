@@ -14,7 +14,7 @@ const upload = multer({ storage: storage });
 router.post(
   "/upload_document",
   upload.single("file"),
-  AiDrafter.uploadDocument  
+  AiDrafter.uploadDocument
 );
 
 router.get("/create_document", AiDrafter.createDocument);
@@ -53,18 +53,20 @@ router.post(
   AiDrafter.AiDrafterUploadInputDocument
 );
 
-
-
 // Adira Admin routes
 
 // router.get("/addAdmin")
-router.post("/addAdmin", AiDrafter.AddAdiraAdmin)
+router.post("/addAdmin", AiDrafter.AddAdiraAdmin);
 // router.put("/updateAdmin")
 // router.delete("/deleteAdmin")
 
-
 // Define the route for file upload
-router.post('/uploadPrompt', upload.single('file'), AiDrafter.handleFileUpload);
+router.post("/uploadPrompt", upload.single("file"), AiDrafter.handleFileUpload);
 
+router.post("/anomaly_questions", AiDrafter.AnomalyQuestions);
+
+router.post("/api/telegram_bot", AiDrafter.TelegramBot);
+
+router.post("/recommend_question", AiDrafter.RecommendQuestion);
 
 module.exports = router;

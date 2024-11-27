@@ -6,17 +6,14 @@ const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
-const AdiraAdmin = require("../models/adiraAdmin")
-const bcrypt = require("bcrypt")
-
-
+const AdiraAdmin = require("../models/adiraAdmin");
+const bcrypt = require("bcrypt");
 
 async function uploadDocument(req, res) {
   try {
     var file = req.file;
     const doc_id = req.body.doc_id;
     console.log(doc_id);
-    
 
     if (!file) {
       return res.status(400).json({ error: "No file uploaded" });
@@ -59,7 +56,6 @@ async function FetchupdateDocument({ file }) {
       body: formData,
       headers: formData.getHeaders(), // Ensure correct headers are set
     });
-    
 
     if (!response.ok) {
       const errorText = await response.text(); // Get the error message from the response
@@ -69,8 +65,8 @@ async function FetchupdateDocument({ file }) {
     }
 
     const responseData = await response.json();
-    console.log(responseData)
-    console.log("responseData")
+    console.log(responseData);
+    console.log("responseData");
     return responseData;
   } catch (error) {
     console.error(error);
@@ -283,7 +279,7 @@ async function generateDocument(req, res) {
     return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
   } catch (error) {
     console.log(error);
-    const errorResponse = ErrorResponse({}, error);
+    const errorResponse = ErrorResponse({}, error.message);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(errorResponse);
@@ -1042,60 +1038,222 @@ async function FetchAiDrafterUploadInputDocument(formData) {
   }
 }
 
-async function AddAdiraAdmin(req,res){
-  try{
-
-    
-    const {username , password} = req.body
+async function AddAdiraAdmin(req, res) {
+  try {
+    const { username, password } = req.body;
     const salt = await bcrypt.genSalt(10);
-    const encryptedPassword =await  bcrypt.hash(password,salt)
-    
-    const newAdmin =  AdiraAdmin.create({
-      "username":username,
-      "password":encryptedPassword
-    })
+    const encryptedPassword = await bcrypt.hash(password, salt);
 
-    return res.status(200).json({newAdmin})
+    const newAdmin = AdiraAdmin.create({
+      username: username,
+      password: encryptedPassword,
+    });
+
+    return res.status(200).json({ newAdmin });
+  } catch (e) {
+    console.log(e);
+    return res.status(400);
   }
-  catch(e){
-    console.log(e)
-    return res.status(400)
-  }
-
-
 }
-
 
 async function handleFileUpload(req, res) {
   try {
     if (!req.file) {
-      return res.status(400).send('No file uploaded');
+      return res.status(400).send("No file uploaded");
     }
 
     const fileBuffer = req.file.buffer; // Get the file data from memory
     const query = req.body.query;
 
     const formData = new FormData();
-    formData.append('file', fileBuffer, {
+    formData.append("file", fileBuffer, {
       filename: req.file.originalname,
-      contentType: req.file.mimetype
+      contentType: req.file.mimetype,
     });
-    formData.append('query', query);
+    formData.append("query", query);
 
     // Prepare headers with the correct content type for multipart/form-data
     const headers = {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
       ...formData.getHeaders(),
     };
 
     // Send the file and query to the external server
-    const response = await axios.post('http://20.40.42.224/upload_prompt_document', formData, { headers });
+    const response = await axios.post(
+      `${AL_DRAFTER_API}/upload_prompt_document`,
+      formData,
+      { headers }
+    );
 
     // Send the response from the external server back to the client
     res.send(response.data);
   } catch (error) {
-    console.error('Error in file upload:', error);
-    res.status(500).send('Error uploading file');
+    console.error("Error in file upload:", error);
+    res.status(500).send("Error uploading file");
+  }
+}
+
+async function AnomalyQuestions(req, res) {
+  try {
+    const { doc_id } = req.body;
+    const fetcheAnomalyQuestions = await fetchAnomalyQuestions({ doc_id });
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ fetcheAnomalyQuestions }));
+  } catch (error) {
+    {
+      console.log(error);
+      res
+        .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse({}, error.message));
+    }
+  }
+}
+
+async function fetchAnomalyQuestions({ doc_id }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/anomaly_questions`, {
+      method: "POST",
+      body: JSON.stringify({ doc_id }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(`message: ${errorText}`);
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+async function TelegramBot(req, res) {
+  try {
+    const {
+      doc_id,
+      User_name,
+      email_id,
+      contact_no,
+      meeting_date,
+      start_time,
+      end_time,
+      user_query,
+      additional_details,
+      number_of_pages,
+      customer_type,
+    } = req.body;
+    fetchedMeeting = await fetchTelegramBot({
+      doc_id,
+      User_name,
+      email_id,
+      contact_no,
+      meeting_date,
+      start_time,
+      end_time,
+      user_query,
+      additional_details,
+      number_of_pages,
+      customer_type,
+    });
+    res.status(StatusCodes.OK).json(SuccessResponse({ fetchedMeeting }));
+  } catch (error) {
+    {
+      console.log(error);
+      res
+        .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse({}, error.message));
+    }
+  }
+}
+
+async function fetchTelegramBot({
+  doc_id,
+  User_name,
+  email_id,
+  contact_no,
+  meeting_date,
+  start_time,
+  end_time,
+  user_query,
+  additional_details,
+  number_of_pages,
+  customer_type,
+}) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/api/telegram_bot`, {
+      method: "POST",
+      body: JSON.stringify({
+        doc_id,
+        User_name,
+        email_id,
+        contact_no,
+        meeting_date,
+        start_time,
+        end_time,
+        user_query,
+        additional_details,
+        number_of_pages,
+        customer_type,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(`message: ${errorText}`);
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+}
+
+async function RecommendQuestion(req, res) {
+  try {
+    const { doc_id } = req.body;
+    const fetchedData = await fetchRecommendQuestion({ doc_id });
+    return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
+  } catch (error) {
+    {
+      console.log(error);
+      res
+        .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+        .json(ErrorResponse({}, error.message));
+    }
+  }
+}
+
+async function fetchRecommendQuestion({ doc_id }) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    const response = await fetch(`${AL_DRAFTER_API}/recommend_question`, {
+      method: "POST",
+      body: JSON.stringify({ doc_id }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    if (!response.ok) {
+      const errorText = await response.text(); // Get the error message from the response
+      throw new Error(`message: ${errorText}`);
+    }
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.log(error);
+    throw error;
   }
 }
 
@@ -1124,5 +1282,8 @@ module.exports = {
   getDocumentPromptRequirements,
   AiDrafterUploadInputDocument,
   AddAdiraAdmin,
-  handleFileUpload
+  handleFileUpload,
+  AnomalyQuestions,
+  TelegramBot,
+  RecommendQuestion,
 };
