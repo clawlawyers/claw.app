@@ -69,4 +69,8 @@ router.post("/api/telegram_bot", AiDrafter.TelegramBot);
 
 router.post("/recommend_question", AiDrafter.RecommendQuestion);
 
+// create a adira plan
+
+router.post("/create_adira_plan", AiDrafter.createAdiraPlan);
+
 module.exports = router;

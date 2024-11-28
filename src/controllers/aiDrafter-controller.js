@@ -8,6 +8,7 @@ const path = require("path");
 const axios = require("axios");
 const AdiraAdmin = require("../models/adiraAdmin");
 const bcrypt = require("bcrypt");
+const prisma = require("../config/prisma-client");
 
 async function uploadDocument(req, res) {
   try {
@@ -1257,6 +1258,50 @@ async function fetchRecommendQuestion({ doc_id }) {
   }
 }
 
+async function createAdiraPlan(req, res) {
+  try {
+    const {
+      name,
+      price,
+      duration,
+      isTypeOfDocument,
+      isPromptDrafting,
+      isUploadOwnDocument,
+      isUploadOwnDocumentWithPrompt,
+      isDownloadWithWaterMark,
+      isSummerizeDocument,
+      isSnippet,
+      isAnalysieAnyDocument,
+    } = req.body;
+
+    // Validate inputs (simple validation)
+    if (!name || !price || !duration) {
+      return res
+        .status(400)
+        .json({ error: "Name, price, and duration are required." });
+    }
+
+    // Create the new plan
+    const newPlan = await prisma.adiraPlan.create({
+      data: {
+        name,
+        price,
+        duration,
+        isTypeOfDocument,
+        isPromptDrafting,
+        isUploadOwnDocument,
+        isUploadOwnDocumentWithPrompt,
+        isDownloadWithWaterMark,
+        isSummerizeDocument,
+        isSnippet,
+        isAnalysieAnyDocument,
+      },
+    });
+
+    return res.status(201).json(newPlan);
+  } catch (error) {}
+}
+
 module.exports = {
   uploadDocument,
   createDocument,
@@ -1286,4 +1331,5 @@ module.exports = {
   AnomalyQuestions,
   TelegramBot,
   RecommendQuestion,
+  createAdiraPlan,
 };
