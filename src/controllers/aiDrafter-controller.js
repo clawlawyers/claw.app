@@ -1440,6 +1440,7 @@ async function createAdiraPlan(req, res) {
 }
 
 async function retriveAdiraPlan(req, res) {
+  console.log("hi");
   const { _id } = req.body.client;
   try {
     const plan = await prisma.userAdiraPlan.findFirst({

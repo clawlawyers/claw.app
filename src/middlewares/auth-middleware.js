@@ -39,30 +39,27 @@ async function checkClientAuth(req, res, next) {
     if (!token) {
       throw new AppError("Missing jwt token", StatusCodes.BAD_REQUEST);
     }
-    console.log(token)
-   
-   
-      
-      const response = verifyToken(token);
-    
+
+    console.log(token);
+
+    const response = verifyToken(token);
+
     const client = await ClientService.getClientById(response.id);
 
     console.log(response);
     console.log("asdsadasdasdasdasdasdasdasdasdasdasdas");
-let session
+    let session;
     // Find the session and update its activity timestamp
-    if(response.phoneNumber=="8603805697"){
-      session=client.sessions[0]
-    }
-    else{
-
-       session = client.sessions.find(
+    if (response.phoneNumber == "8603805697") {
+      session = client.sessions[0];
+    } else {
+      session = client.sessions.find(
         (session) => session.sessionId === response.sessionId
       );
       if (!session) {
         return res.status(401).send("Invalid session");
       }
-      
+
       session.lastActive = Date.now(); // Update last active time
     }
     await client.save();
