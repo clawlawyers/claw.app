@@ -182,6 +182,96 @@ const OfferplanNamesquence = [
 //   }
 // }
 
+async function talkToExpertCreateOrder(req, res) {
+  const { amount, currency, receipt } = req.body;
+  try {
+    const options = {
+      amount: amount * 100,
+      currency,
+      receipt,
+    };
+
+    const orderr = await razorpay.orders.create(options);
+    const combinedResponse = {
+      razorpayOrder: orderr,
+    };
+    console.log(combinedResponse);
+    res.status(200).json(combinedResponse);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+}
+
+async function talkToExpertVerifyOrder(req, res) {
+  const {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    meetingData,
+    phoneNumber,
+  } = req.body;
+  try {
+    const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
+    hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+    const generated_signature = hmac.digest("hex");
+
+    if (generated_signature === razorpay_signature) {
+      const {
+        doc_id,
+        User_name,
+        email_id,
+        contact_no,
+        meeting_date,
+        start_time,
+        end_time,
+        user_query,
+        additional_details,
+        number_of_pages,
+        customer_type,
+      } = meetingData;
+      const fetchUser = await ClientService.getClientByPhoneNumber(phoneNumber);
+
+      fetchedMeeting = await fetchTelegramBot({
+        doc_id,
+        User_name,
+        email_id,
+        contact_no,
+        meeting_date,
+        start_time,
+        end_time,
+        user_query,
+        additional_details,
+        number_of_pages,
+        customer_type,
+      });
+      console.log(fetchedMeeting);
+      const generatedMeeting = await TalkToExpert.create({
+        client: fetchUser._id,
+        doc_id,
+        User_name,
+        email_id,
+        contact_no,
+        meeting_date,
+        start_time,
+        end_time,
+        user_query,
+        additional_details,
+        number_of_pages,
+        customer_type,
+        meeting_link: fetchedMeeting,
+      });
+      res
+        .status(StatusCodes.OK)
+        .json(SuccessResponse({ fetchedMeeting, generatedMeeting }));
+    } else {
+      res.status(400).json({ status: "Payment verification failed" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+}
+
 async function createPayment(req, res) {
   const { amount, currency, receipt, planName, billingCycle, phoneNumber } =
     req.body;
@@ -701,4 +791,6 @@ module.exports = {
   verifySubscription,
   rezorpayWebhook,
   createPaymentLink,
+  talkToExpertVerifyOrder,
+  talkToExpertCreateOrder,
 };

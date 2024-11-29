@@ -8,6 +8,15 @@ const { checkClientAuth } = require("../../middlewares/auth-middleware");
 router.post("/create-order", RazorpayController.createPayment);
 router.post("/verifyPayment", RazorpayController.verifyPayment);
 
+router.post(
+  "/talk-to-expert-createOrder",
+  RazorpayController.talkToExpertCreateOrder
+);
+router.post(
+  "/talk-to-expert-verifyOrder",
+  RazorpayController.talkToExpertVerifyOrder
+);
+
 router.post("/create-subscription", RazorpayController.createSubscription);
 router.post("/verify-subscription", RazorpayController.verifySubscription);
 

@@ -9,6 +9,7 @@ const axios = require("axios");
 const AdiraAdmin = require("../models/adiraAdmin");
 const bcrypt = require("bcrypt");
 const prisma = require("../config/prisma-client");
+const TalkToExpert = require("../models/talkToExpert");
 
 async function uploadDocument(req, res) {
   try {
@@ -1162,14 +1163,30 @@ async function TelegramBot(req, res) {
       number_of_pages,
       customer_type,
     });
-    res.status(StatusCodes.OK).json(SuccessResponse({ fetchedMeeting }));
+    console.log(fetchedMeeting);
+    const generatedMeeting = await TalkToExpert.create({
+      client: "6726dd872d6c88be90cc6bd5",
+      doc_id,
+      User_name,
+      email_id,
+      contact_no,
+      meeting_date,
+      start_time,
+      end_time,
+      user_query,
+      additional_details,
+      number_of_pages,
+      customer_type,
+      meeting_link: fetchedMeeting,
+    });
+    res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ fetchedMeeting, generatedMeeting }));
   } catch (error) {
-    {
-      console.log(error);
-      res
-        .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-        .json(ErrorResponse({}, error.message));
-    }
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
   }
 }
 
@@ -1212,7 +1229,8 @@ async function fetchTelegramBot({
       const errorText = await response.text(); // Get the error message from the response
       throw new Error(`message: ${errorText}`);
     }
-    const responseData = await response.json();
+
+    const responseData = await response.text();
     return responseData;
   } catch (error) {
     console.log(error);
