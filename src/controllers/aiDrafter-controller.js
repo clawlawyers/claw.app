@@ -1488,4 +1488,6 @@ module.exports = {
   TelegramBot,
   RecommendQuestion,
   getpdfpagecount,
+  retriveAdiraPlan,
+  createAdiraPlan,
 };
