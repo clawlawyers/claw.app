@@ -968,6 +968,108 @@ async function getpdf(req, res) {
     res.status(500).send("Error generating PDF");
   }
 }
+async function getpdfpagecount(req, res) {
+  const { document } = req.body;
+
+  // Clean up the document input
+  const cleanedDocument = document
+    .replaceAll("\\\\n\\\\n", "\n")
+    .replaceAll("\\\\n", "\n")
+    .replaceAll("\\n\\n", "\n")
+    .replaceAll("\\n", "\n")
+    .replaceAll("\n", "\n \n")
+    .replaceAll("\\", "")
+    .replaceAll('"', "")
+    .replaceAll(":", " :")
+    .replaceAll("#", "")
+    .replaceAll('"', "");
+
+  console.log(cleanedDocument);
+  try {
+    console.log("Loading fonts...");
+    const regularFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Regular.ttf"
+    );
+    const boldFontPath = path.join(
+      __dirname,
+      "..",
+      "fonts",
+      "NotoSans-Bold.ttf"
+    );
+
+    const doc = new PDFDocument();
+    doc.registerFont("NotoSans", regularFontPath);
+    doc.registerFont("NotoSans-Bold", boldFontPath);
+
+    const textLines = cleanedDocument.split("\n");
+    for (let line of textLines) {
+      // Split the line based on the bold marker '**'
+      const parts = line.split(/\*\*(.*?)\*\*/); // Regex to capture text between `**`
+
+      for (let i = 0; i < parts.length; i++) {
+        if (i % 2 === 1) {
+          // If index is odd, it's the text inside '**', so make it bold
+          doc.font("NotoSans-Bold").text(parts[i], { continued: true });
+        } else {
+          // Regular text outside '**'
+          doc.font("NotoSans").text(parts[i], { continued: true });
+        }
+      }
+      doc.text(""); // Move to next line after processing the current line
+      doc.moveDown();
+    }
+
+    const chunks = [];
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", async () => {
+      console.log("PDF generated.");
+
+      const pdfBuffer = Buffer.concat(chunks);
+
+      // Load the generated PDF to add watermark on every page
+      const { PDFDocument: LibPDFDocument } = require("pdf-lib");
+      const pdfDoc = await LibPDFDocument.load(pdfBuffer);
+      const pages = pdfDoc.getPages();
+      const imagePath = path.join(__dirname, "..", "fonts", "gptclaw.png"); // Update with the correct image path
+      const imageBuffer = fs.readFileSync(imagePath);
+      const watermarkImage = await pdfDoc.embedPng(imageBuffer);
+
+      // Add watermark to each page
+      let no_of_pages = 0;
+      pages.forEach((page) => {
+        const { width, height } = page.getSize();
+        const imageWidth = 400; // Adjust size as needed
+        const imageHeight =
+          (imageWidth / watermarkImage.width) * watermarkImage.height; // Maintain aspect ratio
+        const xPosition = (width - imageWidth) / 2;
+        const yPosition = (height - imageHeight) / 2;
+
+        page.drawImage(watermarkImage, {
+          x: xPosition,
+          y: yPosition,
+          width: imageWidth,
+          height: imageHeight,
+          opacity: 0.3, // Adjust opacity as needed
+        });
+        no_of_pages = no_of_pages + 1;
+      });
+
+      // Save the final PDF with watermark
+      const watermarkedPdfBytes = await pdfDoc.save();
+      // res.setHeader("Content-disposition", `attachment; filename="new.pdf"`);
+      // res.setHeader("Content-type", "application/pdf");
+      return res.status(200).send({ no_of_pages: no_of_pages });
+    });
+
+    doc.end();
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("Error generating PDF");
+  }
+}
 
 async function AiDrafterUploadInputDocument(req, res) {
   try {
@@ -1188,9 +1290,23 @@ async function fetchTelegramBot({
   try {
     // Dynamically import node-fetch
     const fetch = (await import("node-fetch")).default;
-    const response = await fetch(`${AL_DRAFTER_API}/api/telegram_bot`, {
-      method: "POST",
-      body: JSON.stringify({
+    console.log({
+      doc_id,
+      User_name,
+      email_id,
+      contact_no,
+      meeting_date,
+      start_time,
+      end_time,
+      user_query,
+      additional_details,
+      number_of_pages,
+      customer_type,
+    });
+    const response = await axios.post(
+      `${AL_DRAFTER_API}/api/telegram_bot`,
+      // method: "POST",
+      {
         doc_id,
         User_name,
         email_id,
@@ -1202,17 +1318,21 @@ async function fetchTelegramBot({
         additional_details,
         number_of_pages,
         customer_type,
-      }),
-      headers: {
-        "Content-Type": "application/json",
       },
-    });
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log(response.data);
     if (!response.ok) {
-      const errorText = await response.text(); // Get the error message from the response
-      throw new Error(`message: ${errorText}`);
+      // const errorText = await response.text(); // Get the error message from the response
+      // throw new Error(`message: ${errorText}`);
     }
-    const responseData = await response.json();
-    return responseData;
+    // const responseData = await response.json();
+    // return responseData;
+    return response.data;
   } catch (error) {
     console.log(error);
     throw error;
@@ -1286,4 +1406,5 @@ module.exports = {
   AnomalyQuestions,
   TelegramBot,
   RecommendQuestion,
+  getpdfpagecount,
 };
