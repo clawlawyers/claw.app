@@ -1718,6 +1718,9 @@ async function updateUserAdiraPlan(
             isCouponCode: couponCode,
             Paidprice: amount,
           },
+          include: {
+            plan: true,
+          },
         });
 
         if (refferalCode) {
@@ -1743,6 +1746,9 @@ async function updateUserAdiraPlan(
             expiresAt,
             isActive: true,
             Paidprice: amount,
+          },
+          include: {
+            plan: true,
           },
         });
       }
@@ -1760,6 +1766,9 @@ async function updateUserAdiraPlan(
             isCouponCode: couponCode,
             Paidprice: amount,
           },
+          include: {
+            plan: true,
+          },
         });
 
         if (refferalCode) {
@@ -1785,6 +1794,9 @@ async function updateUserAdiraPlan(
             expiresAt,
             isActive: true,
             Paidprice: amount,
+          },
+          include: {
+            plan: true,
           },
         });
       }
