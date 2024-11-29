@@ -326,6 +326,7 @@ async function verifyPayment(req, res) {
   const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
   hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
   const generated_signature = hmac.digest("hex");
+  let res;
 
   if (generated_signature === razorpay_signature) {
     try {
@@ -336,7 +337,7 @@ async function verifyPayment(req, res) {
       // update the plan for user
       console.log(placedOrder.user.toString(), placedOrder.planName);
 
-      const rs = await GptServices.updateUserAdiraPlan(
+      res = await GptServices.updateUserAdiraPlan(
         placedOrder.user.toString(),
         placedOrder.planName,
         razorpay_order_id,
@@ -364,7 +365,9 @@ async function verifyPayment(req, res) {
     } catch (error) {
       console.log(error);
     }
-    res.status(200).json({ status: "Payment verified successfully", plan: rs });
+    res
+      .status(200)
+      .json({ status: "Payment verified successfully", plan: res });
   } else {
     res.status(400).json({ status: "Payment verification failed" });
   }
