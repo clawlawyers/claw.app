@@ -1792,7 +1792,7 @@ async function updateUserAdiraPlan(
 
     return {
       user: updatedUserPlan.userId,
-      plan: updatedUserPlan.planName,
+      plan: updatedUserPlan,
     };
   } catch (error) {
     console.error(error);
