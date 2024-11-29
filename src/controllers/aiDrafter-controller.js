@@ -8,6 +8,8 @@ const path = require("path");
 const axios = require("axios");
 const AdiraAdmin = require("../models/adiraAdmin");
 const bcrypt = require("bcrypt");
+const prisma = require("../config/prisma-client");
+const TalkToExpert = require("../models/talkToExpert");
 
 async function uploadDocument(req, res) {
   try {
@@ -1263,14 +1265,30 @@ async function TelegramBot(req, res) {
       number_of_pages,
       customer_type,
     });
-    res.status(StatusCodes.OK).json(SuccessResponse({ fetchedMeeting }));
+    console.log(fetchedMeeting);
+    const generatedMeeting = await TalkToExpert.create({
+      client: "6726dd872d6c88be90cc6bd5",
+      doc_id,
+      User_name,
+      email_id,
+      contact_no,
+      meeting_date,
+      start_time,
+      end_time,
+      user_query,
+      additional_details,
+      number_of_pages,
+      customer_type,
+      meeting_link: fetchedMeeting,
+    });
+    res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ fetchedMeeting, generatedMeeting }));
   } catch (error) {
-    {
-      console.log(error);
-      res
-        .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-        .json(ErrorResponse({}, error.message));
-    }
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
   }
 }
 
@@ -1374,6 +1392,69 @@ async function fetchRecommendQuestion({ doc_id }) {
   } catch (error) {
     console.log(error);
     throw error;
+  }
+}
+
+async function createAdiraPlan(req, res) {
+  try {
+    const {
+      name,
+      price,
+      duration,
+      isTypeOfDocument,
+      isPromptDrafting,
+      isUploadOwnDocument,
+      isUploadOwnDocumentWithPrompt,
+      isDownloadWithWaterMark,
+      isSummerizeDocument,
+      isSnippet,
+      isAnalysieAnyDocument,
+    } = req.body;
+
+    // Validate inputs (simple validation)
+    if (!name || !price || !duration) {
+      return res
+        .status(400)
+        .json({ error: "Name, price, and duration are required." });
+    }
+
+    // Create the new plan
+    const newPlan = await prisma.adiraPlan.create({
+      data: {
+        name,
+        price,
+        duration,
+        isTypeOfDocument,
+        isPromptDrafting,
+        isUploadOwnDocument,
+        isUploadOwnDocumentWithPrompt,
+        isDownloadWithWaterMark,
+        isSummerizeDocument,
+        isSnippet,
+        isAnalysieAnyDocument,
+      },
+    });
+
+    return res.status(201).json(newPlan);
+  } catch (error) {}
+}
+
+async function retriveAdiraPlan(req, res) {
+  const { mongoId } = req.body;
+  try {
+    const plan = await prisma.userAdiraPlan.findFirst({
+      where: {
+        userId: mongoId,
+      },
+      include: {
+        user: true,
+        plan: true,
+      },
+    });
+    res.status(200).json({ plan });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Failed to retrieve plan." });
   }
 }
 

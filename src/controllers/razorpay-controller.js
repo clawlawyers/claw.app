@@ -1,7 +1,11 @@
 const { RAZORPAY_ID, RAZORPAY_SECRET_KEY } = require("../config/server-config");
 const Razorpay = require("razorpay");
 const crypto = require("crypto");
-const { OrderService, ClientService } = require("../services");
+const {
+  OrderService,
+  ClientService,
+  AdiraOrderService,
+} = require("../services");
 const { ErrorResponse, SuccessResponse } = require("../utils/common");
 const { StatusCodes } = require("http-status-codes");
 const { paymentStatus } = require("../utils/common/constants");
@@ -73,16 +77,204 @@ const OfferplanNamesquence = [
   { name: "PREMIUM_Y", price: 11999, id: "plan_OydlmF2HCHk2cI" },
 ];
 
-async function createPayment(req, res) {
+// async function createPayment(req, res) {
+//   const {
+//     amount,
+//     currency,
+//     receipt,
+//     plan,
+//     billingCycle,
+//     session,
+//     phoneNumber,
+//   } = req.body;
+//   // const { _id, phoneNumber } = req.body.client;
+//   console.log(req.body);
+
+//   const fetchUser = await ClientService.getClientByPhoneNumber(phoneNumber);
+
+//   console.log(fetchUser._id.toHexString());
+
+//   const order = await OrderService.createOrder({
+//     plan,
+//     session,
+//     billingCycle,
+//     user: fetchUser._id,
+//     paymentStatus: paymentStatus.INITIATED,
+//   });
+
+//   try {
+//     const options = {
+//       amount: amount * 100,
+//       currency,
+//       receipt,
+//     };
+
+//     const orderr = await razorpay.orders.create(options);
+//     const combinedResponse = {
+//       razorpayOrder: orderr,
+//       createdOrder: order,
+//     };
+//     console.log(combinedResponse);
+//     res.status(200).json(combinedResponse);
+//   } catch (error) {
+//     res.status(500).json(error);
+//   }
+// }
+
+// async function verifyPayment(req, res) {
+//   const {
+//     razorpay_order_id,
+//     razorpay_payment_id,
+//     razorpay_signature,
+//     _id,
+//     couponCode,
+//     refferalCode,
+//     createdAt,
+//     expiresAt,
+//     existingSubscription,
+//     amount,
+//   } = req.body;
+
+//   const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
+//   hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+//   const generated_signature = hmac.digest("hex");
+
+//   if (generated_signature === razorpay_signature) {
+//     try {
+//       const placedOrder = await OrderService.updateOrder(_id, {
+//         paymentStatus: paymentStatus.SUCCESS,
+//       });
+
+//       // update the plan for user
+//       console.log(placedOrder.user.toString(), placedOrder.plan);
+
+//       const rs = await GptServices.updateUserPlan(
+//         placedOrder.user.toString(),
+//         placedOrder.plan,
+//         razorpay_order_id,
+//         existingSubscription,
+//         createdAt,
+//         refferalCode,
+//         couponCode,
+//         expiresAt,
+//         amount
+//       );
+//       // insert it into user purchase
+
+//       await GptServices.insertIntoUserPurchase(
+//         placedOrder.user.toString(),
+//         placedOrder.plan,
+//         createdAt,
+//         razorpay_order_id,
+//         expiresAt,
+//         refferalCode,
+//         amount,
+//         couponCode
+//       );
+
+//       console.log(rs);
+//     } catch (error) {
+//       console.log(error);
+//     }
+//     res.status(200).json({ status: "Payment verified successfully" });
+//   } else {
+//     res.status(400).json({ status: "Payment verification failed" });
+//   }
+// }
+
+async function talkToExpertCreateOrder(req, res) {
+  const { amount, currency, receipt } = req.body;
+  try {
+    const options = {
+      amount: amount * 100,
+      currency,
+      receipt,
+    };
+
+    const orderr = await razorpay.orders.create(options);
+    const combinedResponse = {
+      razorpayOrder: orderr,
+    };
+    console.log(combinedResponse);
+    res.status(200).json(combinedResponse);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+}
+
+async function talkToExpertVerifyOrder(req, res) {
   const {
-    amount,
-    currency,
-    receipt,
-    plan,
-    billingCycle,
-    session,
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    meetingData,
     phoneNumber,
   } = req.body;
+  try {
+    const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
+    hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+    const generated_signature = hmac.digest("hex");
+
+    if (generated_signature === razorpay_signature) {
+      const {
+        doc_id,
+        User_name,
+        email_id,
+        contact_no,
+        meeting_date,
+        start_time,
+        end_time,
+        user_query,
+        additional_details,
+        number_of_pages,
+        customer_type,
+      } = meetingData;
+      const fetchUser = await ClientService.getClientByPhoneNumber(phoneNumber);
+
+      fetchedMeeting = await fetchTelegramBot({
+        doc_id,
+        User_name,
+        email_id,
+        contact_no,
+        meeting_date,
+        start_time,
+        end_time,
+        user_query,
+        additional_details,
+        number_of_pages,
+        customer_type,
+      });
+      console.log(fetchedMeeting);
+      const generatedMeeting = await TalkToExpert.create({
+        client: fetchUser._id,
+        doc_id,
+        User_name,
+        email_id,
+        contact_no,
+        meeting_date,
+        start_time,
+        end_time,
+        user_query,
+        additional_details,
+        number_of_pages,
+        customer_type,
+        meeting_link: fetchedMeeting,
+      });
+      res
+        .status(StatusCodes.OK)
+        .json(SuccessResponse({ fetchedMeeting, generatedMeeting }));
+    } else {
+      res.status(400).json({ status: "Payment verification failed" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).json(error);
+  }
+}
+
+async function createPayment(req, res) {
+  const { amount, currency, receipt, planName, billingCycle, phoneNumber } =
+    req.body;
   // const { _id, phoneNumber } = req.body.client;
   console.log(req.body);
 
@@ -90,9 +282,9 @@ async function createPayment(req, res) {
 
   console.log(fetchUser._id.toHexString());
 
-  const order = await OrderService.createOrder({
-    plan,
-    session,
+  const order = await AdiraOrderService.createOrder({
+    price: amount,
+    planName,
     billingCycle,
     user: fetchUser._id,
     paymentStatus: paymentStatus.INITIATED,
@@ -137,16 +329,16 @@ async function verifyPayment(req, res) {
 
   if (generated_signature === razorpay_signature) {
     try {
-      const placedOrder = await OrderService.updateOrder(_id, {
+      const placedOrder = await AdiraOrderService.updateOrder(_id, {
         paymentStatus: paymentStatus.SUCCESS,
       });
 
       // update the plan for user
-      console.log(placedOrder.user.toString(), placedOrder.plan);
+      console.log(placedOrder.user.toString(), placedOrder.planName);
 
-      const rs = await GptServices.updateUserPlan(
+      const rs = await GptServices.updateUserAdiraPlan(
         placedOrder.user.toString(),
-        placedOrder.plan,
+        placedOrder.planName,
         razorpay_order_id,
         existingSubscription,
         createdAt,
@@ -157,16 +349,16 @@ async function verifyPayment(req, res) {
       );
       // insert it into user purchase
 
-      await GptServices.insertIntoUserPurchase(
-        placedOrder.user.toString(),
-        placedOrder.plan,
-        createdAt,
-        razorpay_order_id,
-        expiresAt,
-        refferalCode,
-        amount,
-        couponCode
-      );
+      // await GptServices.insertIntoUserPurchase(
+      //   placedOrder.user.toString(),
+      //   placedOrder.plan,
+      //   createdAt,
+      //   razorpay_order_id,
+      //   expiresAt,
+      //   refferalCode,
+      //   amount,
+      //   couponCode
+      // );
 
       console.log(rs);
     } catch (error) {
@@ -599,4 +791,6 @@ module.exports = {
   verifySubscription,
   rezorpayWebhook,
   createPaymentLink,
+  talkToExpertVerifyOrder,
+  talkToExpertCreateOrder,
 };
