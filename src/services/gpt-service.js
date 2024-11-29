@@ -1718,6 +1718,9 @@ async function updateUserAdiraPlan(
             isCouponCode: couponCode,
             Paidprice: amount,
           },
+          include: {
+            plan: true,
+          },
         });
 
         if (refferalCode) {
@@ -1743,6 +1746,9 @@ async function updateUserAdiraPlan(
             expiresAt,
             isActive: true,
             Paidprice: amount,
+          },
+          include: {
+            plan: true,
           },
         });
       }
@@ -1760,6 +1766,9 @@ async function updateUserAdiraPlan(
             isCouponCode: couponCode,
             Paidprice: amount,
           },
+          include: {
+            plan: true,
+          },
         });
 
         if (refferalCode) {
@@ -1786,13 +1795,16 @@ async function updateUserAdiraPlan(
             isActive: true,
             Paidprice: amount,
           },
+          include: {
+            plan: true,
+          },
         });
       }
     }
 
     return {
       user: updatedUserPlan.userId,
-      plan: updatedUserPlan.planName,
+      plan: updatedUserPlan,
     };
   } catch (error) {
     console.error(error);
