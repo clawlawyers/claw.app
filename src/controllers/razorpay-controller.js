@@ -364,7 +364,7 @@ async function verifyPayment(req, res) {
     } catch (error) {
       console.log(error);
     }
-    res.status(200).json({ status: "Payment verified successfully" });
+    res.status(200).json({ status: "Payment verified successfully", plan: rs });
   } else {
     res.status(400).json({ status: "Payment verification failed" });
   }
