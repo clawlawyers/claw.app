@@ -1440,11 +1440,11 @@ async function createAdiraPlan(req, res) {
 }
 
 async function retriveAdiraPlan(req, res) {
-  const { mongoId } = req.body;
+  const { _id } = req.body.client;
   try {
     const plan = await prisma.userAdiraPlan.findFirst({
       where: {
-        userId: mongoId,
+        userId: _id,
       },
       include: {
         user: true,

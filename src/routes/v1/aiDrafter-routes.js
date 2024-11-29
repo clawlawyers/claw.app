@@ -74,6 +74,10 @@ router.post("/recommend_question", AiDrafter.RecommendQuestion);
 
 router.post("/create_adira_plan", AiDrafter.createAdiraPlan);
 
-router.post("/retrive-adira_plan", AiDrafter.retriveAdiraPlan);
+router.post(
+  "/retrive-adira_plan",
+  authMiddleware.checkClientAuth,
+  AiDrafter.retriveAdiraPlan
+);
 
 module.exports = router;

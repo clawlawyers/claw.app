@@ -237,6 +237,24 @@ async function verify(req, res) {
     //   updatedClient.id
     // );
 
+    const adiraPlan = await prisma.userAdiraPlan.findFirst({
+      where: {
+        userId: updatedClient.id,
+      },
+      include: {
+        plan: true,
+      },
+    });
+
+    const gptPlan = await prisma.newUserPlan.findFirst({
+      where: {
+        userId: updatedClient.id,
+      },
+      include: {
+        plan: true,
+      },
+    });
+
     const successResponse = SuccessResponse({
       newClient: false,
       verified: verified,
@@ -248,6 +266,8 @@ async function verify(req, res) {
       sessions: sessions.numberOfSessions,
       mongoId: sessions.mongoId,
       stateLocation: sessions.StateLocation,
+      adiraPlan,
+      gptPlan,
     });
 
     // console.log(successResponse);
