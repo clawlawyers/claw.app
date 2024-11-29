@@ -1320,6 +1320,25 @@ async function createAdiraPlan(req, res) {
   } catch (error) {}
 }
 
+async function retriveAdiraPlan(req, res) {
+  const { mongoId } = req.body;
+  try {
+    const plan = await prisma.userAdiraPlan.findFirst({
+      where: {
+        userId: mongoId,
+      },
+      include: {
+        user: true,
+        plan: true,
+      },
+    });
+    res.status(200).json({ plan });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Failed to retrieve plan." });
+  }
+}
+
 module.exports = {
   uploadDocument,
   createDocument,
@@ -1350,4 +1369,5 @@ module.exports = {
   TelegramBot,
   RecommendQuestion,
   createAdiraPlan,
+  retriveAdiraPlan,
 };
