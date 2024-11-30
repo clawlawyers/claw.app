@@ -15,6 +15,7 @@ async function uploadDocument(req, res) {
   try {
     var file = req.file;
     const doc_id = req.body.doc_id;
+    const language = req.body.language;
     console.log(doc_id);
 
     if (!file) {
@@ -26,7 +27,7 @@ async function uploadDocument(req, res) {
     // file.originalname = `${doc_id}` + ".docx";
     // console.log(file);
 
-    const fetchedData = await FetchupdateDocument({ file: file });
+    const fetchedData = await FetchupdateDocument({ file: file, language });
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ fetchedData }));
   } catch (error) {
@@ -1080,7 +1081,7 @@ async function AiDrafterUploadInputDocument(req, res) {
       return res.status(400).json({ error: "No files uploaded" });
     }
 
-    const { doc_id } = req.body;
+    const { doc_id, language } = req.body;
 
     // Rename only the first file and prepare the data object for getOverview
     const formData = new FormData();
@@ -1109,6 +1110,8 @@ async function AiDrafterUploadInputDocument(req, res) {
         contentType: renamedFile.mimetype,
       });
     });
+
+    formData.append("language", language);
     const response = await FetchAiDrafterUploadInputDocument(formData);
     return res.status(StatusCodes.OK).json({ response });
   } catch (error) {
@@ -1168,6 +1171,7 @@ async function handleFileUpload(req, res) {
 
     const fileBuffer = req.file.buffer; // Get the file data from memory
     const query = req.body.query;
+    const language = req.body.language;
 
     const formData = new FormData();
     formData.append("file", fileBuffer, {
@@ -1175,6 +1179,7 @@ async function handleFileUpload(req, res) {
       contentType: req.file.mimetype,
     });
     formData.append("query", query);
+    formData.append("language", language);
 
     // Prepare headers with the correct content type for multipart/form-data
     const headers = {

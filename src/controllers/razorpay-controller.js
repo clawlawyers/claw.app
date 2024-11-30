@@ -10,6 +10,9 @@ const { ErrorResponse, SuccessResponse } = require("../utils/common");
 const { StatusCodes } = require("http-status-codes");
 const { paymentStatus } = require("../utils/common/constants");
 const { GptServices } = require("../services");
+const { AL_DRAFTER_API } = process.env;
+const axios = require("axios");
+const TalkToExpert = require("../models/talkToExpert");
 
 const razorpay = new Razorpay({
   key_id: RAZORPAY_ID,
@@ -199,6 +202,71 @@ async function talkToExpertCreateOrder(req, res) {
     res.status(200).json(combinedResponse);
   } catch (error) {
     res.status(500).json(error);
+  }
+}
+
+async function fetchTelegramBot({
+  doc_id,
+  User_name,
+  email_id,
+  contact_no,
+  meeting_date,
+  start_time,
+  end_time,
+  user_query,
+  additional_details,
+  number_of_pages,
+  customer_type,
+}) {
+  try {
+    // Dynamically import node-fetch
+    const fetch = (await import("node-fetch")).default;
+    console.log({
+      doc_id,
+      User_name,
+      email_id,
+      contact_no,
+      meeting_date,
+      start_time,
+      end_time,
+      user_query,
+      additional_details,
+      number_of_pages,
+      customer_type,
+    });
+    const response = await axios.post(
+      `${AL_DRAFTER_API}/api/telegram_bot`,
+      // method: "POST",
+      {
+        doc_id,
+        User_name,
+        email_id,
+        contact_no,
+        meeting_date,
+        start_time,
+        end_time,
+        user_query,
+        additional_details,
+        number_of_pages,
+        customer_type,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    console.log(response.data);
+    if (!response.ok) {
+      // const errorText = await response.text(); // Get the error message from the response
+      // throw new Error(`message: ${errorText}`);
+    }
+    // const responseData = await response.json();
+    // return responseData;
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    throw error;
   }
 }
 
