@@ -1280,25 +1280,26 @@ async function UpdatetoUserPurchase(
 async function insertIntoUserPurchase(
   userId,
   planName,
+  razorpay_order_id,
+  existingSubscription,
   createdAt,
-  subscriptionId,
+  refferalCode,
+  couponCode,
   expiresAt,
-  referralCodeId,
-  Paidprice,
-  isCouponCode
+  amount
 ) {
   try {
     // Insert into the UserPurchases table
-    const updatePurchase = await prisma.userPurchases.create({
+    const updatePurchase = await prisma.userAdiraPurchases.create({
       data: {
-        userId: userId,
-        planName: planName,
-        createdAt: createdAt,
-        subscriptionId: subscriptionId,
-        expiresAt: expiresAt,
-        referralCodeId: referralCodeId,
-        Paidprice: Paidprice,
-        isCouponCode: isCouponCode,
+        userId,
+        planName,
+        subscriptionId: razorpay_order_id,
+        expiresAt,
+        createdAt,
+        referralCodeId: refferalCode,
+        Paidprice: amount,
+        isCouponCode: couponCode,
       },
     });
 
@@ -2062,7 +2063,7 @@ async function cancelSubscription(mongoId, planName) {
 
 async function getPurchaseHistory(id) {
   try {
-    const purchaseHistory = await prisma.userPurchases.findMany({
+    const purchaseHistory = await prisma.userAdiraPurchases.findMany({
       where: { userId: id },
       orderBy: {
         createdAt: "desc",

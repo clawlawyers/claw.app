@@ -56,6 +56,12 @@ router.post(
   validateRequestMiddleware.validateClientVerifyRequest,
   ClientController.verify
 );
+
+router.post(
+  "/verifyCleint",
+  validateRequestMiddleware.verifyClientMiddleware,
+  ClientController.verify
+);
 router.post("/setState", ClientController.setLocation);
 router.patch(
   "/",

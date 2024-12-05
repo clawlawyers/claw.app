@@ -418,16 +418,17 @@ async function verifyPayment(req, res) {
       );
       // insert it into user purchase
 
-      // await GptServices.insertIntoUserPurchase(
-      //   placedOrder.user.toString(),
-      //   placedOrder.plan,
-      //   createdAt,
-      //   razorpay_order_id,
-      //   expiresAt,
-      //   refferalCode,
-      //   amount,
-      //   couponCode
-      // );
+      await GptServices.insertIntoUserPurchase(
+        placedOrder.user.toString(),
+        placedOrder.planName,
+        razorpay_order_id,
+        existingSubscription,
+        createdAt,
+        refferalCode,
+        couponCode,
+        expiresAt,
+        amount
+      );
 
       console.log(rs);
     } catch (error) {

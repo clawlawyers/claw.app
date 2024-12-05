@@ -26,6 +26,8 @@ model ReferralCode {
   UserPurchases UserPurchases[]
 
   UserAdiraPlan UserAdiraPlan[]
+
+  UserAdiraPurchases UserAdiraPurchases[]
 }
 
 model Plan {
@@ -83,6 +85,8 @@ model User {
   UserPurchases UserPurchases[]
 
   UserAdiraPlan UserAdiraPlan[]
+
+  UserAdiraPurchases UserAdiraPurchases[]
 }
 
 model UserPlan {
@@ -153,6 +157,25 @@ model UserPurchases {
 }
 
 
+
+model UserAdiraPurchases {
+  userId         String
+  planName       String
+  user           User        @relation(fields: [userId], references: [mongoId], onDelete: Cascade)
+  plan     AdiraPlan @relation(fields: [planName], references: [name], onDelete: Cascade)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @default(now())
+  subscriptionId String      @default("")
+  expiresAt      DateTime?
+  referralCodeId String?     // This will store the referral code string
+  referralCode   ReferralCode? @relation(fields: [referralCodeId], references: [referralCode], onDelete: SetNull) // Relation to ReferralCode
+  Paidprice      Int         @default(0)
+  isCouponCode   String      @default("")
+
+  @@id([userId, planName]) // Composite primary key
+}
+
+
 model AdiraPlan{
   name String @id
   price Int
@@ -170,6 +193,8 @@ model AdiraPlan{
 
 
   UserAdiraPlan UserAdiraPlan[]
+
+  UserAdiraPurchases UserAdiraPurchases[]
 }
 
 
