@@ -2096,7 +2096,9 @@ async function Fetchingtranslate(context, language) {
       }
     );
     if (!fetchedTranslations.ok) {
-      throw new Error("Failed to fetch translations");
+      const error = await fetchedTranslations.text();
+      console.log(error);
+      throw new Error(`Failed to fetch translations `);
     }
 
     const translations = await fetchedTranslations.json();
@@ -2104,7 +2106,7 @@ async function Fetchingtranslate(context, language) {
   } catch (error) {
     console.error(error);
     throw new AppError(
-      "Error while fetching purchase history",
+      "Failed to fetch translations",
       StatusCodes.INTERNAL_SERVER_ERROR
     );
   }
