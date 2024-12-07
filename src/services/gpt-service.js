@@ -6,6 +6,7 @@ const { FLASK_API_ENDPOINT } = process.env;
 const PDFDocument = require("pdfkit");
 const User = require("../models/user");
 const Order = require("../models/order");
+const Client = require("../models/client");
 
 async function fetchContext(sessionId) {
   try {
@@ -2038,6 +2039,23 @@ async function deleteSessions(mongoId, modelName) {
   }
 }
 
+async function storeUsedTimeService(id) {
+  try {
+    const user = await Client.findByIdAndUpdate(id, {
+      $inc: {
+        totalUsed: 1,
+      },
+    });
+    return user;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while storing used time service",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function cancelSubscription(mongoId, planName) {
   try {
     const userPlan = await prisma.newUserPlan.findUnique({
@@ -2332,4 +2350,5 @@ module.exports = {
   generateInvoicePDF,
   createSocketMessage,
   updateUserAdiraPlan,
+  storeUsedTimeService,
 };

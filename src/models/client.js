@@ -34,6 +34,10 @@ const clientSchema = new mongoose.Schema(
       },
     },
     sessions: [sessionSchema], // Store multiple session information with timestamps
+    totalUsed: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

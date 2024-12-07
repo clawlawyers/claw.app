@@ -1,4 +1,5 @@
 const prisma = require("../config/prisma-client");
+const Client = require("../models/client");
 
 async function handleExpiredPlans() {
   try {
@@ -67,6 +68,22 @@ async function handleExpiredPlans() {
     console.error("Error handling expired plans:", error);
   }
 }
+
+const resetTotalUsedForAllClients = async () => {
+  try {
+    // Update all documents by setting totalUsed to 0
+    const result = await Client.updateMany(
+      {}, // Empty filter matches all documents
+      { $set: { totalUsed: 0 } } // Set totalUsed to 0
+    );
+
+    console.log(
+      `Successfully reset totalUsed for ${result.modifiedCount} clients.`
+    );
+  } catch (error) {
+    console.error("Error resetting totalUsed:", error);
+  }
+};
 
 async function updateUserTokens(userId, planName) {
   try {
@@ -220,4 +237,5 @@ module.exports = {
   updateUserTokens,
   activateTodaysNewUserPlans,
   deactivateExpiredUserPlans,
+  resetTotalUsedForAllClients,
 };

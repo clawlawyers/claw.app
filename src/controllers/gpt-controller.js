@@ -1117,6 +1117,20 @@ async function generateInvoice(req, res) {
   }
 }
 
+async function storeUsedTime(req, res) {
+  try {
+    const userId = req.body.client._id;
+
+    await GptServices.storeUsedTimeService(userId);
+    return res.status(StatusCodes.OK).json({message: 'Time stored successfully'}));
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
 module.exports = {
   startSession,
   appendMessageByScocket,
@@ -1154,4 +1168,5 @@ module.exports = {
   upload,
   translate,
   generateInvoice,
+  storeUsedTime
 };
