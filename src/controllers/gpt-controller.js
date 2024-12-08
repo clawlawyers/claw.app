@@ -1122,7 +1122,9 @@ async function storeUsedTime(req, res) {
     const userId = req.body.client._id;
 
     await GptServices.storeUsedTimeService(userId);
-    return res.status(StatusCodes.OK).json({message: 'Time stored successfully'}));
+    return res
+      .status(StatusCodes.OK)
+      .json({ message: "Time stored successfully" });
   } catch (error) {
     console.log(error);
     res
@@ -1168,5 +1170,5 @@ module.exports = {
   upload,
   translate,
   generateInvoice,
-  storeUsedTime
+  storeUsedTime,
 };
