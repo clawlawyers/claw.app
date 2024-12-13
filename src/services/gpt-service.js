@@ -1635,7 +1635,7 @@ async function updateUserAdiraPlan(
     let updatedUserPlan;
 
     if (newPlan === "FREE") {
-      updatedUserPlan = await prisma.newUserPlan.create({
+      updatedUserPlan = await prisma.userAdiraPlan.create({
         data: {
           userId: mongoId,
           planName: newPlan,
