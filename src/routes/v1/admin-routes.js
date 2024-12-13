@@ -59,6 +59,7 @@ const {
   bookClientAdira,
   userPlanDist,
   getFeedback,
+  addNewEnterpriseUser,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -219,6 +220,8 @@ router.get("/user-plan-distibution", userPlanDist);
 // feedback of legal GPT
 
 router.get("/feedback", getFeedback);
+
+router.post("/add-new-enterprise-user", addNewEnterpriseUser);
 
 // user tracking
 
