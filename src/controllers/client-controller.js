@@ -267,7 +267,7 @@ async function verify(req, res) {
       mongoId: sessions.mongoId,
       stateLocation: sessions.StateLocation,
       adiraPlan,
-      gptPlan,
+      // gptPlan,
     });
 
     // console.log(successResponse);
