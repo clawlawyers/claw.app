@@ -84,6 +84,16 @@ async function verify(req, res) {
 
       // create new corresponding gpt user
       await GptServices.createGptUser(phoneNumber, client.id);
+
+      const adiraPlan = await prisma.userAdiraPlan.findFirst({
+        where: {
+          userId: client.id,
+        },
+        include: {
+          plan: true,
+        },
+      });
+
       const data = {
         verified: client.verified,
         ambassador: client.ambassador ? true : false,
@@ -93,6 +103,8 @@ async function verify(req, res) {
         sessions: 1,
         mongoId: client.id,
         stateLocation: "",
+        adiraPlan,
+        totalUsed: 0,
       };
 
       if (verified) {
@@ -116,17 +128,17 @@ async function verify(req, res) {
       console.log("user do not have any plan. plan will be creating");
 
       const createAt = new Date();
-      const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+      // const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-      await GptServices.updateUserPlan(
+      await GptServices.updateUserAdiraPlan(
         existing.id,
-        "FREE_M",
-        "EVENT_OCCATION_FREE",
+        "FREE",
+        "15 MINUTES TRIAL",
         "",
         createAt,
         null,
         "",
-        expiresAt,
+        null,
         0
       );
 
@@ -268,6 +280,7 @@ async function verify(req, res) {
       stateLocation: sessions.StateLocation,
       adiraPlan,
       // gptPlan,
+      totalUsed: updatedClient.totalUsed,
     });
 
     // console.log(successResponse);
