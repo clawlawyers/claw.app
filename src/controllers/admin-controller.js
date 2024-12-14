@@ -17,47 +17,7 @@ const prisma = require("../config/prisma-client");
 const { createNewUser } = require("../services/common-service");
 const ClientAdiraUser = require("../models/cleintAdiraUser");
 const { sendConfirmationEmailForAmbas } = require("../utils/common/sendEmail");
-const enterprisesAdiraUser = require("../models/enterprisesAdiraUser");
 const { hashPassword } = require("../utils/coutroom/auth");
-const EnterprisesUser = require("../models/enterprisesAdiraUser");
-
-async function addNewEnterpriseUser(req, res) {
-  try {
-    const { name, username, password, startToken, endToken, usedToken } =
-      req.body;
-
-    // Validation check (basic)
-    if (!name || !username || !password) {
-      return res
-        .status(400)
-        .json({ message: "Name, username, and password are required." });
-    }
-
-    const hashedPassword = hashPassword(password);
-
-    // Create a new user instance
-    const newUser = new EnterprisesUser({
-      name,
-      username,
-      password: hashedPassword, // Ensure password is hashed before saving in production
-      startToken: startToken || 0,
-      endToken: endToken || 0,
-      usedToken: usedToken || 0,
-    });
-
-    // Save user to the database
-    await newUser.save();
-    res
-      .status(201)
-      .json({ message: "User created successfully.", user: newUser });
-  } catch (error) {
-    if (error.code === 11000) {
-      res.status(400).json({ message: "Username already exists." });
-    } else {
-      res.status(500).json({ message: "Server error.", error: error.message });
-    }
-  }
-}
 
 async function getFeedback(req, res) {
   try {
@@ -2058,5 +2018,4 @@ module.exports = {
   bookClientAdira,
   userPlanDist,
   getFeedback,
-  addNewEnterpriseUser,
 };

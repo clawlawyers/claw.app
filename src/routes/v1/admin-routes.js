@@ -221,8 +221,6 @@ router.get("/user-plan-distibution", userPlanDist);
 
 router.get("/feedback", getFeedback);
 
-router.post("/add-new-enterprise-user", addNewEnterpriseUser);
-
 // user tracking
 
 module.exports = router;
