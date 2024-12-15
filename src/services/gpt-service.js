@@ -114,7 +114,7 @@ async function createGptUser(phoneNumber, mongoId) {
       // const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       await updateUserAdiraPlan(
-        existing.id,
+        newUser.id,
         "FREE",
         "15 MINUTES TRIAL",
         "",
