@@ -13,6 +13,8 @@ const {
 const sessionCleanup = require("../utils/common/sessionHelper");
 const { default: mongoose } = require("mongoose");
 
+require("../services/passport");
+
 /**
  * POST:  client/signup
  * req.body {email: 'client@gmail.com', password: "dsfj9sdjfoijw09"}
@@ -72,12 +74,22 @@ async function verify(req, res) {
     const { phoneNumber, verified } = req.body;
     const existing = await ClientService.getClientByPhoneNumber(phoneNumber);
 
+    console.log(existing);
+
     // new client
     if (!existing) {
+      const { firstName, lastName, email, profession, industry, purpose } =
+        req.body;
       // create new client
       const { client, jwt, expiresAt } = await ClientService.createClient({
         phoneNumber,
         verified,
+        firstName,
+        lastName,
+        email,
+        profession,
+        industry,
+        purpose,
       });
 
       console.log(client.id);
@@ -258,14 +270,14 @@ async function verify(req, res) {
       },
     });
 
-    const gptPlan = await prisma.newUserPlan.findFirst({
-      where: {
-        userId: updatedClient.id,
-      },
-      include: {
-        plan: true,
-      },
-    });
+    // const gptPlan = await prisma.newUserPlan.findFirst({
+    //   where: {
+    //     userId: updatedClient.id,
+    //   },
+    //   include: {
+    //     plan: true,
+    //   },
+    // });
 
     const successResponse = SuccessResponse({
       newClient: false,
@@ -290,6 +302,234 @@ async function verify(req, res) {
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(errorResponse);
+  }
+}
+
+async function googleAuthCallbackTemp(req, res) {
+  const { token } = req.body; // The token sent from the frontend
+
+  if (!token) {
+    return res.status(400).json({ message: "Token is missing" });
+  }
+
+  try {
+    // Verify the Google ID token using Google's OAuth2Client
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.CLIENTID, // Your Google OAuth 2.0 Client ID
+    });
+
+    const payload = ticket.getPayload(); // Get user info from the token
+
+    const email = payload.email;
+    const googleId = payload.sub; // This is the unique ID from Google
+
+    // Check if the user exists in your database
+    let user = await Client.findOne({ email });
+
+    if (!user) {
+      // If the user doesn't exist, you can create a new user or redirect them
+      // Example of creating a new user (You can customize as needed)
+      user = new Client({
+        googleAuthId: googleId,
+        name: payload.name,
+        email: payload.email,
+        profilePicture: payload.picture, // Optional, if you want to store the profile picture
+      });
+
+      await user.save(); // Save new user to the database
+    }
+
+    // Generate a JWT token (Optional, if you want to use JWT for subsequent requests)
+    const jwtToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    // Send response back to the frontend with the user data and JWT token
+    res.status(200).json({
+      message: "User authenticated successfully",
+      user: {
+        name: user.name,
+        email: user.email,
+        profilePicture: user.profilePicture, // Optional
+      },
+      token: jwtToken, // Send JWT token if using JWT for authentication
+    });
+  } catch (error) {
+    console.error("Error verifying Google token:", error);
+    res.status(400).json({ message: "Invalid token" });
+  }
+}
+
+async function googleAuthCallback(req, res) {
+  try {
+    const existing = req.user;
+    console.log(existing);
+
+    // If a user is authenticated and found, proceed
+    if (existing) {
+      // You can redirect them to a dashboard or any page
+      return res.redirect("/dashboard");
+    }
+
+    const plan = await GptServices.getUserPlan(existing.id); // it can be open
+    console.log(plan.length);
+    console.log(new Date());
+
+    // This free plan only for some occasionally
+
+    if (plan.length === 0) {
+      console.log("user do not have any plan. plan will be creating");
+
+      const createAt = new Date();
+      // const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      await GptServices.updateUserAdiraPlan(
+        existing.id,
+        "FREE",
+        "15 MINUTES TRIAL",
+        "",
+        createAt,
+        null,
+        "",
+        null,
+        0
+      );
+
+      console.log("plan created");
+    }
+
+    // fetch updated client
+    const updatedClient = await ClientService.updateClient(existing.id, {
+      verified,
+    });
+    console.log(updatedClient.id, existing.id);
+
+    const existingPlan = await prisma.newUserPlan.findMany({
+      where: {
+        userId: existing.id,
+      },
+      include: {
+        plan: true,
+      },
+    });
+
+    let maxSession = 0;
+
+    if (existingPlan.length == 0) {
+      maxSession = 1;
+    } else {
+      existingPlan.forEach((plan) => {
+        maxSession = Math.max(maxSession, plan?.plan?.session);
+      });
+    }
+
+    // console.log(JSON.stringify(existingPlan));
+    // console.log(existingPlan);
+
+    // Clean up old/inactive sessions
+    await sessionCleanup(existing);
+
+    // If active sessions have reached the limit, logout all users
+    if (existing.sessions.length >= maxSession) {
+      existing.sessions = []; // Clear all sessions
+      await existing.save();
+      // return res
+      //   .status(403)
+      //   .send("All users have been logged out. Please log in again.");
+    }
+
+    // Create new JWT and session ID
+    const sessionId = new mongoose.Types.ObjectId().toString();
+
+    // create jwt
+    const { jwt, expiresAt } = createToken({
+      id: updatedClient.id,
+      phoneNumber,
+      sessionId,
+    });
+
+    // Add the new session to activeSessions array
+    existing.sessions.push({ sessionId });
+    await existing.save();
+
+    // console.log(jwt, expiresAt);
+    // check if new gpt user
+    const existingGptUser = await fetchGptUser(existing.id);
+    if (!existingGptUser)
+      await GptServices.createGptUser(phoneNumber, existing.id);
+
+    const sessions = await GptServices.incrementNumberOfSessions(
+      updatedClient.id,
+      1
+    );
+
+    const gtpUserGuy = await prisma.user.findFirst({
+      where: {
+        mongoId: updatedClient.id,
+      },
+    });
+
+    if (gtpUserGuy.isambassadorBenifined === false) {
+      const createAt = new Date();
+      const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+      await GptServices.updateIsAmbassadorBenifined(updatedClient.id, true);
+      await GptServices.updateUserPlan(
+        updatedClient.id,
+        "FREE_M",
+        "ambassador",
+        "",
+        createAt,
+        null,
+        "",
+        expiresAt,
+        0
+      );
+
+      const username = existing?.firstName;
+      const email = existing?.email;
+
+      await sendConfirmationEmailForAmbasForFreePlan(email, username);
+    }
+
+    const adiraPlan = await prisma.userAdiraPlan.findFirst({
+      where: {
+        userId: updatedClient.id,
+      },
+      include: {
+        plan: true,
+      },
+    });
+
+    const successResponse = {
+      newClient: false,
+      verified: verified,
+      registered: updatedClient.registered,
+      ambassador: updatedClient.ambassador ? true : false,
+      jwt,
+      expiresAt,
+      newGptUser: existingGptUser ? false : true,
+      sessions: sessions.numberOfSessions,
+      mongoId: sessions.mongoId,
+      stateLocation: sessions.StateLocation,
+      adiraPlan,
+      // gptPlan,
+      totalUsed: updatedClient.totalUsed,
+    };
+
+    if (process.env.NODE_ENV === "production") {
+      console.log("this is a production");
+      res.redirect(
+        `https://clawlaw-dev.netlify.app/?userDetails=${successResponse}`
+      );
+    } else {
+      console.log("this is a development");
+
+      res.redirect(`http://localhost:3001/?userDetails=${successResponse}`);
+    }
+  } catch (e) {
+    console.error(e);
+    res.status(400).json({ error: e.message });
   }
 }
 
@@ -415,4 +655,6 @@ module.exports = {
   register,
   createLeader,
   setLocation,
+  googleAuthCallback,
+  googleAuthCallbackTemp,
 };

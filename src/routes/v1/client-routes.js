@@ -7,6 +7,7 @@ const {
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
+const passport = require("passport");
 
 const upload = multer({
   fileFilter: function (req, file, callback) {
@@ -55,6 +56,26 @@ router.post(
   "/verify",
   validateRequestMiddleware.validateClientVerifyRequest,
   ClientController.verify
+);
+
+// google auth
+
+// Authentication routes
+// router.get(
+//   "/google",
+//   passport.authenticate("google", {
+//     scope: ["profile", "email"],
+//     session: false,
+//   })
+// );
+
+router.post(
+  "/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: "https://smart-shop-kro.netlify.app/",
+    session: false,
+  }),
+  ClientController.googleAuthCallbackTemp
 );
 
 router.post(

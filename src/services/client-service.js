@@ -8,12 +8,13 @@ const {
 } = require("../utils/common/auth");
 const CourtRoomBooking = require("../models/courtRoomBooking");
 const { default: mongoose } = require("mongoose");
+const { Client } = require("../models");
 
 const clientRepository = new ClientRepository();
 
 async function createClient(data) {
   try {
-    const client = await clientRepository.create(data);
+    const client = await Client.create(data);
 
     // Create new JWT and session ID
     const sessionId = new mongoose.Types.ObjectId().toString();
@@ -23,6 +24,10 @@ async function createClient(data) {
       phoneNumber: client.phoneNumber,
       sessionId,
     });
+
+    // Add the new session to activeSessions array
+    client.sessions.push({ sessionId });
+    await client.save();
     return {
       client,
       jwt,
