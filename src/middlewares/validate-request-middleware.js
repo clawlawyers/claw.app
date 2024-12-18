@@ -115,7 +115,8 @@ async function verifyClientMiddleware(req, res, next) {
         phoneNumber: data.phone,
         verified: data.verified,
       };
-      req.body = data;
+      req.body.phoneNumber = data.phoneNumber;
+      req.body.verified = data.verified;
       console.log(data);
 
       next();

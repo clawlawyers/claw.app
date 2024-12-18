@@ -8,7 +8,7 @@ const {
 } = require("../utils/common/auth");
 const CourtRoomBooking = require("../models/courtRoomBooking");
 const { default: mongoose } = require("mongoose");
-const { Client } = require("../models");
+const Client = require("../models/client");
 
 const clientRepository = new ClientRepository();
 

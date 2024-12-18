@@ -72,6 +72,7 @@ async function getClientById(req, res) {
 async function verify(req, res) {
   try {
     const { phoneNumber, verified } = req.body;
+    console.log(req.body);
     const existing = await ClientService.getClientByPhoneNumber(phoneNumber);
 
     console.log(existing);
@@ -80,6 +81,7 @@ async function verify(req, res) {
     if (!existing) {
       const { firstName, lastName, email, profession, industry, purpose } =
         req.body;
+      console.log(firstName, lastName, email, profession, industry, purpose);
       // create new client
       const { client, jwt, expiresAt } = await ClientService.createClient({
         phoneNumber,
