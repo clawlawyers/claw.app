@@ -12,7 +12,8 @@ const {
 } = require("../utils/common/sendEmail");
 const sessionCleanup = require("../utils/common/sessionHelper");
 const { default: mongoose } = require("mongoose");
-
+const { OAuth2Client } = require("google-auth-library");
+const { Client } = require("../models");
 require("../services/passport");
 
 /**
@@ -365,13 +366,33 @@ async function googleAuthCallbackTemp(req, res) {
 
 async function googleAuthCallback(req, res) {
   try {
-    const existing = req.user;
-    console.log(existing);
+    // const existing = req.user;
+    // console.log(existing);
+    const { token } = req.body; // The token sent from the frontend
+
+    if (!token) {
+      return res.status(400).json({ message: "Token is missing" });
+    }
+    const client = new OAuth2Client(process.env.CLIENTID);
+
+    // Verify the Google ID token using OAuth2Client
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.CLIENTID, // Your Google OAuth 2.0 Client ID
+    });
+
+    const payload = ticket.getPayload(); // Get user info from the token
+    const email = payload.email;
+    const googleId = payload.sub; // This is the unique ID from Google
+    console.log(payload);
+
+    // Check if the user exists in your database
+    let existing = await Client.findOne({ email });
 
     // If a user is authenticated and found, proceed
-    if (existing) {
+    if (!existing) {
       // You can redirect them to a dashboard or any page
-      return res.redirect("/dashboard");
+      return res.status(200).json({ message: "User not found" });
     }
 
     const plan = await GptServices.getUserPlan(existing.id); // it can be open
@@ -403,7 +424,7 @@ async function googleAuthCallback(req, res) {
 
     // fetch updated client
     const updatedClient = await ClientService.updateClient(existing.id, {
-      verified,
+      verified: true,
     });
     console.log(updatedClient.id, existing.id);
 
@@ -447,7 +468,7 @@ async function googleAuthCallback(req, res) {
     // create jwt
     const { jwt, expiresAt } = createToken({
       id: updatedClient.id,
-      phoneNumber,
+      phoneNumber: existing.phoneNumber,
       sessionId,
     });
 
@@ -505,7 +526,7 @@ async function googleAuthCallback(req, res) {
 
     const successResponse = {
       newClient: false,
-      verified: verified,
+      verified: true,
       registered: updatedClient.registered,
       ambassador: updatedClient.ambassador ? true : false,
       jwt,
@@ -519,16 +540,18 @@ async function googleAuthCallback(req, res) {
       totalUsed: updatedClient.totalUsed,
     };
 
-    if (process.env.NODE_ENV === "production") {
-      console.log("this is a production");
-      res.redirect(
-        `https://clawlaw-dev.netlify.app/?userDetails=${successResponse}`
-      );
-    } else {
-      console.log("this is a development");
+    // if (process.env.NODE_ENV === "production") {
+    //   console.log("this is a production");
+    //   res.redirect(
+    //     `https://clawlaw-dev.netlify.app/?userDetails=${successResponse}`
+    //   );
+    // } else {
+    //   console.log("this is a development");
 
-      res.redirect(`http://localhost:3001/?userDetails=${successResponse}`);
-    }
+    //   res.redirect(`http://localhost:3001/?userDetails=${successResponse}`);
+    // }
+
+    return res.status(StatusCodes.OK).json(successResponse);
   } catch (e) {
     console.error(e);
     res.status(400).json({ error: e.message });

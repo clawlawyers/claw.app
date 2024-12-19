@@ -69,14 +69,16 @@ router.post(
 //   })
 // );
 
-router.post(
-  "/google/callback",
-  passport.authenticate("google", {
-    failureRedirect: "https://smart-shop-kro.netlify.app/",
-    session: false,
-  }),
-  ClientController.googleAuthCallbackTemp
-);
+router.post("/google/callback", ClientController.googleAuthCallback);
+
+// router.post(
+//   "/google/callback",
+//   passport.authenticate("google", {
+//     failureRedirect: "https://smart-shop-kro.netlify.app/",
+//     session: false,
+//   }),
+//   ClientController.googleAuthCallbackTemp
+// );
 
 router.post(
   "/verifyCleint",
