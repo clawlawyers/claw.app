@@ -166,53 +166,53 @@ async function verify(req, res) {
     });
     console.log(updatedClient.id, existing.id);
 
-    const existingPlan = await prisma.newUserPlan.findMany({
-      where: {
-        userId: existing.id,
-      },
-      include: {
-        plan: true,
-      },
-    });
+    // const existingPlan = await prisma.newUserPlan.findMany({
+    //   where: {
+    //     userId: existing.id,
+    //   },
+    //   include: {
+    //     plan: true,
+    //   },
+    // });
 
-    let maxSession = 0;
+    // let maxSession = 0;
 
-    if (existingPlan.length == 0) {
-      maxSession = 1;
-    } else {
-      existingPlan.forEach((plan) => {
-        maxSession = Math.max(maxSession, plan?.plan?.session);
-      });
-    }
+    // if (existingPlan.length == 0) {
+    //   maxSession = 1;
+    // } else {
+    //   existingPlan.forEach((plan) => {
+    //     maxSession = Math.max(maxSession, plan?.plan?.session);
+    //   });
+    // }
 
-    // console.log(JSON.stringify(existingPlan));
-    // console.log(existingPlan);
+    // // console.log(JSON.stringify(existingPlan));
+    // // console.log(existingPlan);
 
-    // Clean up old/inactive sessions
-    await sessionCleanup(existing);
-    console.log("proceeding to");
+    // // Clean up old/inactive sessions
+    // await sessionCleanup(existing);
+    // console.log("proceeding to");
 
-    // If active sessions have reached the limit, logout all users
-    if (existing.sessions.length >= maxSession) {
-      existing.sessions = []; // Clear all sessions
-      await existing.save();
-      // return res
-      //   .status(403)
-      //   .send("All users have been logged out. Please log in again.");
-    }
+    // // If active sessions have reached the limit, logout all users
+    // if (existing.sessions.length >= maxSession) {
+    //   existing.sessions = []; // Clear all sessions
+    //   await existing.save();
+    //   // return res
+    //   //   .status(403)
+    //   //   .send("All users have been logged out. Please log in again.");
+    // }
 
-    // Create new JWT and session ID
-    const sessionId = new mongoose.Types.ObjectId().toString();
+    // // Create new JWT and session ID
+    // const sessionId = new mongoose.Types.ObjectId().toString();
 
     // create jwt
     const { jwt, expiresAt } = createToken({
       id: updatedClient.id,
       phoneNumber,
-      sessionId,
+      // sessionId,
     });
 
     // Add the new session to activeSessions array
-    existing.sessions.push({ sessionId });
+    // existing.sessions.push({ sessionId });
     await existing.save();
 
     // console.log(jwt, expiresAt);
@@ -410,52 +410,52 @@ async function googleAuthCallback(req, res) {
     });
     console.log(updatedClient.id, existing.id);
 
-    const existingPlan = await prisma.newUserPlan.findMany({
-      where: {
-        userId: existing.id,
-      },
-      include: {
-        plan: true,
-      },
-    });
+    // const existingPlan = await prisma.newUserPlan.findMany({
+    //   where: {
+    //     userId: existing.id,
+    //   },
+    //   include: {
+    //     plan: true,
+    //   },
+    // });
 
-    let maxSession = 0;
+    // let maxSession = 0;
 
-    if (existingPlan.length == 0) {
-      maxSession = 1;
-    } else {
-      existingPlan.forEach((plan) => {
-        maxSession = Math.max(maxSession, plan?.plan?.session);
-      });
-    }
+    // if (existingPlan.length == 0) {
+    //   maxSession = 1;
+    // } else {
+    //   existingPlan.forEach((plan) => {
+    //     maxSession = Math.max(maxSession, plan?.plan?.session);
+    //   });
+    // }
 
-    // console.log(JSON.stringify(existingPlan));
-    // console.log(existingPlan);
+    // // console.log(JSON.stringify(existingPlan));
+    // // console.log(existingPlan);
 
-    // Clean up old/inactive sessions
-    await sessionCleanup(existing);
+    // // Clean up old/inactive sessions
+    // await sessionCleanup(existing);
 
-    // If active sessions have reached the limit, logout all users
-    if (existing.sessions.length >= maxSession) {
-      existing.sessions = []; // Clear all sessions
-      await existing.save();
-      // return res
-      //   .status(403)
-      //   .send("All users have been logged out. Please log in again.");
-    }
+    // // If active sessions have reached the limit, logout all users
+    // if (existing.sessions.length >= maxSession) {
+    //   existing.sessions = []; // Clear all sessions
+    //   await existing.save();
+    //   // return res
+    //   //   .status(403)
+    //   //   .send("All users have been logged out. Please log in again.");
+    // }
 
-    // Create new JWT and session ID
-    const sessionId = new mongoose.Types.ObjectId().toString();
+    // // Create new JWT and session ID
+    // const sessionId = new mongoose.Types.ObjectId().toString();
 
     // create jwt
     const { jwt, expiresAt } = createToken({
       id: updatedClient.id,
       phoneNumber: existing.phoneNumber,
-      sessionId,
+      // sessionId,
     });
 
-    // Add the new session to activeSessions array
-    existing.sessions.push({ sessionId });
+    // // Add the new session to activeSessions array
+    // existing.sessions.push({ sessionId });
     await existing.save();
 
     // console.log(jwt, expiresAt);

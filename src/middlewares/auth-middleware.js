@@ -47,20 +47,20 @@ async function checkClientAuth(req, res, next) {
 
     console.log(response);
     console.log("asdsadasdasdasdasdasdasdasdasdasdasdas");
-    let session;
-    // Find the session and update its activity timestamp
-    if (response.phoneNumber == "8603805697") {
-      session = client.sessions[0];
-    } else {
-      session = client.sessions.find(
-        (session) => session.sessionId === response.sessionId
-      );
-      if (!session) {
-        return res.status(401).send("Invalid session");
-      }
+    // let session;
+    // // Find the session and update its activity timestamp
+    // if (response.phoneNumber == "8603805697") {
+    //   session = client.sessions[0];
+    // } else {
+    //   session = client.sessions.find(
+    //     (session) => session.sessionId === response.sessionId
+    //   );
+    //   if (!session) {
+    //     return res.status(401).send("Invalid session");
+    //   }
 
-      session.lastActive = Date.now(); // Update last active time
-    }
+    //   session.lastActive = Date.now(); // Update last active time
+    // }
     await client.save();
 
     console.log(client);
