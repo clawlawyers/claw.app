@@ -648,6 +648,24 @@ async function getAllClients(req, res) {
   }
 }
 
+async function validateUser(req, res) {
+  try {
+    const data = req.body;
+    const isValid = await ClientService.validateUserService(data);
+
+    if (!isValid) {
+      return res.status(200).json({ error: "Invalid user credentials" });
+    }
+    return res.status(200).json({ message: "User is valid" });
+  } catch (error) {
+    console.error("Error while validating user:", error);
+    res.status(500).json({
+      error: "An error occurred while validating the user",
+      details: error.message,
+    });
+  }
+}
+
 async function updateClient(req, res) {
   try {
     const { client, ...data } = req.body;
@@ -682,4 +700,5 @@ module.exports = {
   setLocation,
   googleAuthCallback,
   googleAuthCallbackTemp,
+  validateUser,
 };

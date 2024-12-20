@@ -204,6 +204,19 @@ async function getAllClients() {
   }
 }
 
+async function validateUserService(data) {
+  try {
+    const user = await Client.findOne(data);
+    return user;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Failed to fetch User",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 module.exports = {
   createClient,
   signin,
@@ -218,4 +231,5 @@ module.exports = {
   getClientByPhoneNumbers,
   getClientByPhoneNumberWithSession,
   updateClientByPhoneNumberWithSession,
+  validateUserService,
 };

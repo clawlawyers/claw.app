@@ -94,4 +94,6 @@ router.patch(
   ClientController.updateClient
 );
 
+router.post("/validate-user", ClientController.validateUser);
+
 module.exports = router;
