@@ -8,7 +8,7 @@ const sessionSchema = new mongoose.Schema({
 
 const clientSchema = new mongoose.Schema(
   {
-    email: { type: String, trim: true, required: true, unique: true },
+    email: { type: String, trim: true, unique: true },
     firstName: { type: String, trim: true },
     lastName: { type: String, trim: true },
     state: { type: String, trim: true },

@@ -190,6 +190,7 @@ async function verify(req, res) {
 
     // Clean up old/inactive sessions
     await sessionCleanup(existing);
+    console.log("proceeding to");
 
     // If active sessions have reached the limit, logout all users
     if (existing.sessions.length >= maxSession) {
@@ -217,8 +218,8 @@ async function verify(req, res) {
     // console.log(jwt, expiresAt);
     // check if new gpt user
     const existingGptUser = await fetchGptUser(existing.id);
-    if (!existingGptUser)
-      await GptServices.createGptUser(phoneNumber, existing.id);
+    // if (!existingGptUser)
+    //   await GptServices.createGptUser(phoneNumber, existing.id);
 
     const sessions = await GptServices.incrementNumberOfSessions(
       updatedClient.id,
@@ -253,17 +254,6 @@ async function verify(req, res) {
       await sendConfirmationEmailForAmbasForFreePlan(email, username);
     }
 
-    // console.log(sessions);
-
-    // console.log(sessions.StateLocation);
-
-    // console.log(
-    //   "this is updated client => ",
-    //   updatedClient,
-    //   " and this is its id => ",
-    //   updatedClient.id
-    // );
-
     const adiraPlan = await prisma.userAdiraPlan.findFirst({
       where: {
         userId: updatedClient.id,
@@ -272,15 +262,6 @@ async function verify(req, res) {
         plan: true,
       },
     });
-
-    // const gptPlan = await prisma.newUserPlan.findFirst({
-    //   where: {
-    //     userId: updatedClient.id,
-    //   },
-    //   include: {
-    //     plan: true,
-    //   },
-    // });
 
     const successResponse = SuccessResponse({
       newClient: false,
@@ -301,6 +282,7 @@ async function verify(req, res) {
     // console.log(successResponse);
     return res.status(StatusCodes.OK).json(successResponse);
   } catch (error) {
+    console.log(error);
     const errorResponse = ErrorResponse({}, error.message);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
