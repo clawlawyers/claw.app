@@ -11,7 +11,10 @@ async function fetchScrapeApi(id) {
     },
   });
 
-  return response.json();
+  const parsedData = await response.json();
+  const resp = JSON.parse(parsedData);
+
+  return resp;
 }
 
 async function getCase(req, res) {

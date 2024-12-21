@@ -2123,7 +2123,10 @@ async function Fetchingtranslate(context, language) {
     }
 
     const translations = await fetchedTranslations.json();
-    return translations;
+
+    const res = JSON.parse(translations);
+
+    return res;
   } catch (error) {
     console.error(error);
     throw new AppError(

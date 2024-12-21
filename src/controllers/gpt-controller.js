@@ -29,7 +29,9 @@ async function fetchGptApi(body) {
 
   const res = response.json();
 
-  return res;
+  const resp = JSON.parse(res);
+
+  return resp;
 }
 
 async function generateGptResponse(req, res) {
@@ -306,7 +308,11 @@ async function fetchSupremeCourtRoomJudgement(body) {
 
   console.log(response);
 
-  return response.json();
+  const res = await response.json();
+
+  const resp = JSON.parse(res);
+
+  return resp;
 }
 
 async function relevantAct(req, res) {
@@ -339,7 +345,11 @@ async function fetchRelevantAct(body) {
 
   console.log(response);
 
-  return response.json();
+  const res = await response.json();
+
+  const resp = JSON.parse(res);
+
+  return resp;
 }
 
 async function fetchGptRelatedCases(context, courtName) {
@@ -362,7 +372,9 @@ async function fetchGptRelatedCases(context, courtName) {
 
     const parsed = await response.json();
 
-    return parsed;
+    const resp = JSON.parse(parsed);
+
+    return resp;
   } catch (error) {
     console.log(error);
     throw new Error("Failed to make api request to gpt.claw");
@@ -402,7 +414,9 @@ async function Fetchquestions(context) {
 
     const parsed = await response.json();
 
-    return parsed;
+    const resp = JSON.parse(parsed);
+
+    return resp;
   } catch (error) {
     console.log(error);
     throw new Error("Failed to make api request to gpt.claw");
@@ -659,7 +673,9 @@ async function fetchGptCases(folderId, caseId) {
 
     const parsed = await response.json();
 
-    return parsed;
+    const resp = JSON.parse(parsed);
+
+    return resp;
   } catch (error) {
     console.log(error);
     throw new AppError(
@@ -752,7 +768,10 @@ async function fetchGptCaseQuery(body) {
     });
 
     const parsed = await response.json();
-    return parsed;
+
+    const resp = JSON.parse(parsed);
+
+    return resp;
   } catch (error) {
     console.log(error);
     throw new AppError(
@@ -815,7 +834,9 @@ async function fetchCaseSummery(folderId, caseId, query) {
       }
     );
     const parsed = await response.json();
-    return parsed;
+
+    const resp = await JSON.parse(parsed);
+    return resp;
   } catch (error) {
     console.log(error);
     throw new AppError(
@@ -857,7 +878,9 @@ async function fetchlegalgptCaseSummery(folderId, caseId) {
     );
     const parsed = await response.json();
 
-    return parsed;
+    const res = JSON.parse(parsed);
+
+    return res;
   } catch (error) {
     console.log(error);
     throw new AppError(
@@ -1049,7 +1072,11 @@ async function fetchUpload(formData) {
       );
     }
 
-    return await response.json();
+    const parsed = await response.json();
+
+    const res = JSON.parse(parsed);
+
+    return res;
   } catch (error) {
     console.error(error);
     throw error;
