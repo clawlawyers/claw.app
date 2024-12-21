@@ -16,17 +16,11 @@ async function createClient(data) {
   try {
     const client = await Client.create(data);
 
-    // // Create new JWT and session ID
-    // const sessionId = new mongoose.Types.ObjectId().toString();
+    const { jwt, expiresAt } = createToken({
+      id: client.id,
+      phoneNumber: client.phoneNumber,
+    });
 
-    // const { jwt, expiresAt } = createToken({
-    //   id: client.id,
-    //   phoneNumber: client.phoneNumber,
-    //   sessionId,
-    // });
-
-    // // Add the new session to activeSessions array
-    // client.sessions.push({ sessionId });
     await client.save();
     return {
       client,
