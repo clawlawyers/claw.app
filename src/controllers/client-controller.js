@@ -636,7 +636,7 @@ async function validateUser(req, res) {
     const isValid = await ClientService.validateUserService(data);
 
     if (!isValid) {
-      return res.status(200).json({ error: "Invalid user credentials" });
+      return res.status(200).json({ message: "Invalid user credentials" });
     }
     return res.status(200).json({ message: "User is valid" });
   } catch (error) {
