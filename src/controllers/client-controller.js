@@ -507,6 +507,7 @@ async function googleAuthCallback(req, res) {
     });
 
     const successResponse = {
+      phoneNumber: existing.phoneNumber,
       newClient: false,
       verified: true,
       registered: updatedClient.registered,
