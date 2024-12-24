@@ -17,4 +17,5 @@ module.exports = {
   AiDrafter: require("./aiDrafter-controller"),
   TimeBased: require("./timeBased-controller"),
   ClientAdiraController: require("./clientAdira-controller"),
+  CasePredictionController: require("./casePrediction-controller"),
 };
