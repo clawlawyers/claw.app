@@ -33,8 +33,11 @@ class ClientRepository extends CrudRepository {
   }
 
   async getClientByPhoneNumberWithSession(phoneNumber, session) {
-    phoneNumber = phoneNumber.substring(3);
+    if (phoneNumber.startsWith("+")) {
+      phoneNumber = phoneNumber.substring(3);
+    }
     // console.log(phoneNumber);
+
     try {
       const client = Client.findOne({ phoneNumber }).session(session);
       return client;

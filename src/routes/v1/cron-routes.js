@@ -29,6 +29,8 @@ const flushInMemoryDataToDatabase = async () => {
     for (const phoneNumber in inMemoryEngagementData) {
       const userEngagement = inMemoryEngagementData[phoneNumber];
 
+      // console.log(phoneNumber);
+
       // Find the user by phone number
       const user = await ClientService.getClientByPhoneNumberWithSession(
         phoneNumber,
