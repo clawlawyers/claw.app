@@ -18,11 +18,12 @@ async function createUserId(req, res) {
 
 async function caseDetails(req, res) {
   try {
-    const { user_id, case_type, jurisdiction } = req.body;
+    const { user_id, case_type, jurisdiction, case_overview } = req.body;
     const caseDetails = await CasePredictionService.getCaseDetails({
       user_id,
       case_type,
       jurisdiction,
+      case_overview,
     });
     return res.status(StatusCodes.OK).json(SuccessResponse(caseDetails));
   } catch (error) {

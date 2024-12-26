@@ -19,6 +19,70 @@ const ClientAdiraUser = require("../models/cleintAdiraUser");
 const { sendConfirmationEmailForAmbas } = require("../utils/common/sendEmail");
 const { hashPassword } = require("../utils/coutroom/auth");
 
+async function sessionHistory(req, res) {
+  try {
+    const sessionId = req.params.sessionId;
+    const userId = req.params.userId;
+
+    const sessionMessages = await prisma.session.findUnique({
+      where: {
+        id: sessionId,
+      },
+      include: {
+        messages: {
+          orderBy: {
+            createdAt: "asc",
+          },
+          select: {
+            id: true,
+            text: true,
+            isUser: true,
+            createdAt: true,
+            contextId: true,
+            contextMessage: true,
+            isDocument: true,
+          },
+        },
+      },
+    });
+
+    return res
+      .status(StatusCodes.OK)
+      .json(SuccessResponse({ sessionMessages }));
+  } catch (error) {
+    console.error(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
+async function totalSessions(req, res) {
+  try {
+    const userId = req.params.userId;
+    const SessionList = await prisma.session.findMany({
+      where: {
+        userId: userId,
+        modelName: "legalGPT",
+      },
+      orderBy: {
+        updatedAt: "desc",
+      },
+      select: {
+        name: true,
+        updatedAt: true,
+        id: true,
+      },
+    });
+    return res.status(StatusCodes.OK).json(SuccessResponse({ SessionList }));
+  } catch (error) {
+    console.error(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
 async function getFeedback(req, res) {
   try {
     const allFeedback = await prisma.feedback.findMany({
@@ -2018,4 +2082,6 @@ module.exports = {
   bookClientAdira,
   userPlanDist,
   getFeedback,
+  totalSessions,
+  sessionHistory,
 };

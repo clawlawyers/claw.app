@@ -8,7 +8,7 @@ const {
   getModels,
   getSessions,
   getMessages,
-  getFeedbacks,
+  // getFeedbacks,
   getTopUsers,
   createCoupon,
   validateCoupon,
@@ -60,6 +60,8 @@ const {
   userPlanDist,
   getFeedback,
   addNewEnterpriseUser,
+  totalSessions,
+  sessionHistory,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -221,6 +223,9 @@ router.get("/user-plan-distibution", userPlanDist);
 
 router.get("/feedback", getFeedback);
 
-// user tracking
+// For session history
+
+router.get("/sessions/:userId", totalSessions);
+router.get("/sessionsHistory/:userId/:sessionId", sessionHistory);
 
 module.exports = router;
