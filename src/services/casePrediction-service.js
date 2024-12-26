@@ -5,7 +5,7 @@ async function getUserId() {
     const fetch = (await import("node-fetch")).default;
 
     const response = await fetch(`${CASEPREDICTION_ENDPOINT}/user_id`, {
-      method: "POST",
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
