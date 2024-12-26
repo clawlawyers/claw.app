@@ -35,10 +35,9 @@ async function caseDetails(req, res) {
 
 async function evidenceDetails(req, res) {
   try {
-    const { user_id, evidence_type, evidence } = req.body;
+    const { user_id, evidence } = req.body;
     const evidenceDetails = await CasePredictionService.getEvidenceDetails({
       user_id,
-      evidence_type,
       evidence,
     });
     return res.status(StatusCodes.OK).json(SuccessResponse(evidenceDetails));
@@ -87,10 +86,9 @@ async function evidenceDocument(req, res) {
 
 async function witnessDetails(req, res) {
   try {
-    const { user_id, witness_count, witness_statement } = req.body;
+    const { user_id, witness_statement } = req.body;
     const witnessDetails = await CasePredictionService.getWitnessDetails({
       user_id,
-      witness_count,
       witness_statement,
     });
     return res.status(StatusCodes.OK).json(SuccessResponse(witnessDetails));
