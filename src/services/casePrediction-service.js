@@ -4,7 +4,7 @@ const CASEPREDICTION_ENDPOINT = process.env.CASEPREDICTION_ENDPOINT;
 // import fetch from "node-fetch"; // Ensure you're using node-fetch
 const { Blob } = require("buffer");
 const FormData = require("form-data");
-const fetch = require("node-fetch");
+// const fetch = require("node-fetch");
 const { Readable } = require("stream"); // Import Readable from stream
 
 async function getUserId() {
