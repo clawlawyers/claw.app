@@ -21,6 +21,7 @@ const AiDrafter = require("./aiDrafter-routes");
 const TimeBased = require("./timeBased-routes");
 const ClientAdira = require("./clientAdira-routes");
 const CasePrediction = require("./casePrediction-routes");
+const ChatBot = require("./chatBot-routes");
 const router = express.Router();
 
 router.use("/user", UserRoutes);
@@ -45,5 +46,6 @@ router.use("/ai-drafter", AiDrafter);
 router.use("/time-based", TimeBased);
 router.use("/clientAdira", ClientAdira);
 router.use("/casePrediction", CasePrediction);
+router.use("/chatBot", ChatBot);
 
 module.exports = router;

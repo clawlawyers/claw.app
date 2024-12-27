@@ -16,4 +16,5 @@ module.exports = {
   ClientAdiraService: require("./clientAdira-service"),
   AdiraOrderService: require("./adiraOrder-service"),
   CasePredictionService: require("./casePrediction-service"),
+  ChatBotService: require("./chatBot-service"),
 };

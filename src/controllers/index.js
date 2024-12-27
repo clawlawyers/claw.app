@@ -18,4 +18,5 @@ module.exports = {
   TimeBased: require("./timeBased-controller"),
   ClientAdiraController: require("./clientAdira-controller"),
   CasePredictionController: require("./casePrediction-controller"),
+  ChatBotController: require("./chatBot-controller"),
 };
