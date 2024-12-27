@@ -21,6 +21,7 @@ router.post(
 
 router.post(
   "/api/evidence_document",
+  upload.single("file"),
   CasePredictionController.evidenceDocument
 );
 

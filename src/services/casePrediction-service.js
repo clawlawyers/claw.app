@@ -1,4 +1,11 @@
 const CASEPREDICTION_ENDPOINT = process.env.CASEPREDICTION_ENDPOINT;
+// import { Blob } from "buffer"; // Import Blob from 'buffer' package in Node.js
+// import FormData from "form-data"; // Import form-data library
+// import fetch from "node-fetch"; // Ensure you're using node-fetch
+const { Blob } = require("buffer");
+const FormData = require("form-data");
+const fetch = require("node-fetch");
+const { Readable } = require("stream"); // Import Readable from stream
 
 async function getUserId() {
   try {
@@ -24,6 +31,7 @@ async function getUserId() {
 
 async function getCaseDetails(body) {
   try {
+    // console.log(body);
     const fetch = (await import("node-fetch")).default;
     const response = await fetch(
       `${CASEPREDICTION_ENDPOINT}/api/case_details`,
@@ -74,39 +82,47 @@ async function getEvidenceDetails(body) {
 
 async function getDocumentDetails({ file }) {
   try {
-    // Dynamically import node-fetch
-    const fetch = (await import("node-fetch")).default;
-
     console.log(file);
 
+    // Convert Buffer to a Readable stream
+    const fileStream = Readable.from(file.buffer);
+
+    // Create FormData and append the file stream
     const formData = new FormData();
-    formData.append("file", file.buffer, {
+    formData.append("file", fileStream, {
       filename: file.originalname,
       contentType: file.mimetype,
     });
 
+    // Get headers for the FormData request
+    const headers = formData.getHeaders();
+
+    const fetch = (await import("node-fetch")).default;
+
+    // Make the request to the server
     const response = await fetch(
       `${CASEPREDICTION_ENDPOINT}/api/case_document`,
       {
         method: "POST",
         body: formData,
-        headers: formData.getHeaders(), // Ensure correct headers are set
+        headers: headers, // Use the headers provided by formData
       }
     );
 
+    // Check if the response is successful
     if (!response.ok) {
-      const errorText = await response.text(); // Get the error message from the response
+      const errorText = await response.text();
       throw new Error(
         `HTTP error! status: ${response.status}, message: ${errorText}`
       );
     }
 
+    // Parse and return the JSON response
     const responseData = await response.json();
     console.log(responseData);
-    console.log("responseData");
     return responseData;
   } catch (error) {
-    console.log(error);
+    console.error("Error while fetching document details:", error);
     throw new Error("Error while fetching document details");
   }
 }
@@ -119,7 +135,11 @@ async function getEvidenceDocumentDetails({ file, type }) {
     console.log(file);
 
     const formData = new FormData();
-    formData.append("file", file.buffer, {
+
+    // Convert Buffer to a Readable stream
+    const fileStream = Readable.from(file.buffer);
+
+    formData.append("file", fileStream, {
       filename: file.originalname,
       contentType: file.mimetype,
     });

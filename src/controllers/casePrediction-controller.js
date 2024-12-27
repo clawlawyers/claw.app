@@ -19,6 +19,7 @@ async function createUserId(req, res) {
 async function caseDetails(req, res) {
   try {
     const { user_id, case_type, jurisdiction, case_overview } = req.body;
+    // console.log(req.body);
     const caseDetails = await CasePredictionService.getCaseDetails({
       user_id,
       case_type,
@@ -69,6 +70,8 @@ async function evidenceDocument(req, res) {
   try {
     const file = req.file;
     const type = req.body.type;
+
+    console.log(file, type);
     const evidenceDocumentDetails =
       await CasePredictionService.getEvidenceDocumentDetails({
         file,

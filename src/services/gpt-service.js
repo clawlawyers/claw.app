@@ -1643,7 +1643,7 @@ async function updateUserAdiraPlan(
           isActive: true,
           createdAt,
           expiresAt,
-          Paidprice: amount,
+          Paidprice: parseInt(amount),
         },
       });
       return {
@@ -1721,7 +1721,7 @@ async function updateUserAdiraPlan(
             expiresAt,
             referralCodeId: refferalCode,
             isCouponCode: couponCode,
-            Paidprice: amount,
+            Paidprice: parseInt(amount),
           },
           include: {
             plan: true,
@@ -1750,7 +1750,7 @@ async function updateUserAdiraPlan(
             createdAt,
             expiresAt,
             isActive: true,
-            Paidprice: amount,
+            Paidprice: parseInt(amount),
           },
           include: {
             plan: true,
@@ -1769,7 +1769,7 @@ async function updateUserAdiraPlan(
             expiresAt,
             referralCodeId: refferalCode,
             isCouponCode: couponCode,
-            Paidprice: amount,
+            Paidprice: parseInt(amount),
           },
           include: {
             plan: true,
@@ -1798,7 +1798,7 @@ async function updateUserAdiraPlan(
             createdAt,
             expiresAt,
             isActive: true,
-            Paidprice: amount,
+            Paidprice: parseInt(amount),
           },
           include: {
             plan: true,
