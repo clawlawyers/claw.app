@@ -1302,7 +1302,7 @@ async function insertIntoUserPurchase(
         expiresAt,
         createdAt,
         referralCodeId: refferalCode,
-        Paidprice: amount,
+        Paidprice: parseInt(amount),
         isCouponCode: couponCode,
       },
     });
