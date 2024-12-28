@@ -70,7 +70,7 @@ async function endSession(body) {
   try {
     const fetch = (await import("node-fetch")).default;
     const response = await fetch(`${CHATBOT_ENDPOINT}/clear`, {
-      method: "GET",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
