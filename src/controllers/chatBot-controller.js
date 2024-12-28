@@ -17,11 +17,11 @@ async function getUserId(req, res) {
 async function sendMessage(req, res) {
   try {
     const { userId, message } = req.body;
-    const message = await ChatBotService.chatUser({
+    const messageRes = await ChatBotService.chatUser({
       session_id: userId,
       message,
     });
-    return res.status(StatusCodes.OK).json(SuccessResponse(message));
+    return res.status(StatusCodes.OK).json(SuccessResponse(messageRes));
   } catch (error) {
     const errorResponse = ErrorResponse({}, error.message);
     return res
