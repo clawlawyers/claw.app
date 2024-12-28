@@ -17,8 +17,11 @@ async function getUserId(req, res) {
 async function sendMessage(req, res) {
   try {
     const { userId, message } = req.body;
-    await ChatBotService.chatUser({ session_id: userId, message });
-    return res.status(StatusCodes.OK).json(SuccessResponse());
+    const message = await ChatBotService.chatUser({
+      session_id: userId,
+      message,
+    });
+    return res.status(StatusCodes.OK).json(SuccessResponse(message));
   } catch (error) {
     const errorResponse = ErrorResponse({}, error.message);
     return res
@@ -30,11 +33,12 @@ async function sendMessage(req, res) {
 async function getContactUse(req, res) {
   try {
     const { userId, email, phone } = req.body;
-    await ChatBotService.contactUs({
+    const resp = await ChatBotService.contactUs({
       session_id: userId,
       email,
       phone,
     });
+    return res.status(StatusCodes.OK).json(SuccessResponse(resp));
   } catch (error) {
     const errorResponse = ErrorResponse({}, error.message);
     return res
@@ -46,8 +50,8 @@ async function getContactUse(req, res) {
 async function getEndSession(req, res) {
   try {
     const { userId } = req.body;
-    await ChatBotService.endSession({ session_id: userId });
-    return res.status(StatusCodes.OK).json(SuccessResponse());
+    const ends = await ChatBotService.endSession({ session_id: userId });
+    return res.status(StatusCodes.OK).json(SuccessResponse(ends));
   } catch (error) {
     const errorResponse = ErrorResponse({}, error.message);
     return res
