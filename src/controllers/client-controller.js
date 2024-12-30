@@ -120,6 +120,7 @@ async function verify(req, res) {
         stateLocation: "",
         adiraPlan,
         totalUsed: 0,
+        email: email,
       };
 
       if (verified) {
@@ -277,6 +278,7 @@ async function verify(req, res) {
       adiraPlan,
       // gptPlan,
       totalUsed: updatedClient.totalUsed,
+      email: existing.email,
     });
 
     // console.log(successResponse);

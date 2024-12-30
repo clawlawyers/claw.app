@@ -612,6 +612,7 @@ async function fetchGptUser(mongoId) {
       phoneNumber: user.phoneNumber,
       plan: plans,
       totalUsed: client.totalUsed,
+      email: client.email,
     };
   } catch (error) {
     console.log(error);
