@@ -523,6 +523,7 @@ async function googleAuthCallback(req, res) {
       adiraPlan,
       // gptPlan,
       totalUsed: updatedClient.totalUsed,
+      email: email,
     };
 
     // if (process.env.NODE_ENV === "production") {
