@@ -130,7 +130,7 @@ async function getFeedback(req, res) {
 
 async function userPlanDist(req, res) {
   try {
-    const totalActiveUserPlan = await prisma.newUserPlan.findMany({
+    const totalActiveUserPlan = await prisma.userAdiraPlan.findMany({
       where: {
         isActive: true,
       },
@@ -993,16 +993,21 @@ async function getUsers(req, res) {
 
 async function getSubscribedUsers(req, res) {
   try {
-    const nonFreeOrStudentUsers = await prisma.user.findMany({
+    const nonFreeOrStudentUsers = await prisma.userAdiraPlan.findMany({
       where: {
         planName: {
-          notIn: ["free", "student"],
+          notIn: ["FREE", "ADMIN"],
         },
+      },
+      include: {
+        user: true,
       },
     });
 
+    console.log(nonFreeOrStudentUsers);
+
     const filteredUsers = nonFreeOrStudentUsers.filter((user) => {
-      const phoneNumber = user.phoneNumber;
+      const phoneNumber = user.user.phoneNumber;
       const startsWithValidDigit = /^[9876]/.test(phoneNumber);
       const allDigitsSame = /^(\d)\1*$/.test(phoneNumber);
       return startsWithValidDigit && !allDigitsSame;
@@ -1010,6 +1015,7 @@ async function getSubscribedUsers(req, res) {
 
     res.json(filteredUsers);
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: error.message });
   }
 }
@@ -1900,7 +1906,7 @@ async function createReferralCodes(req, res) {
     const createAt = new Date();
     const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    const exitingPlan = await prisma.newUserPlan.findMany({
+    const exitingPlan = await prisma.userAdiraPlan.findMany({
       where: {
         userId: _id,
       },
