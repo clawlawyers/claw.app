@@ -24,13 +24,18 @@ class CrudRepository {
   }
 
   async updateClientByPhoneNumberWithSession(phoneNumber, update, session) {
-    phoneNumber = phoneNumber.substring(3);
+    if (phoneNumber.startsWith("+")) {
+      phoneNumber = phoneNumber.substring(3);
+    }
     try {
       const response = await this.model.findOneAndUpdate(
         { phoneNumber },
         update,
         { session, new: true }
       );
+      console.log("data updated")
+      console.log(update)
+      console.log(phoneNumber)
       return response;
     } catch (error) {
       throw error;
