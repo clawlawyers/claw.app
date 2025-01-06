@@ -202,7 +202,7 @@ async function dbGenerate(req, res) {
 async function askQuery(req, res) {
   try {
     const { user_id, query } = req.body;
-    const queryResponse = await CasePredictionService.getQueryResponse({
+    const queryResponse = await CasePredictionService.getAskQuery({
       user_id,
       query,
     });
