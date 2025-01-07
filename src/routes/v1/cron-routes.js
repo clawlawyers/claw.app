@@ -539,6 +539,6 @@ router.post("/engagement/time", (req, res) => {
   res.status(200).json({ message: "Engagement data received" });
 });
 
-setInterval(flushInMemoryDataToDatabase, 6000); // Flush to database every minute
+setInterval(flushInMemoryDataToDatabase, 60000); // Flush to database every minute
 
 module.exports = router;
