@@ -46,6 +46,7 @@ const clientSchema = new mongoose.Schema(
           type: Number,
           default: 0,
         },
+        lastPage:{type :String , default:""}
       },
       Warroom: {
         daily: { type: Map, of: Number, default: {} },
@@ -55,6 +56,7 @@ const clientSchema = new mongoose.Schema(
           type: Number,
           default: 0,
         },
+        lastPage:{type :String , default:""}
       }
     },
     

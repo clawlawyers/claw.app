@@ -206,12 +206,14 @@ const  flushInMemoryDataToDatabase = async () => {
               monthly: {},
               yearly: {},
               total: 0,
+              lastPage:""
             },
             Warroom:{
               daily: {},
               monthly: {},
               yearly: {},
               total: 0,
+              lastPage:""
             }
           };
         }
@@ -220,6 +222,19 @@ const  flushInMemoryDataToDatabase = async () => {
           0
         );
         user.spcificEngagementTime.Adira.total += totalEngagementTime;
+        console.log(userEngagement.lastPage)
+        console.log("lastpage")
+        await ClientService.updateClientByPhoneNumberWithSession(
+          phoneNumber,
+          { $set:{
+
+          
+              [`spcificEngagementTime.Adira.lastPage`]: userEngagement.lastPage ,
+            
+          }
+          },
+          session
+        );
 
         for (const [day, time] of Object.entries(userEngagement.daily)) {
           const dailyIncrement = time / 60; // Convert seconds to minutes
@@ -460,11 +475,12 @@ router.post("/specificEengagement/time", (req, res) => {
   const engagementData = req.body.engagementData;
   const platform = req.body.platform;
 
-  engagementData.forEach(({ phoneNumber, engagementTime, timestamp }) => {
+  engagementData.forEach(({ phoneNumber,LastPage, engagementTime, timestamp }) => {
     const date = new Date(timestamp); // Convert seconds to milliseconds
     const day = date.toISOString().slice(0, 10);
     const month = date.toISOString().slice(0, 7);
     const year = date.getFullYear();
+    console.log(LastPage)
     if (platform == "Adira") {
       if (!AdirainMemoryEngagementData[phoneNumber]) {
         AdirainMemoryEngagementData[phoneNumber] = {
@@ -472,8 +488,10 @@ router.post("/specificEengagement/time", (req, res) => {
           monthly: {},
           yearly: {},
           total: 0,
+          lastPage:LastPage
         };
       }
+      AdirainMemoryEngagementData[phoneNumber].lastPage=LastPagey
       AdirainMemoryEngagementData[phoneNumber].daily[day] =
         (AdirainMemoryEngagementData[phoneNumber].daily[day] || 0) +
         engagementTime;
@@ -484,6 +502,7 @@ router.post("/specificEengagement/time", (req, res) => {
         (AdirainMemoryEngagementData[phoneNumber].yearly[year] || 0) +
         engagementTime;
       AdirainMemoryEngagementData[phoneNumber].total += engagementTime; // Add to total engagement time
+      // AdirainMemoryEngagementData[phoneNumber].lastPage += engagementTime; // Add to total engagement time
     } else if (platform == "warroom") {
       if (!WarroominMemoryEngagementData[phoneNumber]) {
         WarroominMemoryEngagementData[phoneNumber] = {
@@ -491,6 +510,7 @@ router.post("/specificEengagement/time", (req, res) => {
           monthly: {},
           yearly: {},
           total: 0,
+          lastPage:""
         };
       }
       WarroominMemoryEngagementData[phoneNumber].daily[day] =
@@ -539,6 +559,6 @@ router.post("/engagement/time", (req, res) => {
   res.status(200).json({ message: "Engagement data received" });
 });
 
-setInterval(flushInMemoryDataToDatabase, 60000); // Flush to database every minute
+setInterval(flushInMemoryDataToDatabase, 6000); // Flush to database every minute
 
 module.exports = router;
