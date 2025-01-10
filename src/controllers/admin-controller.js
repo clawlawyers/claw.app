@@ -1004,6 +1004,8 @@ async function getUsers(req, res) {
             engagementTime: engagementTime,
             adiraEngagement: adiraEngagement,
             warroomEngagement: warroomEngagement,
+            adiraLastPage:user.spcificEngagementTime.Adira.lastPage,
+            warrromLastPage:user.spcificEngagementTime.Warroom.lastPage,
             firstName: user.firstName,
             lastName: user.lastName,
             collegeName: user.collegeName,

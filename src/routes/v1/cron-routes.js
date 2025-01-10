@@ -54,6 +54,7 @@ const  flushInMemoryDataToDatabase = async () => {
             monthly: {},
             yearly: {},
             total: 0,
+            lastPage:""
           };
         }
        
@@ -66,6 +67,17 @@ const  flushInMemoryDataToDatabase = async () => {
           0
         );
         user.engagementTime.total += totalEngagementTime;
+        await ClientService.updateClientByPhoneNumberWithSession(
+          phoneNumber,
+          { $set:{
+
+          
+              [`engagementTime.lastPage`]: userEngagement.lastPage ,
+            
+          }
+          },
+          session
+        );
 
         // Increment daily engagement time
         for (const [day, time] of Object.entries(userEngagement.daily)) {
@@ -531,7 +543,7 @@ router.post("/specificEengagement/time", (req, res) => {
 router.post("/engagement/time", (req, res) => {
   const engagementData = req.body;
 
-  engagementData.forEach(({ phoneNumber, engagementTime, timestamp }) => {
+  engagementData.forEach(({ phoneNumber,LastPage, engagementTime, timestamp }) => {
     const date = new Date(timestamp); // Convert seconds to milliseconds
     const day = date.toISOString().slice(0, 10);
     const month = date.toISOString().slice(0, 7);
@@ -543,9 +555,10 @@ router.post("/engagement/time", (req, res) => {
         monthly: {},
         yearly: {},
         total: 0,
+        lastPage:LastPage
       };
     }
-
+    inMemoryEngagementData[phoneNumber].lastPage=LastPage
     inMemoryEngagementData[phoneNumber].daily[day] =
       (inMemoryEngagementData[phoneNumber].daily[day] || 0) + engagementTime;
     inMemoryEngagementData[phoneNumber].monthly[month] =
