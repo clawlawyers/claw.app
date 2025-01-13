@@ -382,7 +382,6 @@ async function compainVerifyPayment(req, res) {
     razorpay_order_id,
     razorpay_payment_id,
     razorpay_signature,
-    existingSubscription,
     phoneNumber,
   } = req.body;
 
@@ -404,7 +403,6 @@ async function compainVerifyPayment(req, res) {
         phoneNumber,
         true,
         planName,
-        existingSubscription,
         razorpay_payment_id
       );
 
@@ -447,7 +445,6 @@ async function loginUserWithPlanBuy(
   phoneNumber,
   verified,
   planName,
-  existingSubscriptionId,
   razorpay_subscription_id
 ) {
   try {
@@ -471,8 +468,7 @@ async function loginUserWithPlanBuy(
         phoneNumber,
         client.id,
         planName,
-        razorpay_subscription_id,
-        existingSubscriptionId
+        razorpay_subscription_id
       );
 
       const adiraPlan = await prisma.userAdiraPlan.findFirst({
@@ -523,7 +519,24 @@ async function loginUserWithPlanBuy(
         existing.id,
         planName,
         razorpay_subscription_id,
-        existingSubscriptionId,
+        "",
+        createAt,
+        null,
+        "",
+        expiresAt,
+        99
+      );
+
+      console.log("plan created");
+    } else {
+      const createAt = new Date();
+      const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      await GptServices.updateUserAdiraPlan(
+        existing.id,
+        planName,
+        razorpay_subscription_id,
+        "compane",
         createAt,
         null,
         "",
