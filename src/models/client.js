@@ -35,7 +35,31 @@ const clientSchema = new mongoose.Schema(
         type: Number,
         default: 0,
       },
+      lastPage: { type: String, default: "" },
     },
+    spcificEngagementTime: {
+      Adira: {
+        daily: { type: Map, of: Number, default: {} },
+        monthly: { type: Map, of: Number, default: {} },
+        yearly: { type: Map, of: Number, default: {} },
+        total: {
+          type: Number,
+          default: 0,
+        },
+        lastPage: { type: String, default: "" },
+      },
+      Warroom: {
+        daily: { type: Map, of: Number, default: {} },
+        monthly: { type: Map, of: Number, default: {} },
+        yearly: { type: Map, of: Number, default: {} },
+        total: {
+          type: Number,
+          default: 0,
+        },
+        lastPage: { type: String, default: "" },
+      },
+    },
+
     sessions: [sessionSchema], // Store multiple session information with timestamps
     totalUsed: {
       type: Number,

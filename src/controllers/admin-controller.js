@@ -962,6 +962,34 @@ async function getUsers(req, res) {
                 total: user.engagementTime.total.toFixed(2),
               }
             : null;
+          const adiraEngagement = user?.spcificEngagementTime.Adira
+            ? {
+                daily: Array.from(user.spcificEngagementTime.Adira.daily.values())
+                  .reduce((a, b) => a + b, 0)
+                  .toFixed(2),
+                monthly: Array.from(user.spcificEngagementTime.Adira.monthly.values())
+                  .reduce((a, b) => a + b, 0)
+                  .toFixed(2),
+                yearly: Array.from(user.spcificEngagementTime.Adira.yearly.values())
+                  .reduce((a, b) => a + b, 0)
+                  .toFixed(2),
+                total: user.spcificEngagementTime.Adira.total.toFixed(2),
+              }
+            : null;
+          const warroomEngagement = user?.spcificEngagementTime.Warroom
+            ? {
+                daily: Array.from(user.spcificEngagementTime.Warroom.daily.values())
+                  .reduce((a, b) => a + b, 0)
+                  .toFixed(2),
+                monthly: Array.from(user.spcificEngagementTime.Warroom.monthly.values())
+                  .reduce((a, b) => a + b, 0)
+                  .toFixed(2),
+                yearly: Array.from(user.spcificEngagementTime.Warroom.yearly.values())
+                  .reduce((a, b) => a + b, 0)
+                  .toFixed(2),
+                total: user.spcificEngagementTime.Warroom.total.toFixed(2),
+              }
+            : null;
 
           return {
             mongoId: Muser.mongoId,
@@ -974,6 +1002,11 @@ async function getUsers(req, res) {
             planNames, // Use the fetched plan names here
             ambassador: user.ambassador,
             engagementTime: engagementTime,
+            adiraEngagement: adiraEngagement,
+            warroomEngagement: warroomEngagement,
+            adiraLastPage: user.spcificEngagementTime.Adira.lastPage,
+            warrromLastPage: user.spcificEngagementTime.Warroom.lastPage,
+            mainWebsite: user.engagementTime.lastPage,
             firstName: user.firstName,
             lastName: user.lastName,
             collegeName: user.collegeName,
