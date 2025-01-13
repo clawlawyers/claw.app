@@ -92,7 +92,13 @@ async function fetchContextForRegenerate(sessionId) {
   }
 }
 
-async function createGptUser(phoneNumber, mongoId) {
+async function createGptUser(
+  phoneNumber,
+  mongoId,
+  planName,
+  razorpay_subscription_id,
+  existingSubscriptionId
+) {
   try {
     const newUser = await prisma.user.create({
       data: {
@@ -115,14 +121,14 @@ async function createGptUser(phoneNumber, mongoId) {
 
       await updateUserAdiraPlan(
         mongoId,
-        "FREE",
-        "15 MINUTES TRIAL",
-        "",
+        planName,
+        razorpay_subscription_id,
+        existingSubscriptionId,
         createAt,
         null,
         "",
-        null,
-        0
+        expiresAt,
+        99
       );
 
       console.log("plan created");

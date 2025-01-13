@@ -13,6 +13,7 @@ const { GptServices } = require("../services");
 const { AL_DRAFTER_API } = process.env;
 const axios = require("axios");
 const TalkToExpert = require("../models/talkToExpert");
+const AppError = require("../utils/errors/app-error");
 
 const razorpay = new Razorpay({
   key_id: RAZORPAY_ID,
@@ -337,6 +338,252 @@ async function talkToExpertVerifyOrder(req, res) {
   } catch (error) {
     console.log(error);
     res.status(500).json(error);
+  }
+}
+
+async function compainCreatePayment(req, res) {
+  const { amount, currency, receipt } = req.body;
+  // const { _id, phoneNumber } = req.body.client;
+  console.log(req.body);
+
+  // const fetchUser = await ClientService.getClientByPhoneNumber(phoneNumber);
+
+  // console.log(fetchUser._id.toHexString());
+
+  // const order = await AdiraOrderService.createOrder({
+  //   price: amount,
+  //   planName,
+  //   billingCycle,
+  //   user: fetchUser._id,
+  //   paymentStatus: paymentStatus.INITIATED,
+  // });
+
+  try {
+    const options = {
+      amount: amount * 100,
+      currency,
+      receipt,
+    };
+
+    const orderr = await razorpay.orders.create(options);
+    const combinedResponse = {
+      razorpayOrder: orderr,
+      // createdOrder: order,
+    };
+    console.log(combinedResponse);
+    res.status(200).json(combinedResponse);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+}
+
+async function compainVerifyPayment(req, res) {
+  const {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    existingSubscription,
+    phoneNumber,
+  } = req.body;
+
+  const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
+  hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
+  const generated_signature = hmac.digest("hex");
+  let rs;
+
+  if (generated_signature === razorpay_signature) {
+    try {
+      // const placedOrder = await AdiraOrderService.updateOrder(_id, {
+      //   paymentStatus: paymentStatus.SUCCESS,
+      // });
+
+      // update the plan for user
+      // console.log(placedOrder.user.toString(), placedOrder.planName);
+
+      res = await loginUserWithPlanBuy(
+        phoneNumber,
+        true,
+        planName,
+        existingSubscription,
+        razorpay_payment_id
+      );
+
+      // rs = await GptServices.updateUserAdiraPlan(
+      //   placedOrder.user.toString(),
+      //   placedOrder.planName,
+      //   razorpay_order_id,
+      //   existingSubscription,
+      //   createdAt,
+      //   refferalCode,
+      //   couponCode,
+      //   expiresAt,
+      //   amount
+      // );
+      // // insert it into user purchase
+
+      // await GptServices.insertIntoUserPurchase(
+      //   placedOrder.user.toString(),
+      //   placedOrder.planName,
+      //   razorpay_order_id,
+      //   existingSubscription,
+      //   createdAt,
+      //   refferalCode,
+      //   couponCode,
+      //   expiresAt,
+      //   amount
+      // );
+
+      console.log(rs);
+    } catch (error) {
+      console.log(error);
+    }
+    res.status(200).json({ status: "Payment verified successfully", plan: rs });
+  } else {
+    res.status(400).json({ status: "Payment verification failed" });
+  }
+}
+
+async function loginUserWithPlanBuy(
+  phoneNumber,
+  verified,
+  planName,
+  existingSubscriptionId,
+  razorpay_subscription_id
+) {
+  try {
+    // const { phoneNumber, verified } = req.body;
+    console.log(req.body);
+    const existing = await ClientService.getClientByPhoneNumber(phoneNumber);
+
+    console.log(existing);
+
+    // new client
+    if (!existing) {
+      const { client, jwt, expiresAt } = await ClientService.createClient({
+        phoneNumber,
+        verified,
+      });
+
+      console.log(client.id);
+
+      // create new corresponding gpt user
+      await GptServices.createGptUser(
+        phoneNumber,
+        client.id,
+        planName,
+        razorpay_subscription_id,
+        existingSubscriptionId
+      );
+
+      const adiraPlan = await prisma.userAdiraPlan.findFirst({
+        where: {
+          userId: client.id,
+        },
+        include: {
+          plan: true,
+        },
+      });
+
+      const data = {
+        verified: client.verified,
+        ambassador: client.ambassador ? true : false,
+        registered: false,
+        newGptUser: true,
+        newClient: true,
+        sessions: 1,
+        mongoId: client.id,
+        stateLocation: "",
+        adiraPlan,
+        totalUsed: 0,
+        email: "",
+      };
+
+      if (verified) {
+        data.jwt = jwt;
+        data.expiresAt = expiresAt;
+      }
+
+      const successResponse = SuccessResponse(data);
+      return successResponse;
+    }
+
+    const plan = await GptServices.getUserPlan(existing.id); // it can be open
+    console.log(plan.length);
+    console.log(new Date());
+
+    // This free plan only for some occasionally
+
+    if (plan.length === 0) {
+      console.log("user do not have any plan. plan will be creating");
+
+      const createAt = new Date();
+      const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      await GptServices.updateUserAdiraPlan(
+        existing.id,
+        planName,
+        razorpay_subscription_id,
+        existingSubscriptionId,
+        createAt,
+        null,
+        "",
+        expiresAt,
+        99
+      );
+
+      console.log("plan created");
+    }
+
+    // fetch updated client
+    const updatedClient = await ClientService.updateClient(existing.id, {
+      verified,
+    });
+    console.log(updatedClient.id, existing.id);
+
+    // create jwt
+    const { jwt, expiresAt } = createToken({
+      id: updatedClient.id,
+      phoneNumber,
+    });
+
+    await existing.save();
+
+    // check if new gpt user
+    const existingGptUser = await fetchGptUser(existing.id);
+
+    const sessions = await GptServices.incrementNumberOfSessions(
+      updatedClient.id,
+      1
+    );
+
+    const adiraPlan = await prisma.userAdiraPlan.findFirst({
+      where: {
+        userId: updatedClient.id,
+      },
+      include: {
+        plan: true,
+      },
+    });
+
+    const successResponse = SuccessResponse({
+      newClient: false,
+      verified: verified,
+      registered: updatedClient.registered,
+      ambassador: updatedClient.ambassador ? true : false,
+      jwt,
+      expiresAt,
+      newGptUser: existingGptUser ? false : true,
+      sessions: sessions.numberOfSessions,
+      mongoId: sessions.mongoId,
+      stateLocation: sessions.StateLocation,
+      adiraPlan,
+      totalUsed: updatedClient.totalUsed,
+      email: existing.email,
+    });
+
+    return successResponse;
+  } catch (error) {
+    throw new AppError(error.message, StatusCodes.INTERNAL_SERVER_ERROR);
   }
 }
 
@@ -1076,4 +1323,6 @@ module.exports = {
   talkToExpertCreateOrder,
   testVerifySubscription,
   testCreateSubscription,
+  compainVerifyPayment,
+  compainCreatePayment,
 };
