@@ -21,6 +21,15 @@ router.post("/create-subscription", RazorpayController.createSubscription);
 router.post("/verify-subscription", RazorpayController.verifySubscription);
 
 router.post(
+  "/test-create-subscription",
+  RazorpayController.testCreateSubscription
+);
+router.post(
+  "/test-verify-subscription",
+  RazorpayController.testVerifySubscription
+);
+
+router.post(
   "/createPaymentLink",
   checkClientAuth,
   RazorpayController.createPaymentLink

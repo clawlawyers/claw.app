@@ -645,6 +645,217 @@ async function verifySubscription(req, res) {
   }
 }
 
+// Create subscription
+async function testCreateSubscription(req, res) {
+  const { plan, billingCycle, session, phoneNumber } = req.body;
+
+  try {
+    const fetchUser = await ClientService.getClientByPhoneNumber(phoneNumber);
+
+    const createdOrder = await OrderService.createOrder({
+      plan,
+      session,
+      billingCycle,
+      user: fetchUser._id,
+      paymentStatus: paymentStatus.INITIATED,
+    });
+
+    // let Backendplan;
+
+    // if (isDiscount) {
+    //   Backendplan = LiveOfferplanNamesquence.find((p) => p.name === plan);
+    // } else {
+    //   Backendplan = LiveplanNamesquence.find((p) => p.name === plan);
+    // }
+
+    // let updatedTimeInSeconds;
+
+    // if (trialDays) {
+    //   let currentTimeInSeconds = Math.floor(Date.now() / 1000); // Current time in seconds
+    //   let date = new Date(currentTimeInSeconds * 1000); // Convert to milliseconds and create a Date object
+
+    //   // Modify only the date part (e.g., add 7 days)
+    //   date.setDate(date.getDate() + trialDays);
+
+    //   // Get the updated timestamp (time remains unchanged)
+    //   updatedTimeInSeconds = Math.floor(date.getTime() / 1000);
+    // } else {
+    //   let currentTimeInSeconds = Math.floor(Date.now() / 1000); // Current time in seconds
+
+    //   // Add 5 minutes (300 seconds) to the current time
+    //   updatedTimeInSeconds = currentTimeInSeconds + 120;
+    // }
+
+    let currentTimeInSeconds = Math.floor(Date.now() / 1000);
+
+    updatedTimeInSeconds = currentTimeInSeconds + 120;
+
+    const subscriptionOptions = {
+      // plan_PiqDuUsceqF696  // this is test
+      // plan_PipOXSzuWx6Wk0  // this live
+      plan_id: "plan_PipOXSzuWx6Wk0", // Razorpay Plan ID from dashboard
+      customer_notify: 1,
+      // total_count: billingCycle === "MONTHLY" ? 12 : 1, // Monthly or yearly billing
+      start_at: updatedTimeInSeconds,
+      end_at: Math.floor(Date.now() / 1000) + 10 * 365 * 24 * 60 * 60, // Set an end date 10 years from now
+      // offer_id:k "offer_OwvYlKUwvJg4yc",
+      notes: {
+        user_id: fetchUser._id,
+      },
+    };
+
+    console.log(subscriptionOptions);
+
+    // Create a subscription on Razorpay
+    const razorpaySubscription = await razorpay.subscriptions.create(
+      subscriptionOptions
+    );
+
+    console.log("Razorpay subscription:", razorpaySubscription);
+
+    console.log(razorpaySubscription);
+
+    const combinedResponse = {
+      razorpaySubscription,
+      createdOrder,
+      // orderId, // Send back the first order ID
+    };
+
+    res.status(200).json(combinedResponse);
+  } catch (error) {
+    console.error("Error creating subscription:", error);
+    res.status(500).json({ error: "Subscription creation failed" });
+  }
+}
+
+// Verify subscription payment
+
+async function testVerifySubscription(req, res) {
+  let {
+    // existingSubscription,
+    razorpay_subscription_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    _id,
+    // createdAt,
+    // refferalCode,
+    // couponCode,
+  } = req.body;
+
+  console.log("Subscription ID:", razorpay_subscription_id);
+  console.log("Payment ID:", razorpay_payment_id);
+  console.log("Received Razorpay Signature:", razorpay_signature);
+
+  // Generate signature for verification
+  const generatedSignature = crypto
+    .createHmac("sha256", RAZORPAY_SECRET_KEY)
+    .update(`${razorpay_payment_id}|${razorpay_subscription_id}`)
+    .digest("hex");
+
+  console.log("Generated Signature:", generatedSignature);
+
+  if (generatedSignature === razorpay_signature) {
+    try {
+      // if (existingSubscription) {
+      //   // Step 1: Cancel the existing subscription
+      //   const canceledSubscription = await razorpay.subscriptions.cancel(
+      //     existingSubscription
+      //   );
+
+      //   console.log("Canceled Subscription:", canceledSubscription);
+      //   if (
+      //     canceledSubscription.total_count -
+      //     canceledSubscription.remaining_count
+      //   ) {
+      //     console.log(new Date(canceledSubscription.current_end * 1000)); // use
+      //     console.log(new Date(canceledSubscription.start_at * 1000)); // use
+
+      //     const endDate = new Date(canceledSubscription.current_end * 1000);
+
+      //     const currentDate = new Date();
+
+      //     const planId = canceledSubscription.plan_id;
+      //     let plan = LiveplanNamesquence.find((p) => p.id === planId);
+
+      //     if (!plan) {
+      //       plan = LiveOfferplanNamesquence.find((p) => p.id === planId);
+      //     }
+
+      //     const onedayPrice =
+      //       plan.price / (plan.name.split("_")[1] === "M" ? 30 : 365);
+
+      //     const totalDaysBetweenEndAndCurrent = Math.floor(
+      //       (endDate.getTime() - currentDate.getTime()) / (24 * 60 * 60 * 1000)
+      //     );
+
+      //     const refundMoney = totalDaysBetweenEndAndCurrent * onedayPrice;
+
+      //     const invoices = await razorpay.invoices.all({
+      //       subscription_id: existingSubscription, // Filter by subscription ID
+      //     });
+
+      //     console.log("Invoices related to subscription:", invoices);
+
+      //     const paymentId = invoices.items[0].payment_id;
+
+      //     // Step 3: Refund the custom amount (if applicable)
+      //     if (refundMoney > 0) {
+      //       const refund = await razorpay.payments.refund(paymentId, {
+      //         amount: refundMoney, // Refund amount in paise
+      //       });
+
+      //       console.log("Refund processed:", refund);
+      //     }
+      //   }
+      // }
+
+      // Step 4: Update order status to SUCCESS
+      const placedOrder = await OrderService.updateOrder(_id, {
+        paymentStatus: paymentStatus.SUCCESS,
+      });
+
+      const subscription = await razorpay.subscriptions.fetch(
+        razorpay_subscription_id
+      );
+
+      console.log("Razorpay subscription:", subscription);
+
+      let expiresAt =
+        subscription.current_end === null
+          ? subscription.charge_at
+          : subscription.current_end;
+
+      expiresAt = new Date(expiresAt * 1000);
+
+      // // Step 5: Update the user plan after subscription success
+      // await GptServices.updateUserPlan(
+      //   placedOrder.user.toString(),
+      //   placedOrder.plan,
+      //   razorpay_subscription_id,
+      //   existingSubscription,
+      //   createdAt,
+      //   refferalCode,
+      //   couponCode,
+      //   expiresAt
+      // );
+
+      res.status(200).json({
+        status:
+          "Payment verified, subscription updated, and refund processed successfully",
+        resp: subscription,
+      });
+    } catch (error) {
+      console.error("Error in processing subscription or refund:", error);
+      res
+        .status(500)
+        .json({ error: "Internal server error during subscription or refund" });
+    }
+  } else {
+    console.error("Signature verification failed");
+    res.status(400).json({ status: "Payment verification failed" });
+  }
+}
+
 async function createPaymentLink(req, res) {
   const {
     amount,
@@ -863,4 +1074,6 @@ module.exports = {
   createPaymentLink,
   talkToExpertVerifyOrder,
   talkToExpertCreateOrder,
+  testVerifySubscription,
+  testCreateSubscription,
 };
