@@ -949,7 +949,6 @@ async function testCreateSubscription(req, res) {
     let currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
     updatedTimeInSeconds = currentTimeInSeconds + 48; // 24 for one minute
-    plan_Pk4Ynnur1sNlOr;
 
     const subscriptionOptions = {
       // plan_Pk4Ynnur1sNlOr  // this live
