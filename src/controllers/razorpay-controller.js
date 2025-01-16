@@ -948,17 +948,17 @@ async function testCreateSubscription(req, res) {
 
     let currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
-    updatedTimeInSeconds = currentTimeInSeconds + 120;
+    updatedTimeInSeconds = currentTimeInSeconds + 48; // 24 for one minute
+    plan_Pk4Ynnur1sNlOr;
 
     const subscriptionOptions = {
-      // plan_PiqDuUsceqF696  // this is test
-      // plan_PipOXSzuWx6Wk0  // this live
-      plan_id: "plan_PipOXSzuWx6Wk0", // Razorpay Plan ID from dashboard
+      // plan_Pk4Ynnur1sNlOr  // this live
+      plan_id: "plan_Pk4Ynnur1sNlOr", // Razorpay Plan ID from dashboard
       customer_notify: 1,
       // total_count: billingCycle === "MONTHLY" ? 12 : 1, // Monthly or yearly billing
       start_at: updatedTimeInSeconds,
       end_at: Math.floor(Date.now() / 1000) + 10 * 365 * 24 * 60 * 60, // Set an end date 10 years from now
-      // offer_id:k "offer_OwvYlKUwvJg4yc",
+      offer_id: "offer_Pk4Q93P3LqFDfU",
       notes: {
         user_id: fetchUser._id,
       },
