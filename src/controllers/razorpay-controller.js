@@ -907,7 +907,8 @@ async function verifySubscription(req, res) {
 
 // Create subscription
 async function testCreateSubscription(req, res) {
-  const { plan, billingCycle, session, phoneNumber } = req.body;
+  const { plan, billingCycle, session, phoneNumber, paymentOptionCard } =
+    req.body;
 
   try {
     const fetchUser = await ClientService.getClientByPhoneNumber(phoneNumber);
@@ -920,44 +921,21 @@ async function testCreateSubscription(req, res) {
       paymentStatus: paymentStatus.INITIATED,
     });
 
-    // let Backendplan;
-
-    // if (isDiscount) {
-    //   Backendplan = LiveOfferplanNamesquence.find((p) => p.name === plan);
-    // } else {
-    //   Backendplan = LiveplanNamesquence.find((p) => p.name === plan);
-    // }
-
-    // let updatedTimeInSeconds;
-
-    // if (trialDays) {
-    //   let currentTimeInSeconds = Math.floor(Date.now() / 1000); // Current time in seconds
-    //   let date = new Date(currentTimeInSeconds * 1000); // Convert to milliseconds and create a Date object
-
-    //   // Modify only the date part (e.g., add 7 days)
-    //   date.setDate(date.getDate() + trialDays);
-
-    //   // Get the updated timestamp (time remains unchanged)
-    //   updatedTimeInSeconds = Math.floor(date.getTime() / 1000);
-    // } else {
-    //   let currentTimeInSeconds = Math.floor(Date.now() / 1000); // Current time in seconds
-
-    //   // Add 5 minutes (300 seconds) to the current time
-    //   updatedTimeInSeconds = currentTimeInSeconds + 120;
-    // }
-
     let currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
     updatedTimeInSeconds = currentTimeInSeconds + 120; // 24 for one minute
 
     const subscriptionOptions = {
       // plan_Pk4Ynnur1sNlOr  // this live
-      plan_id: "plan_Pk8F6ggJqlhS75", // Razorpay Plan ID from dashboard
+      plan_id: "plan_Pk4Ynnur1sNlOr", // Razorpay Plan ID from dashboard
       customer_notify: 1,
-      // total_count: billingCycle === "MONTHLY" ? 12 : 1, // Monthly or yearly billing
-      start_at: updatedTimeInSeconds,
-      end_at: Math.floor(Date.now() / 1000) + 10 * 365 * 24 * 60 * 60, // Set an end date 10 years from now
-      offer_id: "offer_Pk8DkTItGAvore",
+      quantity: 1,
+      total_count: 12, // billingCycle === "MONTHLY" ? 12 : 1, // Monthly or yearly billing
+      // start_at: updatedTimeInSeconds,
+      // end_at: Math.floor(Date.now() / 1000) + 180 * 24 * 60 * 60, // Set an end date 10 years from now
+      offer_id: paymentOptionCard
+        ? "offer_PkYTHNjBicHVPl"
+        : "offer_Pk4Q93P3LqFDfU",
       notes: {
         user_id: fetchUser._id,
       },
@@ -1015,59 +993,6 @@ async function testVerifySubscription(req, res) {
 
   if (generatedSignature === razorpay_signature) {
     try {
-      // if (existingSubscription) {
-      //   // Step 1: Cancel the existing subscription
-      //   const canceledSubscription = await razorpay.subscriptions.cancel(
-      //     existingSubscription
-      //   );
-
-      //   console.log("Canceled Subscription:", canceledSubscription);
-      //   if (
-      //     canceledSubscription.total_count -
-      //     canceledSubscription.remaining_count
-      //   ) {
-      //     console.log(new Date(canceledSubscription.current_end * 1000)); // use
-      //     console.log(new Date(canceledSubscription.start_at * 1000)); // use
-
-      //     const endDate = new Date(canceledSubscription.current_end * 1000);
-
-      //     const currentDate = new Date();
-
-      //     const planId = canceledSubscription.plan_id;
-      //     let plan = LiveplanNamesquence.find((p) => p.id === planId);
-
-      //     if (!plan) {
-      //       plan = LiveOfferplanNamesquence.find((p) => p.id === planId);
-      //     }
-
-      //     const onedayPrice =
-      //       plan.price / (plan.name.split("_")[1] === "M" ? 30 : 365);
-
-      //     const totalDaysBetweenEndAndCurrent = Math.floor(
-      //       (endDate.getTime() - currentDate.getTime()) / (24 * 60 * 60 * 1000)
-      //     );
-
-      //     const refundMoney = totalDaysBetweenEndAndCurrent * onedayPrice;
-
-      //     const invoices = await razorpay.invoices.all({
-      //       subscription_id: existingSubscription, // Filter by subscription ID
-      //     });
-
-      //     console.log("Invoices related to subscription:", invoices);
-
-      //     const paymentId = invoices.items[0].payment_id;
-
-      //     // Step 3: Refund the custom amount (if applicable)
-      //     if (refundMoney > 0) {
-      //       const refund = await razorpay.payments.refund(paymentId, {
-      //         amount: refundMoney, // Refund amount in paise
-      //       });
-
-      //       console.log("Refund processed:", refund);
-      //     }
-      //   }
-      // }
-
       // Step 4: Update order status to SUCCESS
       const placedOrder = await OrderService.updateOrder(_id, {
         paymentStatus: paymentStatus.SUCCESS,
@@ -1085,18 +1010,6 @@ async function testVerifySubscription(req, res) {
           : subscription.current_end;
 
       expiresAt = new Date(expiresAt * 1000);
-
-      // // Step 5: Update the user plan after subscription success
-      // await GptServices.updateUserPlan(
-      //   placedOrder.user.toString(),
-      //   placedOrder.plan,
-      //   razorpay_subscription_id,
-      //   existingSubscription,
-      //   createdAt,
-      //   refferalCode,
-      //   couponCode,
-      //   expiresAt
-      // );
 
       res.status(200).json({
         status:
