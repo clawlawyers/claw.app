@@ -92,7 +92,53 @@ async function fetchContextForRegenerate(sessionId) {
   }
 }
 
-async function createGptUser(
+async function createGptUser(phoneNumber, mongoId) {
+  try {
+    const newUser = await prisma.user.create({
+      data: {
+        phoneNumber,
+        mongoId,
+      },
+    });
+
+    const plan = await getUserPlan(mongoId); // it can be open
+    console.log(plan.length);
+    console.log(new Date());
+
+    // This free plan only for some occasionally
+
+    if (plan.length === 0) {
+      console.log("user do not have any plan. plan will be creating");
+
+      const createAt = new Date();
+      // const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+      await updateUserAdiraPlan(
+        mongoId,
+        "FREE",
+        "15 MINUTES TRIAL",
+        "",
+        createAt,
+        null,
+        "",
+        null,
+        0
+      );
+
+      console.log("plan created");
+    }
+
+    return newUser;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while creating new user",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
+async function createGptUserForCompain(
   phoneNumber,
   mongoId,
   planName,
@@ -116,13 +162,13 @@ async function createGptUser(
       console.log("user do not have any plan. plan will be creating");
 
       const createAt = new Date();
-      // const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const expiresAt = new Date(createAt.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       await updateUserAdiraPlan(
         mongoId,
         planName,
         razorpay_subscription_id,
-        "",
+        "compane",
         createAt,
         null,
         "",
@@ -1661,53 +1707,25 @@ async function updateUserAdiraPlan(
         });
       }
 
-      if (refferalCode || couponCode) {
-        updatedUserPlan = await prisma.userAdiraPlan.create({
-          data: {
-            userId: mongoId,
-            planName: newPlan,
-            subscriptionId: razorpay_subscription_id,
-            isActive: true,
-            createdAt,
-            expiresAt,
-            referralCodeId: refferalCode,
-            isCouponCode: couponCode,
-            Paidprice: parseInt(amount),
-          },
-          include: {
-            plan: true,
-          },
-        });
+      updatedUserPlan = await prisma.userAdiraPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          subscriptionId: razorpay_subscription_id,
+          createdAt,
+          expiresAt,
+          isActive: true,
+          Paidprice: parseInt(amount),
+        },
+        include: {
+          plan: true,
+        },
+      });
 
-        if (refferalCode) {
-          await prisma.referralCode.update({
-            where: {
-              referralCode: refferalCode,
-            },
-            data: {
-              redeemedBy: {
-                connect: { mongoId: mongoId },
-              },
-              redeemed: true,
-            },
-          });
-        }
-      } else {
-        updatedUserPlan = await prisma.userAdiraPlan.create({
-          data: {
-            userId: mongoId,
-            planName: newPlan,
-            subscriptionId: razorpay_subscription_id,
-            createdAt,
-            expiresAt,
-            isActive: true,
-            Paidprice: parseInt(amount),
-          },
-          include: {
-            plan: true,
-          },
-        });
-      }
+      return {
+        user: updatedUserPlan.mongoId,
+        plan: updatedUserPlan.planName,
+      };
     }
     if (newPlan === "FREE") {
       updatedUserPlan = await prisma.userAdiraPlan.create({
@@ -1726,42 +1744,6 @@ async function updateUserAdiraPlan(
         plan: updatedUserPlan.planName,
       };
     }
-
-    // if (razorpay_subscription_id === "ambassador") {
-    //   updatedUserPlan = await prisma.newUserPlan.create({
-    //     data: {
-    //       userId: mongoId,
-    //       planName: newPlan,
-    //       subscriptionId: razorpay_subscription_id,
-    //       isActive: true,
-    //       createdAt,
-    //       expiresAt,
-    //       Paidprice: amount,
-    //     },
-    //   });
-    //   return {
-    //     user: updatedUserPlan.mongoId,
-    //     plan: updatedUserPlan.planName,
-    //   };
-    // }
-
-    // if (newPlan === "ADDON_M") {
-    //   updatedUserPlan = await prisma.newUserPlan.create({
-    //     data: {
-    //       userId: mongoId,
-    //       planName: newPlan,
-    //       subscriptionId: razorpay_subscription_id,
-    //       isActive: true,
-    //       createdAt,
-    //       expiresAt,
-    //       Paidprice: amount,
-    //     },
-    //   });
-    //   return {
-    //     user: updatedUserPlan.mongoId,
-    //     plan: updatedUserPlan.planName,
-    //   };
-    // }
 
     if (existingSubscription !== "") {
       // Find the plan that is active
@@ -2432,4 +2414,5 @@ module.exports = {
   createSocketMessage,
   updateUserAdiraPlan,
   storeUsedTimeService,
+  createGptUserForCompain,
 };

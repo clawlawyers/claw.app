@@ -213,6 +213,7 @@ model UserAdiraPlan {
   referralCode   ReferralCode? @relation(fields: [referralCodeId], references: [referralCode], onDelete: SetNull) // Relation to ReferralCode
   Paidprice   Int @default(0)
   isCouponCode   String  @default("")
+  totalDocuments Int?
 
   @@id([userId, planName])
 }
