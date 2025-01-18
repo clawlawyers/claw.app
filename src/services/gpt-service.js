@@ -1228,54 +1228,34 @@ async function updateUserSubscription(
   }
 }
 
-async function updateUserPlanPayment(mongoId, planName, paymentId, amountPaid) {
-  console.log(mongoId, planName, paymentId, amountPaid);
+async function updateUserPlanPayment(phoneNumber, paymentId) {
   try {
-    const planduration = planName.split("_")[1];
-    let duration = planduration === "M" ? 30 : 365;
-
-    const userPlan = await prisma.newUserPlan.findFirst({
+    let userPlanData;
+    // First, fetch the current user plan to get the existing `expiresAt` value
+    const userPlan = await prisma.userAdiraPlan.findUnique({
       where: {
-        userId: mongoId,
-        planName: planName,
+        user: { phoneNumber: phoneNumber },
       },
     });
+    // Check if the user plan exists
+    if (userPlan) {
+      // Add 30 days to the existing `expiresAt`
+      const newExpiresAt = new Date(
+        userPlan.expiresAt.getTime() + 30 * 24 * 60 * 60 * 1000
+      );
 
-    const payment_link = userPlan.subscriptionId;
-
-    const dateToExpire = userPlan.expiresAt;
-    let newDate = new Date(dateToExpire);
-    newDate.setDate(dateToExpire.getDate() + duration);
-
-    const userPlanUpdate = await prisma.newUserPlan.update({
-      where: {
-        userId_planName: {
-          userId: mongoId,
-          planName: planName,
-        },
-      },
-      data: {
-        subscriptionId: paymentId,
-        expiresAt: newDate,
-        Paidprice: parseInt(amountPaid),
-      },
-    });
-
-    if (userPlan.referralCodeId) {
-      await prisma.referralCode.update({
+      // Update the user's plan with the new expiration date
+      userPlanData = await prisma.userAdiraPlan.update({
         where: {
-          referralCode: userPlan.referralCodeId,
+          user: { phoneNumber: phoneNumber },
         },
         data: {
-          redeemedAndPayBy: {
-            connect: { mongoId: mongoId },
-          },
-          redeemed: true,
+          expiresAt: newExpiresAt,
         },
       });
     }
 
-    return payment_link;
+    return userPlanData;
   } catch (error) {
     console.error(error);
     throw new AppError(

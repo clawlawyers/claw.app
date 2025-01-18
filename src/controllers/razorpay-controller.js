@@ -1005,25 +1005,23 @@ async function rezorpayWebhook(req, res) {
       const paymentDetails = req.body.payload.payment_link.entity;
       const paymentId = paymentDetails.id;
       const customerMobile = paymentDetails.customer.contact;
-      const userId = paymentDetails.notes.userId;
-      const planName = paymentDetails.notes.planName;
-      const price = paymentDetails.notes.price;
+      const phoneNumber = paymentDetails.notes.phoneNumber;
+      // const planName = paymentDetails.notes.planName;
+      // const price = paymentDetails.notes.price;
       const amountPaid = paymentDetails.amount_paid;
 
       const payment_link = await GptServices.updateUserPlanPayment(
-        userId,
-        planName,
-        paymentId,
-        price
+        phoneNumber,
+        paymentId
       );
 
-      await GptServices.UpdatetoUserPurchase(
-        userId,
-        planName,
-        paymentId,
-        price,
-        payment_link
-      );
+      // await GptServices.UpdatetoUserPurchase(
+      //   userId,
+      //   planName,
+      //   paymentId,
+      //   price,
+      //   payment_link
+      // );
 
       // Update the database with payment details
       // mockDatabase[customerMobile] = {
@@ -1032,21 +1030,21 @@ async function rezorpayWebhook(req, res) {
       //     status: 'Paid',
       // };
 
-      const obj = {
-        customerMobile,
-        userId,
-        paymentId,
-        amountPaid,
-        status: "Paid",
-      };
+      // const obj = {
+      //   customerMobile,
+      //   userId,
+      //   paymentId,
+      //   amountPaid,
+      //   status: "Paid",
+      // };
 
       // Option 1: Using JSON.stringify
-      console.log(
-        `Payment successful for mobile: ${JSON.stringify(obj, null, 2)}`
-      );
+      // console.log(
+      //   `Payment successful for mobile: ${JSON.stringify(obj, null, 2)}`
+      // );
 
       // Option 2: Logging the object separately
-      console.log("Payment successful for mobile:", obj);
+      console.log("Payment successful for mobile:", payment_link);
       // Respond with success
       res.status(200).json({ success: true });
     } else {
