@@ -999,9 +999,9 @@ async function rezorpayWebhook(req, res) {
 
   if (receivedSignature === expectedSignature) {
     const event = req.body.event;
-
+    subscription.charged;
     // Handle payment success event
-    if (event === "payment_link.paid") {
+    if (event === "subscription.charged") {
       const paymentDetails = req.body.payload.payment_link.entity;
       const paymentId = paymentDetails.id;
       const customerMobile = paymentDetails.customer.contact;
