@@ -1262,7 +1262,10 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
       // Update the user's plan with the new expiration date
       userPlanData = await prisma.userAdiraPlan.update({
         where: {
-          userId: id,
+          userId_planName: {
+            userId: id,
+            planName: userPlan.planName, // Ensure `planName` is included
+          },
         },
         data: {
           expiresAt: newExpiresAt,
