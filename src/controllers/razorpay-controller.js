@@ -14,6 +14,9 @@ const { AL_DRAFTER_API } = process.env;
 const axios = require("axios");
 const TalkToExpert = require("../models/talkToExpert");
 const AppError = require("../utils/errors/app-error");
+const { createToken } = require("../utils/common/auth");
+const { fetchGptUser } = require("../services/gpt-service");
+const prisma = require("../config/prisma-client");
 
 const razorpay = new Razorpay({
   key_id: RAZORPAY_ID,
