@@ -10,6 +10,8 @@ const Client = require("../models/client");
 const { ClientService } = require(".");
 const { ClientRepository } = require("../repositories");
 
+const clientRepository = new ClientRepository();
+
 async function fetchContext(sessionId) {
   try {
     const messages = await prisma.message.findMany({
@@ -1239,7 +1241,7 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
     if (phoneNumber.startsWith("+")) {
       phoneNumber = phoneNumber.substring(3);
     }
-    const userData = await ClientRepository.getClientByPhoneNumber(phoneNumber);
+    const userData = await Client.findOne({ phoneNumber });
 
     console.log(userData);
     const userPlan = await prisma.userAdiraPlan.findUnique({
