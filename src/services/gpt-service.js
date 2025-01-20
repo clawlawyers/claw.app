@@ -1696,6 +1696,7 @@ async function updateUserAdiraPlan(
           expiresAt,
           isActive: true,
           Paidprice: parseInt(amount),
+          totalDocuments: 3,
         },
         include: {
           plan: true,

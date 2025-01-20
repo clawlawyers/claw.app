@@ -346,20 +346,6 @@ async function talkToExpertVerifyOrder(req, res) {
 
 async function compainCreatePayment(req, res) {
   const { amount, currency, receipt } = req.body;
-  // const { _id, phoneNumber } = req.body.client;
-  console.log(req.body);
-
-  // const fetchUser = await ClientService.getClientByPhoneNumber(phoneNumber);
-
-  // console.log(fetchUser._id.toHexString());
-
-  // const order = await AdiraOrderService.createOrder({
-  //   price: amount,
-  //   planName,
-  //   billingCycle,
-  //   user: fetchUser._id,
-  //   paymentStatus: paymentStatus.INITIATED,
-  // });
 
   try {
     const options = {
@@ -371,7 +357,6 @@ async function compainCreatePayment(req, res) {
     const orderr = await razorpay.orders.create(options);
     const combinedResponse = {
       razorpayOrder: orderr,
-      // createdOrder: order,
     };
     console.log(combinedResponse);
     res.status(200).json(combinedResponse);
@@ -386,6 +371,7 @@ async function compainVerifyPayment(req, res) {
     razorpay_payment_id,
     razorpay_signature,
     phoneNumber,
+    email,
   } = req.body;
 
   const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
@@ -395,46 +381,6 @@ async function compainVerifyPayment(req, res) {
 
   if (generated_signature === razorpay_signature) {
     try {
-      // const placedOrder = await AdiraOrderService.updateOrder(_id, {
-      //   paymentStatus: paymentStatus.SUCCESS,
-      // });
-
-      // update the plan for user
-      // console.log(placedOrder.user.toString(), placedOrder.planName);
-
-      res = await loginUserWithPlanBuy(
-        phoneNumber,
-        true,
-        planName,
-        razorpay_payment_id
-      );
-
-      // rs = await GptServices.updateUserAdiraPlan(
-      //   placedOrder.user.toString(),
-      //   placedOrder.planName,
-      //   razorpay_order_id,
-      //   existingSubscription,
-      //   createdAt,
-      //   refferalCode,
-      //   couponCode,
-      //   expiresAt,
-      //   amount
-      // );
-      // // insert it into user purchase
-
-      // await GptServices.insertIntoUserPurchase(
-      //   placedOrder.user.toString(),
-      //   placedOrder.planName,
-      //   razorpay_order_id,
-      //   existingSubscription,
-      //   createdAt,
-      //   refferalCode,
-      //   couponCode,
-      //   expiresAt,
-      //   amount
-      // );
-
-      console.log(rs);
     } catch (error) {
       console.log(error);
     }
