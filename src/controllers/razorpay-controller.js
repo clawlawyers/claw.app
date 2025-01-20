@@ -1012,14 +1012,14 @@ async function razorpayWebhook(req, res) {
       console.log(phoneNumber);
       console.log(amountPaid);
 
-      if (paymentDetails.paid_count === 1) {
-        return res
-          .status(200)
-          .json({
-            success: true,
-            message: "Subscription charged successfully",
-          });
-      }
+      // if (paymentDetails.paid_count === 1) {
+      //   return res
+      //     .status(200)
+      //     .json({
+      //       success: true,
+      //       message: "Subscription charged successfully",
+      //     });
+      // }
 
       // Update subscription payment details in the database
       const paymentDatails = await GptServices.updateUserPlanPayment(

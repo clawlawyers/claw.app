@@ -1233,12 +1233,13 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
   try {
     let userPlanData;
     phoneNumber = String(phoneNumber);
+    console.log(phoneNumber);
     // First, fetch the current user plan to get the existing `expiresAt` value
     const userData = getUserByPhoneNumber(phoneNumber);
-    console.log(userPlanData);
+    console.log(userData);
     const userPlan = await prisma.userAdiraPlan.findUnique({
       where: {
-        user: userData._id,
+        userId: userData._id,
       },
     });
     console.log(userPlan);
