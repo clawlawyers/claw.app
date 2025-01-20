@@ -1236,14 +1236,12 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
   try {
     let userPlanData;
     phoneNumber = String(phoneNumber);
-    console.log(phoneNumber);
 
     if (phoneNumber.startsWith("+")) {
       phoneNumber = phoneNumber.substring(3);
     }
     const userData = await Client.findOne({ phoneNumber });
 
-    console.log(userData);
     const id = userData._id.toHexString();
 
     const userPlan = await prisma.userAdiraPlan.findFirst({
@@ -1251,7 +1249,6 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
         userId: id,
       },
     });
-    console.log(userPlan);
     // Check if the user plan exists
     if (userPlan) {
       // Add 30 days to the existing `expiresAt`
@@ -1269,6 +1266,9 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
         },
         data: {
           expiresAt: newExpiresAt,
+          totalDocuments: {
+            increment: 3,
+          },
         },
       });
     }

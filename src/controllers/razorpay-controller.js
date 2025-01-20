@@ -997,7 +997,7 @@ async function razorpayWebhook(req, res) {
 
     const event = req.body.event;
     console.log(`Received webhook event: ${event}`);
-    console.log(req.body.payload.subscription);
+    // console.log(req.body.payload.subscription);
 
     // Handle subscription-related events
     if (event === "subscription.charged") {
@@ -1011,15 +1011,14 @@ async function razorpayWebhook(req, res) {
       console.log(paymentId);
       console.log(phoneNumber);
       console.log(amountPaid);
-
-      // if (paymentDetails.paid_count === 1) {
-      //   return res
-      //     .status(200)
-      //     .json({
-      //       success: true,
-      //       message: "Subscription charged successfully",
-      //     });
-      // }
+      console.log(paymentDetails.paid_count);
+      if (paymentDetails.paid_count === 1) {
+        console.log("paid count is 1");
+        return res.status(200).json({
+          success: true,
+          message: "Subscription charged successfully",
+        });
+      }
 
       // Update subscription payment details in the database
       const paymentDatails = await GptServices.updateUserPlanPayment(
