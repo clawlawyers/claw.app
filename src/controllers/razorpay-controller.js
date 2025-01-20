@@ -748,8 +748,8 @@ async function testCreateSubscription(req, res) {
     updatedTimeInSeconds = currentTimeInSeconds + 120; // 24 for one minute
 
     const subscriptionOptions = {
-      // plan_Pk4Ynnur1sNlOr  // this live
-      plan_id: "plan_Pk4Ynnur1sNlOr", // Razorpay Plan ID from dashboard
+      // plan_id: "plan_Pk4Ynnur1sNlOr", // Razorpay Plan ID from dashboard (this live)
+      plan_id: "plan_PiqDuUsceqF696", // Razorpay Plan ID from dashboard (this test)
       customer_notify: 1,
       quantity: 1,
       total_count: 12, // billingCycle === "MONTHLY" ? 12 : 1, // Monthly or yearly billing
