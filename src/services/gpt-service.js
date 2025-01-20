@@ -8,6 +8,8 @@ const User = require("../models/user");
 const Order = require("../models/order");
 const Client = require("../models/client");
 const { getUserByPhoneNumber } = require("./user-service");
+const { getClientByPhoneNumber } = require("./client-service");
+const { ClientService } = require(".");
 
 async function fetchContext(sessionId) {
   try {
@@ -1235,7 +1237,7 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
     phoneNumber = String(phoneNumber);
     console.log(phoneNumber);
     // First, fetch the current user plan to get the existing `expiresAt` value
-    const userData = await getUserByPhoneNumber(phoneNumber);
+    const userData = await ClientService.getClientByPhoneNumber(phoneNumber);
     console.log(userData);
     const userPlan = await prisma.userAdiraPlan.findUnique({
       where: {
