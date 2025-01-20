@@ -997,15 +997,20 @@ async function razorpayWebhook(req, res) {
 
     const event = req.body.event;
     console.log(`Received webhook event: ${event}`);
-    console.log(req.body.payload);
+    console.log(req.body.payload.subscription);
 
     // Handle subscription-related events
     if (event === "subscription.charged") {
-      const paymentDetails = req.body.payload.payment_link.entity;
+      const paymentDetails = req.body.payload.subscription.entity;
       const paymentId = paymentDetails.id;
-      const customerMobile = paymentDetails.customer.contact;
+      // const customerMobile = paymentDetails.customer.contact;
       const phoneNumber = paymentDetails.notes.phoneNumber; // Assuming phoneNumber is stored in notes
-      const amountPaid = paymentDetails.amount_paid;
+      const amountPaid = req.body.payload.payment.entity.amount / 100;
+
+      console.log(paymentDetails);
+      console.log(paymentId);
+      console.log(phoneNumber);
+      console.log(amountPaid);
 
       // Update subscription payment details in the database
       const paymentLink = await GptServices.updateUserPlanPayment(
