@@ -1246,14 +1246,6 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
     console.log(userData);
     const id = userData._id.toHexString();
 
-    const activePlan = await prisma.userAdiraPlan.findFirst({
-      where: {
-        userId: mongoId,
-        // subscriptionId: existingSubscription,
-        isActive: true,
-      },
-    });
-
     const userPlan = await prisma.userAdiraPlan.findFirst({
       where: {
         userId: id,
