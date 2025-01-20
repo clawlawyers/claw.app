@@ -7,6 +7,7 @@ const PDFDocument = require("pdfkit");
 const User = require("../models/user");
 const Order = require("../models/order");
 const Client = require("../models/client");
+const { getUserByPhoneNumber } = require("./user-service");
 
 async function fetchContext(sessionId) {
   try {
@@ -1232,11 +1233,14 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
   try {
     let userPlanData;
     // First, fetch the current user plan to get the existing `expiresAt` value
+    const userData = getUserByPhoneNumber(phoneNumber);
+    console.log(userPlanData);
     const userPlan = await prisma.userAdiraPlan.findUnique({
       where: {
-        user: { phoneNumber: phoneNumber },
+        user: userData._id,
       },
     });
+    console.log(userPlan);
     // Check if the user plan exists
     if (userPlan) {
       // Add 30 days to the existing `expiresAt`
