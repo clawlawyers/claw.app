@@ -997,6 +997,7 @@ async function razorpayWebhook(req, res) {
 
     const event = req.body.event;
     console.log(`Received webhook event: ${event}`);
+    console.log(req.body.payload);
 
     // Handle subscription-related events
     if (event === "subscription.charged") {
