@@ -1232,6 +1232,7 @@ async function updateUserSubscription(
 async function updateUserPlanPayment(phoneNumber, paymentId) {
   try {
     let userPlanData;
+    phoneNumber = String(phoneNumber);
     // First, fetch the current user plan to get the existing `expiresAt` value
     const userData = getUserByPhoneNumber(phoneNumber);
     console.log(userPlanData);
