@@ -1245,6 +1245,15 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
 
     console.log(userData);
     const id = userData._id.toHexString();
+
+    const activePlan = await prisma.userAdiraPlan.findFirst({
+      where: {
+        userId: mongoId,
+        // subscriptionId: existingSubscription,
+        isActive: true,
+      },
+    });
+
     const userPlan = await prisma.userAdiraPlan.findFirst({
       where: {
         userId: id,
@@ -1261,7 +1270,7 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
       // Update the user's plan with the new expiration date
       userPlanData = await prisma.userAdiraPlan.update({
         where: {
-          user: { phoneNumber: phoneNumber },
+          userId: id,
         },
         data: {
           expiresAt: newExpiresAt,
