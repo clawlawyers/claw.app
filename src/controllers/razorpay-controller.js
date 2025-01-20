@@ -936,132 +936,135 @@ async function createPaymentLink(req, res) {
 
 const WebHookCode = "Clawapp.dev";
 
-async function rezorpayWebhook(req, res) {
-  const receivedSignature = req.headers["x-razorpay-signature"];
-  const payload = JSON.stringify(req.body);
+// async function rezorpayWebhook(req, res) {
+//   const receivedSignature = req.headers["x-razorpay-signature"];
+//   const payload = JSON.stringify(req.body);
 
-  // Validate the webhook signature
-  const expectedSignature = crypto
-    .createHmac("sha256", WebHookCode)
-    .update(payload)
-    .digest("hex");
+//   // Validate the webhook signature
+//   const expectedSignature = crypto
+//     .createHmac("sha256", WebHookCode)
+//     .update(payload)
+//     .digest("hex");
 
-  if (receivedSignature === expectedSignature) {
+//   if (receivedSignature === expectedSignature) {
+//     const event = req.body.event;
+//     // Handle payment success event
+//     if (event === "subscription.charged") {
+//       const paymentDetails = req.body.payload.payment_link.entity;
+//       const paymentId = paymentDetails.id;
+//       const customerMobile = paymentDetails.customer.contact;
+//       const phoneNumber = paymentDetails.notes.phoneNumber;
+//       // const planName = paymentDetails.notes.planName;
+//       // const price = paymentDetails.notes.price;
+//       const amountPaid = paymentDetails.amount_paid;
+
+//       const payment_link = await GptServices.updateUserPlanPayment(
+//         phoneNumber,
+//         paymentId
+//       );
+
+//       // Option 2: Logging the object separately
+//       console.log("Payment successful for mobile:", payment_link);
+//       // Respond with success
+//       res.status(200).json({ success: true });
+//     } else {
+//       res.status(200).json({ success: true, message: "Event not handled" });
+//     }
+//   } else {
+//     console.log("Invalid signature, possible tampering detected");
+//     res.status(403).json({ success: false, message: "Invalid signature" });
+//   }
+// }
+
+async function razorpayWebhook(req, res) {
+  try {
+    // Extract the Razorpay signature and payload
+    const receivedSignature = req.headers["x-razorpay-signature"];
+    const payload = JSON.stringify(req.body);
+
+    // Validate the webhook signature
+    const expectedSignature = crypto
+      .createHmac("sha256", WebHookCode) // Use environment variable for the webhook secret
+      .update(payload)
+      .digest("hex");
+
+    if (receivedSignature !== expectedSignature) {
+      console.log("Invalid signature, possible tampering detected");
+      return res
+        .status(403)
+        .json({ success: false, message: "Invalid signature" });
+    }
+
     const event = req.body.event;
-    // Handle payment success event
+    console.log(`Received webhook event: ${event}`);
+
+    // Handle subscription-related events
     if (event === "subscription.charged") {
       const paymentDetails = req.body.payload.payment_link.entity;
       const paymentId = paymentDetails.id;
       const customerMobile = paymentDetails.customer.contact;
-      const phoneNumber = paymentDetails.notes.phoneNumber;
-      // const planName = paymentDetails.notes.planName;
-      // const price = paymentDetails.notes.price;
+      const phoneNumber = paymentDetails.notes.phoneNumber; // Assuming phoneNumber is stored in notes
       const amountPaid = paymentDetails.amount_paid;
 
-      const payment_link = await GptServices.updateUserPlanPayment(
+      // Update subscription payment details in the database
+      const paymentLink = await GptServices.updateUserPlanPayment(
         phoneNumber,
         paymentId
       );
 
-      // await GptServices.UpdatetoUserPurchase(
-      //   userId,
-      //   planName,
-      //   paymentId,
-      //   price,
-      //   payment_link
-      // );
-
-      // Update the database with payment details
-      // mockDatabase[customerMobile] = {
-      //     paymentId,
-      //     amountPaid,
-      //     status: 'Paid',
-      // };
-
-      // const obj = {
-      //   customerMobile,
-      //   userId,
-      //   paymentId,
-      //   amountPaid,
-      //   status: "Paid",
-      // };
-
-      // Option 1: Using JSON.stringify
-      // console.log(
-      //   `Payment successful for mobile: ${JSON.stringify(obj, null, 2)}`
-      // );
-
-      // Option 2: Logging the object separately
-      console.log("Payment successful for mobile:", payment_link);
-      // Respond with success
-      res.status(200).json({ success: true });
-    } else {
-      res.status(200).json({ success: true, message: "Event not handled" });
+      console.log(
+        `Subscription charged for phone: ${phoneNumber}, paymentId: ${paymentId}`
+      );
+      return res
+        .status(200)
+        .json({ success: true, message: "Subscription charged successfully" });
     }
-  } else {
-    console.log("Invalid signature, possible tampering detected");
-    res.status(403).json({ success: false, message: "Invalid signature" });
+
+    // Additional subscription events can be handled here
+    if (event === "subscription.cancelled") {
+      const subscriptionDetails = req.body.payload.subscription.entity;
+      const subscriptionId = subscriptionDetails.id;
+
+      // Update subscription status in your database
+      await GptServices.updateSubscriptionStatus(subscriptionId, "cancelled");
+      console.log(`Subscription cancelled: ${subscriptionId}`);
+      return res.status(200).json({
+        success: true,
+        message: "Subscription cancelled successfully",
+      });
+    }
+
+    if (event === "subscription.paid") {
+      const subscriptionDetails = req.body.payload.subscription.entity;
+      const subscriptionId = subscriptionDetails.id;
+
+      // Mark the subscription as paid in your database
+      await GptServices.markSubscriptionAsPaid(subscriptionId);
+      console.log(`Subscription paid: ${subscriptionId}`);
+      return res
+        .status(200)
+        .json({ success: true, message: "Subscription paid successfully" });
+    }
+
+    // Log and respond to unhandled events
+    console.log(`Unhandled event type: ${event}`);
+    return res
+      .status(200)
+      .json({ success: true, message: "Event not handled" });
+  } catch (error) {
+    console.error("Error processing Razorpay webhook:", error);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
   }
 }
-
-// async function rezorpayWebhook(req, res) {
-//   const event = req.body.event;
-//   const data = req.body.payload;
-
-//   try {
-//     if (event === "subscription.charged" || event === "invoice.paid") {
-//       // Successful subscription or invoice payment
-//       const subscriptionId = data.subscription.entity.id;
-//       const userId = data.subscription.entity.notes.user_id;
-//       const currentEndTimestamp = data.subscription.entity.current_end;
-//       const subscriptionEndDate = new Date(currentEndTimestamp * 1000);
-//       // Check the paid count in the subscription entity
-//       const paidCount = data.subscription.entity.paid_count;
-
-//       if (paidCount === 1) {
-//         // This is the first payment, as the paid count is 1
-
-//         await GptServices.handleFirstPayment(userId, subscriptionId);
-//       }
-
-//       // Update the user's subscription as active and set the new end date
-//       await GptServices.updateUserSubscription(
-//         userId,
-//         subscriptionId,
-//         (isActive = true),
-//         subscriptionEndDate
-//       );
-
-//       res.status(200).json({ message: "Subscription updated successfully" });
-//     } else if (
-//       event === "invoice.payment_failed" ||
-//       event === "subscription.halted"
-//     ) {
-//       // Payment failure or subscription halt event
-//       const userId = data.subscription.entity.notes.user_id;
-//       const subscriptionId = data.subscription.entity.id;
-
-//       // Mark the user's subscription as inactive
-//       await updateUserSubscription(userId, subscriptionId, (isActive = false));
-
-//       res.status(200).json({
-//         message: "Subscription marked as inactive due to payment failure",
-//       });
-//     } else {
-//       res.status(400).json({ message: "Unhandled event type" });
-//     }
-//   } catch (error) {
-//     console.error("Error processing webhook:", error);
-//     res.status(500).json({ error: "Failed to process webhook" });
-//   }
-// }
 
 module.exports = {
   createPayment,
   verifyPayment,
   createSubscription,
   verifySubscription,
-  rezorpayWebhook,
+  razorpayWebhook,
   createPaymentLink,
   talkToExpertVerifyOrder,
   talkToExpertCreateOrder,

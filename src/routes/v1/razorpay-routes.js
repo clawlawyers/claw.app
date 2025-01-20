@@ -38,6 +38,6 @@ router.post(
   RazorpayController.createPaymentLink
 );
 
-router.post("/razorpay-webhook", RazorpayController.rezorpayWebhook);
+router.post("/razorpay-webhook", RazorpayController.razorpayWebhook);
 
 module.exports = router;
