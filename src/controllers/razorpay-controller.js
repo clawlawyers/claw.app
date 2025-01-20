@@ -708,7 +708,7 @@ async function verifySubscription(req, res) {
         phoneNumber,
         true,
         "Compain-99",
-        razorpay_payment_id
+        razorpay_subscription_id
       );
       res.status(200).json({
         status:
