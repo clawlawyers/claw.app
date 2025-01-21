@@ -707,7 +707,7 @@ async function verifySubscription(req, res) {
       let resp = await loginUserWithPlanBuy(
         phoneNumber,
         true,
-        "Compain-99",
+        "Campaign-99",
         razorpay_subscription_id
       );
       res.status(200).json({
