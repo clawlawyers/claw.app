@@ -135,6 +135,105 @@ const sendConfirmationEmail = async (
   // console.log(info);
 };
 
+// Template for database access granted email
+const databaseAccessTemplate = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>File Access Granted</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h2 {
+      color: #333333;
+    }
+    p {
+      color: #555555;
+    }
+    .button {
+      display: inline-block;
+      padding: 10px 20px;
+      margin-top: 20px;
+      background-color: #4CAF50;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #777777;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Access Granted to Your File</h2>
+    <p>Hello,</p>
+    <p>You have been granted access to the following file:</p>
+    <p><strong>{{fileName}}</strong></p>
+    <p>You can access the file using the link below:</p>
+    <a href="{{fileLink}}" class="button">View File</a>
+    <p>If you have any questions or need assistance, feel free to contact us.</p>
+    <p>Best regards,<br>Your Company Name</p>
+    <div class="footer">
+      <p>This is an automated message. Please do not reply directly to this email.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+const sendAccessEmail = async ({ email, fileLink }) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    port: 465,
+    secure: true, // true for 465, false for other ports
+    logger: true,
+    debug: true,
+    secureConnection: true,
+    auth: {
+      user: MAIL_USER, // Replace with your email
+      pass: MAIL_PASS, // Replace with your email password
+    },
+    tls: {
+      rejectUnauthorized: true,
+    },
+  });
+
+  const template = handlebars.compile(databaseAccessTemplate);
+
+  const filledTemplate = template({ fileName: "database-claw", fileLink });
+
+  const mailOptions = {
+    from: "claw enterprise",
+    to: email,
+    subject: "Database Claw access granted",
+    html: filledTemplate,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent: ", info.response);
+  } catch (error) {
+    console.error("Error sending email: ", error);
+  }
+  // console.log(info);
+};
+
 async function sendAdminContactUsNotification(contactDetails) {
   const transporter = nodemailer.createTransport({
     service: "Gmail",
@@ -223,4 +322,5 @@ async function sendAdminContactUsNotification(contactDetails) {
 module.exports = {
   sendConfirmationEmail,
   sendAdminContactUsNotification,
+  sendAccessEmail,
 };

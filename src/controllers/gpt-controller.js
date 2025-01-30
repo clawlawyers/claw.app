@@ -12,6 +12,7 @@ const {
   sendConfirmationEmailForAmbasForFreePlan,
 } = require("../utils/common/sendEmail");
 const FormData = require("form-data");
+const prisma = require("../config/prisma-client");
 
 const { FLASK_API_ENDPOINT } = process.env;
 

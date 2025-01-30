@@ -2,6 +2,35 @@ const { ClientService, GptServices } = require(".");
 const { createToken } = require("../utils/common/auth");
 const { fetchGptUser } = require("./gpt-service");
 
+const { google } = require("googleapis");
+const path = require("path");
+const fs = require("fs");
+const { sendAccessEmail } = require("../utils/coutroom/sendEmail");
+
+// Load the service account credentials
+// const credentialsPath = path.join(__dirname, "credentials.json");
+
+let auth;
+if (process.env.NODE_ENV !== "production") {
+  // Google Cloud Storage configuration
+
+  // Load the service account credentials
+  // const credentialsPath = path.join(__dirname, "credentials.json");
+
+  auth = new google.auth.GoogleAuth({
+    keyFile: path.join(__dirname + "/credentials.json"), // Replace with your service account key file path,
+    scopes: ["https://www.googleapis.com/auth/drive"],
+  });
+} else {
+  // Google Cloud Storage configuration
+  auth = new google.auth.GoogleAuth({
+    keyFile: path.join("/etc/secrets/credentials.json"), // Replace with your service account key file path,
+    scopes: ["https://www.googleapis.com/auth/drive"],
+  });
+}
+
+const drive = google.drive({ version: "v3", auth });
+
 exports.createNewUser = async (phoneNumber, verified) => {
   try {
     const existing = await ClientService.getClientByPhoneNumber(phoneNumber);
@@ -76,5 +105,38 @@ exports.createNewUser = async (phoneNumber, verified) => {
     return successResponse;
   } catch (error) {
     throw new Error(error.message);
+  }
+};
+
+exports.giveAccessOfDatabaseDrive = async (emailAddress) => {
+  try {
+    // Grant permission to the email address
+    await drive.permissions.create({
+      fileId: "1ACHBYO6LOxkkRXuGMc_KOUqT13_4LJqa",
+      requestBody: {
+        type: "user", // Share with a specific user
+        role: "reader", // Role can be 'reader', 'commenter', or 'writer'
+        emailAddress: emailAddress,
+      },
+      emailMessage:
+        "You have been invited to access this folder. Please accept the invitation.",
+    });
+
+    console.log(`Invitation sent to ${emailAddress}.`);
+
+    // Get the folder's shareable link
+    const result = await drive.files.get({
+      fileId: folderId,
+      fields: "webViewLink",
+    });
+
+    await sendAccessEmail({
+      email: emailAddress,
+      fileLink: result.data.webViewLink,
+    });
+
+    console.log("Folder is accessible at:", result.data.webViewLink);
+  } catch (error) {
+    console.error("Error sharing folder:", error.message);
   }
 };

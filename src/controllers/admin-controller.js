@@ -901,6 +901,40 @@ async function getPlans(req, res) {
   }
 }
 
+async function createPlan(req, res) {
+  try {
+    const {
+      name,
+      price,
+      duration,
+      legalGptToken,
+      LegalGPTime,
+      AdiraToken,
+      AdiraTime,
+      WarroomToken,
+      WarroomTime,
+    } = req.body;
+
+    const newPlan = await prisma.allPlan.create({
+      data: {
+        name,
+        price,
+        duration,
+        legalGptToken,
+        LegalGPTime,
+        AdiraToken,
+        AdiraTime,
+        WarroomToken,
+        WarroomTime,
+      },
+    });
+    return res.status(StatusCodes.CREATED).json(SuccessResponse({ newPlan }));
+  } catch (error) {
+    console.log(error);
+    res.status(error.statusCode).json(ErrorResponse({}, error.message));
+  }
+}
+
 async function getUsers(req, res) {
   try {
     // Fetch all users from Prisma
@@ -964,13 +998,19 @@ async function getUsers(req, res) {
             : null;
           const adiraEngagement = user?.spcificEngagementTime.Adira
             ? {
-                daily: Array.from(user.spcificEngagementTime.Adira.daily.values())
+                daily: Array.from(
+                  user.spcificEngagementTime.Adira.daily.values()
+                )
                   .reduce((a, b) => a + b, 0)
                   .toFixed(2),
-                monthly: Array.from(user.spcificEngagementTime.Adira.monthly.values())
+                monthly: Array.from(
+                  user.spcificEngagementTime.Adira.monthly.values()
+                )
                   .reduce((a, b) => a + b, 0)
                   .toFixed(2),
-                yearly: Array.from(user.spcificEngagementTime.Adira.yearly.values())
+                yearly: Array.from(
+                  user.spcificEngagementTime.Adira.yearly.values()
+                )
                   .reduce((a, b) => a + b, 0)
                   .toFixed(2),
                 total: user.spcificEngagementTime.Adira.total.toFixed(2),
@@ -978,13 +1018,19 @@ async function getUsers(req, res) {
             : null;
           const warroomEngagement = user?.spcificEngagementTime.Warroom
             ? {
-                daily: Array.from(user.spcificEngagementTime.Warroom.daily.values())
+                daily: Array.from(
+                  user.spcificEngagementTime.Warroom.daily.values()
+                )
                   .reduce((a, b) => a + b, 0)
                   .toFixed(2),
-                monthly: Array.from(user.spcificEngagementTime.Warroom.monthly.values())
+                monthly: Array.from(
+                  user.spcificEngagementTime.Warroom.monthly.values()
+                )
                   .reduce((a, b) => a + b, 0)
                   .toFixed(2),
-                yearly: Array.from(user.spcificEngagementTime.Warroom.yearly.values())
+                yearly: Array.from(
+                  user.spcificEngagementTime.Warroom.yearly.values()
+                )
                   .reduce((a, b) => a + b, 0)
                   .toFixed(2),
                 total: user.spcificEngagementTime.Warroom.total.toFixed(2),
@@ -2123,4 +2169,5 @@ module.exports = {
   getFeedback,
   totalSessions,
   sessionHistory,
+  createPlan,
 };

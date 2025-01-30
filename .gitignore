@@ -2,3 +2,4 @@
 /.env
 /serviceAccountKey.json
 /src/routes/v1/voltaic-charter-435107-j5-d041d0de66bf.json
+/src/services/credentials.json

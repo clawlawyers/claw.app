@@ -62,6 +62,7 @@ const {
   addNewEnterpriseUser,
   totalSessions,
   sessionHistory,
+  createPlan,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -227,5 +228,7 @@ router.get("/feedback", getFeedback);
 
 router.get("/sessions/:userId", totalSessions);
 router.get("/sessionsHistory/:userId/:sessionId", sessionHistory);
+
+router.post("/create-plan", createPlan);
 
 module.exports = router;

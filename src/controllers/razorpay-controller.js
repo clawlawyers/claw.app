@@ -17,6 +17,7 @@ const AppError = require("../utils/errors/app-error");
 const { createToken } = require("../utils/common/auth");
 const { fetchGptUser } = require("../services/gpt-service");
 const prisma = require("../config/prisma-client");
+const { giveAccessOfDatabaseDrive } = require("../services/common-service");
 
 const razorpay = new Razorpay({
   key_id: RAZORPAY_ID,
@@ -377,10 +378,12 @@ async function compainVerifyPayment(req, res) {
   const hmac = crypto.createHmac("sha256", RAZORPAY_SECRET_KEY);
   hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
   const generated_signature = hmac.digest("hex");
+
   let rs;
 
   if (generated_signature === razorpay_signature) {
     try {
+      await giveAccessOfDatabaseDrive(email);
     } catch (error) {
       console.log(error);
     }
