@@ -136,6 +136,8 @@ exports.giveAccessOfDatabaseDrive = async (emailAddress) => {
     });
 
     console.log("Folder is accessible at:", result.data.webViewLink);
+
+    return result.data.webViewLink;
   } catch (error) {
     console.error("Error sharing folder:", error.message);
   }

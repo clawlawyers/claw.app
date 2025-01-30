@@ -379,15 +379,13 @@ async function compainVerifyPayment(req, res) {
   hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
   const generated_signature = hmac.digest("hex");
 
-  let rs;
-
   if (generated_signature === razorpay_signature) {
     try {
-      await giveAccessOfDatabaseDrive(email);
+      const link = await giveAccessOfDatabaseDrive(email);
     } catch (error) {
       console.log(error);
     }
-    res.status(200).json({ status: "Payment verified successfully", plan: rs });
+    res.status(200).json({ status: "Payment verified successfully", link });
   } else {
     res.status(400).json({ status: "Payment verification failed" });
   }
