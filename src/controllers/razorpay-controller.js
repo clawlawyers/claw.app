@@ -379,9 +379,10 @@ async function compainVerifyPayment(req, res) {
   hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
   const generated_signature = hmac.digest("hex");
 
+  let link;
   if (generated_signature === razorpay_signature) {
     try {
-      const link = await giveAccessOfDatabaseDrive(email);
+      link = await giveAccessOfDatabaseDrive(email);
     } catch (error) {
       console.log(error);
     }
