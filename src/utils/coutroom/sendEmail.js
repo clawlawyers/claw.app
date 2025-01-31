@@ -188,7 +188,7 @@ const databaseAccessTemplate = `<!DOCTYPE html>
     <p>You can access the file using the link below:</p>
     <a href="{{fileLink}}" class="button">View File</a>
     <p>If you have any questions or need assistance, feel free to contact us.</p>
-    <p>Best regards,<br>Your Company Name</p>
+    <p>Best regards,<br>Claw Legaltech</p>
     <div class="footer">
       <p>This is an automated message. Please do not reply directly to this email.</p>
     </div>
@@ -206,8 +206,8 @@ const sendAccessEmail = async ({ email, fileLink }) => {
     debug: true,
     secureConnection: true,
     auth: {
-      user: MAIL_USER, // Replace with your email
-      pass: MAIL_PASS, // Replace with your email password
+      user: ACCESSID_USER, // Replace with your email
+      pass: ACCESSID_EMAIL, // Replace with your email password
     },
     tls: {
       rejectUnauthorized: true,
