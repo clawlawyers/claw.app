@@ -255,7 +255,7 @@ async function verify(req, res) {
       await sendConfirmationEmailForAmbasForFreePlan(email, username);
     }
 
-    const adiraPlan = await prisma.userAdiraPlan.findFirst({
+    const adiraPlan = await prisma.userAllPlan.findFirst({
       where: {
         userId: updatedClient.id,
       },
