@@ -275,8 +275,9 @@ async function verify(req, res) {
       sessions: sessions.numberOfSessions,
       mongoId: sessions.mongoId,
       stateLocation: sessions.StateLocation,
-      adiraPlan,
+      currentPlan: adiraPlan,
       // gptPlan,
+      phoneNumber: existingGptUser.phoneNumber,
       totalUsed: updatedClient.totalUsed,
       email: existing.email,
     });
@@ -520,8 +521,9 @@ async function googleAuthCallback(req, res) {
       sessions: sessions.numberOfSessions,
       mongoId: sessions.mongoId,
       stateLocation: sessions.StateLocation,
-      adiraPlan,
+      currentPlan: adiraPlan,
       // gptPlan,
+      phoneNumber: existingGptUser.phoneNumber,
       totalUsed: updatedClient.totalUsed,
       email: email,
     };

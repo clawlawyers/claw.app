@@ -623,7 +623,7 @@ async function fetchGptUser(mongoId) {
 
     console.log(user);
 
-    let plans = await prisma.userAdiraPlan.findMany({
+    let plans = await prisma.userAllPlan.findMany({
       where: {
         userId: mongoId,
       },
@@ -668,6 +668,7 @@ async function fetchGptUser(mongoId) {
       plan: plans,
       totalUsed: client.totalUsed,
       email: client.email,
+      phoneNumber: client.phoneNumber,
     };
   } catch (error) {
     console.log(error);
