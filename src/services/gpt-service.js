@@ -2102,9 +2102,18 @@ async function deleteSessions(mongoId, modelName) {
 
 async function storeUsedTimeService(id) {
   try {
-    const user = await Client.findByIdAndUpdate(id, {
-      $inc: {
-        totalUsed: 1,
+    // const user = await Client.findByIdAndUpdate(id, {
+    //   $inc: {
+    //     totalUsed: 1,
+    //   },
+    // });
+
+    const user = await prisma.userAllPlan.update({
+      where: {
+        userId: id,
+      },
+      data: {
+        UsedLegalGPTime: { increment: 1 },
       },
     });
     return user;
