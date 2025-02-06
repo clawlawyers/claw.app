@@ -2109,14 +2109,24 @@ async function storeUsedTimeService(id) {
     //   },
     // });
 
-    const user = await prisma.userAllPlan.update({
+    const userPlanData = await prisma.userAllPlan.findFirst({
       where: {
         userId: id,
+      },
+    });
+
+    const user = await prisma.userAllPlan.update({
+      where: {
+        userId_planName: {
+          userId: id, // Make sure this is the correct field name
+          planName: userPlanData?.planName, // Assuming you have planName from the userPlanData
+        },
       },
       data: {
         UsedLegalGPTime: { increment: 1 },
       },
     });
+
     return user;
   } catch (error) {
     console.error(error);
