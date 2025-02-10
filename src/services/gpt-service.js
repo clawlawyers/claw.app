@@ -1818,7 +1818,7 @@ async function updateUserAdiraPlan(
       }
     } else {
       if (refferalCode || couponCode) {
-        updatedUserPlan = await prisma.userAdiraPlan.create({
+        updatedUserPlan = await prisma.userAllPlan.create({
           data: {
             userId: mongoId,
             planName: newPlan,
@@ -1849,7 +1849,7 @@ async function updateUserAdiraPlan(
           });
         }
       } else {
-        updatedUserPlan = await prisma.userAdiraPlan.create({
+        updatedUserPlan = await prisma.userAllPlan.create({
           data: {
             userId: mongoId,
             planName: newPlan,
