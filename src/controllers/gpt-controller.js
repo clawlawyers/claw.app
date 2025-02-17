@@ -989,7 +989,7 @@ async function fetchReadAloud({ input_text }) {
     const fetch = (await import("node-fetch")).default;
 
     // Send the POST request to the read_aloud API
-    const response = await fetch("http://20.193.128.165/api/read_aloud", {
+    const response = await fetch(`${FLASK_API_ENDPOINT}/read_aloud`, {
       method: "POST",
       body: JSON.stringify({ input_text }),
       headers: {
