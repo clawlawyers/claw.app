@@ -1036,7 +1036,7 @@ async function upload(req, res) {
     for (const key of Object.keys(files)) {
       const file = files[key][0];
       console.log(file);
-      formData.append("file", file.buffer, {
+      formData.append("files", file.buffer, {
         filename: file.originalname,
         contentType: file.mimetype,
       });
