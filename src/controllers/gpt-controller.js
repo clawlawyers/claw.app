@@ -1081,7 +1081,7 @@ async function fetchUpload(formData) {
 
     // console.log(res);
 
-    return res;
+    return parsed;
   } catch (error) {
     console.error(error);
     throw error;
