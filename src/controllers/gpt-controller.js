@@ -1077,9 +1077,9 @@ async function fetchUpload(formData) {
 
     console.log(parsed);
 
-    const res = JSON.parse(parsed);
+    // const res = JSON.parse(parsed);
 
-    console.log(res);
+    // console.log(res);
 
     return res;
   } catch (error) {
