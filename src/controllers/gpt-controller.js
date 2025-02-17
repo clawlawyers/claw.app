@@ -1075,7 +1075,11 @@ async function fetchUpload(formData) {
 
     const parsed = await response.json();
 
+    console.log(parsed);
+
     const res = JSON.parse(parsed);
+
+    console.log(res);
 
     return res;
   } catch (error) {
