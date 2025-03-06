@@ -590,7 +590,7 @@ async function fetchGptUserByPhoneNumbers(phoneNumbers) {
 
 async function getUserPlan(mongoId) {
   try {
-    const plans = await prisma.userAdiraPlan.findMany({
+    const plans = await prisma.userAllPlan.findMany({
       where: {
         userId: mongoId,
       },
@@ -623,15 +623,6 @@ async function fetchGptUser(mongoId) {
 
     console.log(user);
 
-    let plans = await prisma.userAllPlan.findMany({
-      where: {
-        userId: mongoId,
-      },
-      include: {
-        plan: true,
-      },
-    });
-
     const plan = await getUserPlan(mongoId); // it can be open
     console.log(plan.length);
     console.log(new Date());
@@ -658,6 +649,14 @@ async function fetchGptUser(mongoId) {
 
       console.log("plan created");
     }
+    let plans = await prisma.userAllPlan.findMany({
+      where: {
+        userId: mongoId,
+      },
+      include: {
+        plan: true,
+      },
+    });
 
     const client = await Client.findById(mongoId);
 
@@ -1686,7 +1685,7 @@ async function updateUserAdiraPlan(
     let updatedUserPlan;
 
     if (existingSubscription == "compane") {
-      const activePlan = await prisma.userAdiraPlan.findFirst({
+      const activePlan = await prisma.userAllPlan.findFirst({
         where: {
           userId: mongoId,
           // subscriptionId: existingSubscription,
@@ -1696,7 +1695,7 @@ async function updateUserAdiraPlan(
 
       // If a plan is found, delete it
       if (activePlan) {
-        deletePlan = await prisma.userAdiraPlan.delete({
+        deletePlan = await prisma.userAllPlan.delete({
           where: {
             userId_planName: {
               userId: activePlan.userId,
@@ -1706,7 +1705,7 @@ async function updateUserAdiraPlan(
         });
       }
 
-      updatedUserPlan = await prisma.userAdiraPlan.create({
+      updatedUserPlan = await prisma.userAllPlan.create({
         data: {
           userId: mongoId,
           planName: newPlan,
@@ -1730,7 +1729,7 @@ async function updateUserAdiraPlan(
     }
 
     if (newPlan === "FREE") {
-      updatedUserPlan = await prisma.userAdiraPlan.create({
+      updatedUserPlan = await prisma.userAllPlan.create({
         data: {
           userId: mongoId,
           planName: newPlan,
