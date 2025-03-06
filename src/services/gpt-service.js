@@ -623,7 +623,7 @@ async function fetchGptUser(mongoId) {
 
     console.log(user);
 
-    let plans = await prisma.userAdiraPlan.findMany({
+    let plans = await prisma.userAllPlan.findMany({
       where: {
         userId: mongoId,
       },
@@ -668,6 +668,7 @@ async function fetchGptUser(mongoId) {
       plan: plans,
       totalUsed: client.totalUsed,
       email: client.email,
+      phoneNumber: client.phoneNumber,
     };
   } catch (error) {
     console.log(error);
@@ -1727,6 +1728,7 @@ async function updateUserAdiraPlan(
         plan: updatedUserPlan.planName,
       };
     }
+
     if (newPlan === "FREE") {
       updatedUserPlan = await prisma.userAdiraPlan.create({
         data: {
@@ -1747,7 +1749,7 @@ async function updateUserAdiraPlan(
 
     if (existingSubscription !== "") {
       // Find the plan that is active
-      const activePlan = await prisma.userAdiraPlan.findFirst({
+      const activePlan = await prisma.userAllPlan.findFirst({
         where: {
           userId: mongoId,
           subscriptionId: existingSubscription,
@@ -1757,7 +1759,7 @@ async function updateUserAdiraPlan(
 
       // If a plan is found, delete it
       if (activePlan) {
-        deletePlan = await prisma.userAdiraPlan.delete({
+        deletePlan = await prisma.userAllPlan.delete({
           where: {
             userId_planName: {
               userId: activePlan.userId,
@@ -1768,7 +1770,7 @@ async function updateUserAdiraPlan(
       }
 
       if (refferalCode || couponCode) {
-        updatedUserPlan = await prisma.userAdiraPlan.create({
+        updatedUserPlan = await prisma.userAllPlan.create({
           data: {
             userId: mongoId,
             planName: newPlan,
@@ -1799,7 +1801,7 @@ async function updateUserAdiraPlan(
           });
         }
       } else {
-        updatedUserPlan = await prisma.userAdiraPlan.create({
+        updatedUserPlan = await prisma.userAllPlan.create({
           data: {
             userId: mongoId,
             planName: newPlan,
@@ -1816,7 +1818,7 @@ async function updateUserAdiraPlan(
       }
     } else {
       if (refferalCode || couponCode) {
-        updatedUserPlan = await prisma.userAdiraPlan.create({
+        updatedUserPlan = await prisma.userAllPlan.create({
           data: {
             userId: mongoId,
             planName: newPlan,
@@ -1847,7 +1849,7 @@ async function updateUserAdiraPlan(
           });
         }
       } else {
-        updatedUserPlan = await prisma.userAdiraPlan.create({
+        updatedUserPlan = await prisma.userAllPlan.create({
           data: {
             userId: mongoId,
             planName: newPlan,
@@ -2101,11 +2103,30 @@ async function deleteSessions(mongoId, modelName) {
 
 async function storeUsedTimeService(id) {
   try {
-    const user = await Client.findByIdAndUpdate(id, {
-      $inc: {
-        totalUsed: 1,
+    // const user = await Client.findByIdAndUpdate(id, {
+    //   $inc: {
+    //     totalUsed: 1,
+    //   },
+    // });
+
+    const userPlanData = await prisma.userAllPlan.findFirst({
+      where: {
+        userId: id,
       },
     });
+
+    const user = await prisma.userAllPlan.update({
+      where: {
+        userId_planName: {
+          userId: id, // Make sure this is the correct field name
+          planName: userPlanData?.planName, // Assuming you have planName from the userPlanData
+        },
+      },
+      data: {
+        UsedLegalGPTime: { increment: 1 },
+      },
+    });
+
     return user;
   } catch (error) {
     console.error(error);

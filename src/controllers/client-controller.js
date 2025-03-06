@@ -255,7 +255,7 @@ async function verify(req, res) {
       await sendConfirmationEmailForAmbasForFreePlan(email, username);
     }
 
-    const adiraPlan = await prisma.userAdiraPlan.findFirst({
+    const adiraPlan = await prisma.userAllPlan.findFirst({
       where: {
         userId: updatedClient.id,
       },
@@ -275,8 +275,9 @@ async function verify(req, res) {
       sessions: sessions.numberOfSessions,
       mongoId: sessions.mongoId,
       stateLocation: sessions.StateLocation,
-      adiraPlan,
+      currentPlan: adiraPlan,
       // gptPlan,
+      phoneNumber: existingGptUser.phoneNumber,
       totalUsed: updatedClient.totalUsed,
       email: existing.email,
     });
@@ -499,7 +500,7 @@ async function googleAuthCallback(req, res) {
       await sendConfirmationEmailForAmbasForFreePlan(email, username);
     }
 
-    const adiraPlan = await prisma.userAdiraPlan.findFirst({
+    const adiraPlan = await prisma.userAllPlan.findFirst({
       where: {
         userId: updatedClient.id,
       },
@@ -520,8 +521,9 @@ async function googleAuthCallback(req, res) {
       sessions: sessions.numberOfSessions,
       mongoId: sessions.mongoId,
       stateLocation: sessions.StateLocation,
-      adiraPlan,
+      currentPlan: adiraPlan,
       // gptPlan,
+      phoneNumber: existingGptUser.phoneNumber,
       totalUsed: updatedClient.totalUsed,
       email: email,
     };

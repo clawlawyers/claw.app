@@ -1153,10 +1153,12 @@ async function storeUsedTime(req, res) {
   try {
     const userId = req.body.client._id;
 
-    await GptServices.storeUsedTimeService(userId);
-    return res
-      .status(StatusCodes.OK)
-      .json({ message: "Time stored successfully" });
+    const storedTime = await GptServices.storeUsedTimeService(userId);
+    console.log(storedTime);
+    return res.status(StatusCodes.OK).json({
+      message: "Time stored successfully",
+      usedTime: storedTime.UsedLegalGPTime,
+    });
   } catch (error) {
     console.log(error);
     res

@@ -13,7 +13,7 @@ const { verifyTokenCR } = require("../utils/coutroom/auth");
 
 async function checkUserAuth(req, res, next) {
   try {
-    const token = req.headers["authorization"].split(" ")[1];
+    const token = req.headers["authorization"]?.split(" ")[1];
     if (!token) {
       throw new AppError("Missing jwt token", StatusCodes.BAD_REQUEST);
     }
@@ -34,40 +34,16 @@ async function checkUserAuth(req, res, next) {
 
 async function checkClientAuth(req, res, next) {
   try {
-    const token = req.headers["authorization"].split(" ")[1];
+    const token = req.headers["authorization"]?.split(" ")[1];
     if (!token) {
       throw new AppError("Missing jwt token", StatusCodes.BAD_REQUEST);
     }
-
-    console.log(token);
-
     const response = verifyToken(token);
-
     const client = await ClientService.getClientById(response.id);
-
-    console.log(response);
-    console.log("asdsadasdasdasdasdasdasdasdasdasdasdas");
-    // let session;
-    // // Find the session and update its activity timestamp
-    // if (response.phoneNumber == "8603805697") {
-    //   session = client.sessions[0];
-    // } else {
-    //   session = client.sessions.find(
-    //     (session) => session.sessionId === response.sessionId
-    //   );
-    //   if (!session) {
-    //     return res.status(401).send("Invalid session");
-    //   }
-
-    //   session.lastActive = Date.now(); // Update last active time
-    // }
-    await client.save();
-
-    console.log(client);
-
     if (!client) {
       throw new AppError("No user found", StatusCodes.NOT_FOUND);
     }
+    await client.save();
     req.body.client = client;
     next();
   } catch (error) {
@@ -78,20 +54,17 @@ async function checkClientAuth(req, res, next) {
 
 async function checkCourtroomAuth(req, res, next) {
   try {
-    const token = req.headers["authorization"].split(" ")[1];
-    // console.log(token);
+    const token = req.headers["authorization"]?.split(" ")[1];
     if (!token) {
       throw new AppError("Missing jwt token", StatusCodes.BAD_REQUEST);
     }
     const response = verifyTokenCR(token);
-    // console.log(response);
     const client = await CourtroomService.getClientByPhoneNumber(
       response.phoneNumber
     );
     if (!client) {
       throw new AppError("No user found", StatusCodes.NOT_FOUND);
     }
-    console.log(client);
     req.body.courtroomClient = client;
     next();
   } catch (error) {
@@ -105,21 +78,15 @@ async function checkSpecificLawyerCourtroomAuth(req, res, next) {
     const clientIp =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const origin = req.headers.origin || req.headers.referer;
-
-    // console.log("Client IP:", clientIp);
-    // console.log("Origin:", origin);
-    // console.log("Origin:", origin?.toString()?.substring(8));
     const domain = origin?.toString()?.substring(8);
     req.domain = domain;
     req.ip = clientIp;
-
     const client = await SpecificLawyerCourtroomService.getClientByDomainName(
       domain
     );
     if (!client) {
       throw new AppError("No user found", StatusCodes.NOT_FOUND);
     }
-    // console.log(client);
     req.body.courtroomClient = client?.userBooking;
     next();
   } catch (error) {
@@ -133,19 +100,13 @@ async function checkClientAdiraAuth(req, res, next) {
     const clientIp =
       req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     const origin = req.headers.origin || req.headers.referer;
-
-    // console.log("Client IP:", clientIp);
-    // console.log("Origin:", origin);
-    // console.log("Origin:", origin?.toString()?.substring(8));
     const domain = origin?.toString()?.substring(8);
     req.domain = domain;
     req.ip = clientIp;
-
     const client = await ClientAdiraService.getClientByDomainName(domain);
     if (!client) {
       throw new AppError("No user found", StatusCodes.NOT_FOUND);
     }
-    // console.log(client);
     req.user = client?.userBooking;
     next();
   } catch (error) {
