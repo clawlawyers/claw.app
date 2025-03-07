@@ -72,14 +72,18 @@ async function handleExpiredPlans() {
 const resetTotalUsedForAllClients = async () => {
   try {
     // Update all documents by setting totalUsed to 0
-    const result = await Client.updateMany(
-      {}, // Empty filter matches all documents
-      { $set: { totalUsed: 0 } } // Set totalUsed to 0
-    );
+    // const result1 = await Client.updateMany(
+    //   {}, // Empty filter matches all documents
+    //   { $set: { totalUsed: 0 } } // Set totalUsed to 0
+    // );
 
-    console.log(
-      `Successfully reset totalUsed for ${result.modifiedCount} clients.`
-    );
+    const result = await prisma.userAllPlan.updateMany({
+      data: {
+        UsedLegalGPTime: 0,
+      },
+    });
+
+    console.log(`Successfully reset totalUsed for ${result} clients.`);
   } catch (error) {
     console.error("Error resetting totalUsed:", error);
   }
