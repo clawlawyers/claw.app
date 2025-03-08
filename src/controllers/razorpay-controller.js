@@ -657,8 +657,8 @@ async function createSubscription(req, res) {
 
   try {
     const subscriptionOptions = {
-       plan_id: "plan_PmUHtDg2UWQTqs", // live
-      // plan_id: "plan_PiqDuUsceqF696", // test
+      //  plan_id: "plan_PmUHtDg2UWQTqs", // live
+      plan_id: "plan_PiqDuUsceqF696", // test
       customer_notify: 1,
       total_count: 12,
       notes: {
