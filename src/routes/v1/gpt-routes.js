@@ -88,4 +88,6 @@ router.post("/generate-invoice", GptController.generateInvoice);
 
 router.post("/storeUsedTime", GptController.storeUsedTime);
 
+router.patch("/updateCurrency", GptController.updateCurrency);
+
 module.exports = router;

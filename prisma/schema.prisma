@@ -58,6 +58,7 @@ model User {
   tokenUsed               Float                @default(0.0)
   generatedReferralCodeId String?
   StateLocation           String               @default("")
+  currencyType            String?              @default("INR")
   duration                Int                  @default(0)
   totalTokenUsed          Float                @default(0.0)
   numberOfSessions        Int                  @default(1)

@@ -72,7 +72,7 @@ async function getClientById(req, res) {
 
 async function verify(req, res) {
   try {
-    const { phoneNumber, verified, currencyType } = req.body;
+    const { phoneNumber, verified } = req.body;
     console.log(req.body);
     const existing = await ClientService.getClientByPhoneNumber(phoneNumber);
 
@@ -98,16 +98,45 @@ async function verify(req, res) {
       console.log(client.id);
 
       // create new corresponding gpt user
-      await GptServices.createGptUser(phoneNumber, client.id);
+      const createdUser = await GptServices.createGptUser(
+        phoneNumber,
+        client.id
+      );
 
-      const adiraPlan = await prisma.userAdiraPlan.findFirst({
-        where: {
-          userId: client.id,
-        },
-        include: {
-          plan: true,
-        },
-      });
+      let adiraPlan;
+
+      if (createdUser.currencyType == "INR") {
+        adiraPlan = await prisma.userAllPlan.findFirst({
+          where: {
+            userId: client.id,
+          },
+          include: {
+            plan: true,
+          },
+        });
+      }
+
+      if (createdUser.currencyType == "USD") {
+        adiraPlan = await prisma.userAllUSPlan.findFirst({
+          where: {
+            userId: client.id,
+          },
+          include: {
+            plan: true,
+          },
+        });
+      }
+
+      if (createdUser.currencyType == "GBP") {
+        adiraPlan = await prisma.userAllUKPlan.findFirst({
+          where: {
+            userId: client.id,
+          },
+          include: {
+            plan: true,
+          },
+        });
+      }
 
       const data = {
         verified: client.verified,
@@ -134,9 +163,20 @@ async function verify(req, res) {
       return res.status(StatusCodes.CREATED).json(successResponse);
     }
 
-    const plan = await GptServices.getUserPlan(existing.id); // it can be open
-    console.log(plan.length);
-    console.log(new Date());
+    // fetch updated client
+    const updatedClient = await ClientService.updateClient(existing.id, {
+      verified,
+    });
+
+    const sessions = await GptServices.incrementNumberOfSessions(
+      updatedClient.id,
+      1
+    );
+
+    const plan = await GptServices.getUserPlan(
+      existing.id,
+      sessions.currencyType
+    );
 
     // This free plan only for some occasionally
 
@@ -156,55 +196,11 @@ async function verify(req, res) {
         "",
         null,
         0,
-        currencyType
+        sessions.currencyType
       );
 
       console.log("plan created");
     }
-
-    // fetch updated client
-    const updatedClient = await ClientService.updateClient(existing.id, {
-      verified,
-    });
-    console.log(updatedClient.id, existing.id);
-
-    // const existingPlan = await prisma.newUserPlan.findMany({
-    //   where: {
-    //     userId: existing.id,
-    //   },
-    //   include: {
-    //     plan: true,
-    //   },
-    // });
-
-    // let maxSession = 0;
-
-    // if (existingPlan.length == 0) {
-    //   maxSession = 1;
-    // } else {
-    //   existingPlan.forEach((plan) => {
-    //     maxSession = Math.max(maxSession, plan?.plan?.session);
-    //   });
-    // }
-
-    // // console.log(JSON.stringify(existingPlan));
-    // // console.log(existingPlan);
-
-    // // Clean up old/inactive sessions
-    // await sessionCleanup(existing);
-    // console.log("proceeding to");
-
-    // // If active sessions have reached the limit, logout all users
-    // if (existing.sessions.length >= maxSession) {
-    //   existing.sessions = []; // Clear all sessions
-    //   await existing.save();
-    //   // return res
-    //   //   .status(403)
-    //   //   .send("All users have been logged out. Please log in again.");
-    // }
-
-    // // Create new JWT and session ID
-    // const sessionId = new mongoose.Types.ObjectId().toString();
 
     // create jwt
     const { jwt, expiresAt } = createToken({
@@ -213,20 +209,10 @@ async function verify(req, res) {
       // sessionId,
     });
 
-    // Add the new session to activeSessions array
-    // existing.sessions.push({ sessionId });
     await existing.save();
 
-    // console.log(jwt, expiresAt);
     // check if new gpt user
-    const existingGptUser = await fetchGptUser(existing.id, currencyType);
-    // if (!existingGptUser)
-    //   await GptServices.createGptUser(phoneNumber, existing.id);
-
-    const sessions = await GptServices.incrementNumberOfSessions(
-      updatedClient.id,
-      1
-    );
+    const existingGptUser = await fetchGptUser(existing.id);
 
     const gtpUserGuy = await prisma.user.findFirst({
       where: {
@@ -256,14 +242,40 @@ async function verify(req, res) {
       await sendConfirmationEmailForAmbasForFreePlan(email, username);
     }
 
-    const adiraPlan = await prisma.userAllPlan.findFirst({
-      where: {
-        userId: updatedClient.id,
-      },
-      include: {
-        plan: true,
-      },
-    });
+    let adiraPlan;
+
+    if (sessions.currencyType === "INR") {
+      adiraPlan = await prisma.userAllPlan.findFirst({
+        where: {
+          userId: updatedClient.id,
+        },
+        include: {
+          plan: true,
+        },
+      });
+    }
+
+    if (sessions.currencyType === "USD") {
+      adiraPlan = await prisma.userAllUSPlan.findFirst({
+        where: {
+          userId: updatedClient.id,
+        },
+        include: {
+          plan: true,
+        },
+      });
+    }
+
+    if (sessions.currencyType === "GBP") {
+      adiraPlan = await prisma.userAllUKPlan.findFirst({
+        where: {
+          userId: updatedClient.id,
+        },
+        include: {
+          plan: true,
+        },
+      });
+    }
 
     const successResponse = SuccessResponse({
       newClient: false,
@@ -277,10 +289,10 @@ async function verify(req, res) {
       mongoId: sessions.mongoId,
       stateLocation: sessions.StateLocation,
       currentPlan: adiraPlan,
-      // gptPlan,
       phoneNumber: existingGptUser.phoneNumber,
       totalUsed: updatedClient.totalUsed,
       email: existing.email,
+      currencyType: sessions.currencyType,
     });
 
     // console.log(successResponse);
@@ -352,9 +364,7 @@ async function googleAuthCallbackTemp(req, res) {
 
 async function googleAuthCallback(req, res) {
   try {
-    // const existing = req.user;
-    // console.log(existing);
-    const { token, currencyType } = req.body; // The token sent from the frontend
+    const { token } = req.body; // The token sent from the frontend
 
     if (!token) {
       return res.status(400).json({ message: "Token is missing" });
@@ -381,9 +391,20 @@ async function googleAuthCallback(req, res) {
       return res.status(200).json({ message: "User not found" });
     }
 
-    const plan = await GptServices.getUserPlan(existing.id); // it can be open
-    console.log(plan.length);
-    console.log(new Date());
+    // fetch updated client
+    const updatedClient = await ClientService.updateClient(existing.id, {
+      verified: true,
+    });
+
+    const sessions = await GptServices.incrementNumberOfSessions(
+      updatedClient.id,
+      1
+    );
+
+    const plan = await GptServices.getUserPlan(
+      existing.id,
+      sessions.currencyType
+    ); // it can be open
 
     // This free plan only for some occasionally
 
@@ -403,54 +424,11 @@ async function googleAuthCallback(req, res) {
         "",
         null,
         0,
-        currencyType
+        sessions.currencyType
       );
 
       console.log("plan created");
     }
-
-    // fetch updated client
-    const updatedClient = await ClientService.updateClient(existing.id, {
-      verified: true,
-    });
-    console.log(updatedClient.id, existing.id);
-
-    // const existingPlan = await prisma.newUserPlan.findMany({
-    //   where: {
-    //     userId: existing.id,
-    //   },
-    //   include: {
-    //     plan: true,
-    //   },
-    // });
-
-    // let maxSession = 0;
-
-    // if (existingPlan.length == 0) {
-    //   maxSession = 1;
-    // } else {
-    //   existingPlan.forEach((plan) => {
-    //     maxSession = Math.max(maxSession, plan?.plan?.session);
-    //   });
-    // }
-
-    // // console.log(JSON.stringify(existingPlan));
-    // // console.log(existingPlan);
-
-    // // Clean up old/inactive sessions
-    // await sessionCleanup(existing);
-
-    // // If active sessions have reached the limit, logout all users
-    // if (existing.sessions.length >= maxSession) {
-    //   existing.sessions = []; // Clear all sessions
-    //   await existing.save();
-    //   // return res
-    //   //   .status(403)
-    //   //   .send("All users have been logged out. Please log in again.");
-    // }
-
-    // // Create new JWT and session ID
-    // const sessionId = new mongoose.Types.ObjectId().toString();
 
     // create jwt
     const { jwt, expiresAt } = createToken({
@@ -459,20 +437,14 @@ async function googleAuthCallback(req, res) {
       // sessionId,
     });
 
-    // // Add the new session to activeSessions array
     // existing.sessions.push({ sessionId });
     await existing.save();
 
     // console.log(jwt, expiresAt);
     // check if new gpt user
-    const existingGptUser = await fetchGptUser(existing.id, currencyType);
+    const existingGptUser = await fetchGptUser(existing.id);
     if (!existingGptUser)
       await GptServices.createGptUser(phoneNumber, existing.id);
-
-    const sessions = await GptServices.incrementNumberOfSessions(
-      updatedClient.id,
-      1
-    );
 
     const gtpUserGuy = await prisma.user.findFirst({
       where: {
@@ -502,14 +474,40 @@ async function googleAuthCallback(req, res) {
       await sendConfirmationEmailForAmbasForFreePlan(email, username);
     }
 
-    const adiraPlan = await prisma.userAllPlan.findFirst({
-      where: {
-        userId: updatedClient.id,
-      },
-      include: {
-        plan: true,
-      },
-    });
+    let adiraPlan;
+
+    if (sessions.currencyType === "INR") {
+      adiraPlan = await prisma.userAllPlan.findFirst({
+        where: {
+          userId: updatedClient.id,
+        },
+        include: {
+          plan: true,
+        },
+      });
+    }
+
+    if (sessions.currencyType === "USD") {
+      adiraPlan = await prisma.userAllUSPlan.findFirst({
+        where: {
+          userId: updatedClient.id,
+        },
+        include: {
+          plan: true,
+        },
+      });
+    }
+
+    if (sessions.currencyType === "GBP") {
+      adiraPlan = await prisma.userAllUKPlan.findFirst({
+        where: {
+          userId: updatedClient.id,
+        },
+        include: {
+          plan: true,
+        },
+      });
+    }
 
     const successResponse = {
       phoneNumber: existing.phoneNumber,
@@ -528,18 +526,8 @@ async function googleAuthCallback(req, res) {
       phoneNumber: existingGptUser.phoneNumber,
       totalUsed: updatedClient.totalUsed,
       email: email,
+      currencyType: sessions.currencyType,
     };
-
-    // if (process.env.NODE_ENV === "production") {
-    //   console.log("this is a production");
-    //   res.redirect(
-    //     `https://clawlaw-dev.netlify.app/?userDetails=${successResponse}`
-    //   );
-    // } else {
-    //   console.log("this is a development");
-
-    //   res.redirect(`http://localhost:3001/?userDetails=${successResponse}`);
-    // }
 
     return res.status(StatusCodes.OK).json(successResponse);
   } catch (e) {

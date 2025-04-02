@@ -396,12 +396,9 @@ async function loginUserWithPlanBuy(
   phoneNumber,
   verified,
   planName,
-  razorpay_subscription_id,
-  currencyType
+  razorpay_subscription_id
 ) {
   try {
-    // const { phoneNumber, verified } = req.body;
-    // console.log(req.body);
     const existing = await ClientService.getClientByPhoneNumber(phoneNumber);
 
     console.log(existing);
@@ -456,9 +453,20 @@ async function loginUserWithPlanBuy(
       return successResponse;
     }
 
-    const plan = await GptServices.getUserPlan(existing.id); // it can be open
-    console.log(plan.length);
-    console.log(new Date());
+    // fetch updated client
+    const updatedClient = await ClientService.updateClient(existing.id, {
+      verified,
+    });
+
+    const sessions = await GptServices.incrementNumberOfSessions(
+      updatedClient.id,
+      1
+    );
+
+    const plan = await GptServices.getUserPlan(
+      existing.id,
+      sessions.currencyType
+    ); // it can be open
 
     // This free plan only for some occasionally
 
@@ -478,7 +486,7 @@ async function loginUserWithPlanBuy(
         "",
         expiresAt,
         99,
-        currencyType
+        sessions.currencyType
       );
 
       console.log("plan created");
@@ -496,17 +504,11 @@ async function loginUserWithPlanBuy(
         "",
         expiresAt,
         99,
-        currencyType
+        sessions.currencyType
       );
 
       console.log("plan created");
     }
-
-    // fetch updated client
-    const updatedClient = await ClientService.updateClient(existing.id, {
-      verified,
-    });
-    console.log(updatedClient.id, existing.id);
 
     // create jwt
     const { jwt, expiresAt } = createToken({
@@ -517,12 +519,7 @@ async function loginUserWithPlanBuy(
     await existing.save();
 
     // check if new gpt user
-    const existingGptUser = await fetchGptUser(existing.id, currencyType);
-
-    const sessions = await GptServices.incrementNumberOfSessions(
-      updatedClient.id,
-      1
-    );
+    const existingGptUser = await fetchGptUser(existing.id);
 
     const adiraPlan = await prisma.userAdiraPlan.findFirst({
       where: {

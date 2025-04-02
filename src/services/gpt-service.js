@@ -105,7 +105,7 @@ async function createGptUser(phoneNumber, mongoId) {
       },
     });
 
-    const plan = await getUserPlan(mongoId); // it can be open
+    const plan = await getUserPlan(mongoId, newUser.currencyType); // it can be open
     console.log(plan.length);
     console.log(new Date());
 
@@ -126,7 +126,8 @@ async function createGptUser(phoneNumber, mongoId) {
         null,
         "",
         null,
-        0
+        0,
+        newUser.currencyType
       );
 
       console.log("plan created");
@@ -157,7 +158,7 @@ async function createGptUserForCompain(
       },
     });
 
-    const plan = await getUserPlan(mongoId); // it can be open
+    const plan = await getUserPlan(mongoId, currencyType); // it can be open
     console.log(plan.length);
     console.log(new Date());
 
@@ -218,6 +219,7 @@ async function incrementNumberOfSessions(mongoId, count = 1) {
       numberOfSessions: updatedUser.numberOfSessions,
       mongoId: updatedUser.mongoId,
       StateLocation: updatedUser.StateLocation,
+      currencyType: updatedUser.currencyType,
     };
   } catch (error) {
     console.log(error);
@@ -590,13 +592,32 @@ async function fetchGptUserByPhoneNumbers(phoneNumbers) {
   }
 }
 
-async function getUserPlan(mongoId) {
+async function getUserPlan(mongoId, currencyType) {
   try {
-    const plans = await prisma.userAllPlan.findMany({
-      where: {
-        userId: mongoId,
-      },
-    });
+    let plans;
+    if (currencyType === "INR") {
+      plans = await prisma.userAllPlan.findMany({
+        where: {
+          userId: mongoId,
+        },
+      });
+    }
+
+    if (currencyType === "USD") {
+      plans = await prisma.userAllUSPlan.findMany({
+        where: {
+          userId: mongoId,
+        },
+      });
+    }
+
+    if (currencyType === "GBP") {
+      plans = await prisma.userAllUKPlan.findMany({
+        where: {
+          userId: mongoId,
+        },
+      });
+    }
 
     return plans;
   } catch (err) {
@@ -608,7 +629,7 @@ async function getUserPlan(mongoId) {
   }
 }
 
-async function fetchGptUser(mongoId, currencyType) {
+async function fetchGptUser(mongoId) {
   try {
     const user = await prisma.user.findUnique({
       where: {
@@ -625,7 +646,7 @@ async function fetchGptUser(mongoId, currencyType) {
 
     console.log(user);
 
-    const plan = await getUserPlan(mongoId); // it can be open
+    const plan = await getUserPlan(mongoId, user.currencyType); // it can be open
     console.log(plan.length);
     console.log(new Date());
 
@@ -647,19 +668,46 @@ async function fetchGptUser(mongoId, currencyType) {
         "",
         null,
         0,
-        currencyType
+        user.currencyType
       );
 
       console.log("plan created");
     }
-    let plans = await prisma.userAllPlan.findMany({
-      where: {
-        userId: mongoId,
-      },
-      include: {
-        plan: true,
-      },
-    });
+
+    let plans;
+
+    if (user.currencyType === "INR") {
+      plans = await prisma.userAllPlan.findMany({
+        where: {
+          userId: mongoId,
+        },
+        include: {
+          plan: true,
+        },
+      });
+    }
+
+    if (user.currencyType === "USD") {
+      plans = await prisma.userAllUSPlan.findMany({
+        where: {
+          userId: mongoId,
+        },
+        include: {
+          plan: true,
+        },
+      });
+    }
+
+    if (user.currencyType === "GBP") {
+      plans = await prisma.userAllUKPlan.findMany({
+        where: {
+          userId: mongoId,
+        },
+        include: {
+          plan: true,
+        },
+      });
+    }
 
     const client = await Client.findById(mongoId);
 
@@ -671,6 +719,7 @@ async function fetchGptUser(mongoId, currencyType) {
       totalUsed: client.totalUsed,
       email: client.email,
       phoneNumber: client.phoneNumber,
+      currencyType: user.currencyType,
     };
   } catch (error) {
     console.log(error);
@@ -1812,8 +1861,44 @@ async function updateUserAdiraPlan(
       };
     }
 
-    if (newPlan === "FREE") {
+    if (newPlan === "FREE" && currencyType === "INR") {
       updatedUserPlan = await prisma.userAllPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          subscriptionId: razorpay_subscription_id,
+          isActive: true,
+          createdAt,
+          expiresAt,
+          Paidprice: parseInt(amount),
+        },
+      });
+      return {
+        user: updatedUserPlan.mongoId,
+        plan: updatedUserPlan.planName,
+      };
+    }
+
+    if (newPlan === "FREE" && currencyType === "USD") {
+      updatedUserPlan = await prisma.userAllUSPlan.create({
+        data: {
+          userId: mongoId,
+          planName: newPlan,
+          subscriptionId: razorpay_subscription_id,
+          isActive: true,
+          createdAt,
+          expiresAt,
+          Paidprice: parseInt(amount),
+        },
+      });
+      return {
+        user: updatedUserPlan.mongoId,
+        plan: updatedUserPlan.planName,
+      };
+    }
+
+    if (newPlan === "FREE" && currencyType === "GBP") {
+      updatedUserPlan = await prisma.userAllUKPlan.create({
         data: {
           userId: mongoId,
           planName: newPlan,
@@ -2458,6 +2543,26 @@ async function storeUsedTimeService(id) {
   }
 }
 
+async function updateCurrency(mongoId, currencyType) {
+  try {
+    const updatedUser = await prisma.user.update({
+      where: {
+        mongoId: mongoId,
+      },
+      data: {
+        currencyType: currencyType,
+      },
+    });
+    return updatedUser.currencyType;
+  } catch (error) {
+    console.error(error);
+    throw new AppError(
+      "Error while storing used time service",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function cancelSubscription(mongoId, planName) {
   try {
     const userPlan = await prisma.newUserPlan.findUnique({
@@ -2757,4 +2862,5 @@ module.exports = {
   updateUserAdiraPlan,
   storeUsedTimeService,
   createGptUserForCompain,
+  updateCurrency,
 };

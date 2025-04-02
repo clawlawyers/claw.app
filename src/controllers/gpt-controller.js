@@ -613,7 +613,6 @@ async function fetchAmbassadorDetails(req, res) {
 
 async function fetchGptUser(req, res) {
   try {
-    const currencyType = req.query.currencyType;
     const { _id } = req.body.client;
     if (!_id)
       return res
@@ -621,7 +620,7 @@ async function fetchGptUser(req, res) {
         .json(
           ErrorResponse({}, { message: "Missing jwt for user authorization" })
         );
-    const gptUser = await GptServices.fetchGptUser(_id, currencyType);
+    const gptUser = await GptServices.fetchGptUser(_id);
 
     const gtpUserGuy = await prisma.user.findFirst({
       where: {
@@ -1168,6 +1167,30 @@ async function storeUsedTime(req, res) {
   }
 }
 
+async function updateCurrency(req, res) {
+  try {
+    const { currencyType } = req.body;
+    const userId = req.body.client._id;
+
+    console.log(req.body.client._id);
+
+    const updatedCurrency = await GptServices.updateCurrency(
+      userId,
+      currencyType
+    );
+    console.log(updatedCurrency);
+    return res.status(StatusCodes.OK).json({
+      message: "Time stored successfully",
+      updatedCurrency,
+    });
+  } catch (error) {
+    console.log(error);
+    res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
 module.exports = {
   startSession,
   appendMessageByScocket,
@@ -1206,4 +1229,5 @@ module.exports = {
   translate,
   generateInvoice,
   storeUsedTime,
+  updateCurrency,
 };
