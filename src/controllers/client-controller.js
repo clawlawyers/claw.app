@@ -155,7 +155,8 @@ async function verify(req, res) {
         null,
         "",
         null,
-        0
+        0,
+        currencyType
       );
 
       console.log("plan created");
@@ -353,7 +354,7 @@ async function googleAuthCallback(req, res) {
   try {
     // const existing = req.user;
     // console.log(existing);
-    const { token } = req.body; // The token sent from the frontend
+    const { token, currencyType } = req.body; // The token sent from the frontend
 
     if (!token) {
       return res.status(400).json({ message: "Token is missing" });
@@ -401,7 +402,8 @@ async function googleAuthCallback(req, res) {
         null,
         "",
         null,
-        0
+        0,
+        currencyType
       );
 
       console.log("plan created");
