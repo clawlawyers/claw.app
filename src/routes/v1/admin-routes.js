@@ -73,7 +73,7 @@ const TrailBooking = require("../../models/trailBookingAllow");
 // const { updateUserPlan } = require("../../services/gpt-service");
 
 router.get("/referralcode", getReferralCodes);
-router.post("/referralcode", createReferralCodes);
+// router.post("/referralcode", createReferralCodes);  // deprecated
 router.get("/plan", getPlans);
 router.get("/user", getUsers);
 router.get("/subscribed-user", getSubscribedUsers);

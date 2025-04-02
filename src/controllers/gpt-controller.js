@@ -613,6 +613,7 @@ async function fetchAmbassadorDetails(req, res) {
 
 async function fetchGptUser(req, res) {
   try {
+    const currencyType = req.query.currencyType;
     const { _id } = req.body.client;
     if (!_id)
       return res
@@ -620,7 +621,7 @@ async function fetchGptUser(req, res) {
         .json(
           ErrorResponse({}, { message: "Missing jwt for user authorization" })
         );
-    const gptUser = await GptServices.fetchGptUser(_id);
+    const gptUser = await GptServices.fetchGptUser(_id, currencyType);
 
     const gtpUserGuy = await prisma.user.findFirst({
       where: {

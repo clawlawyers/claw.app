@@ -72,7 +72,7 @@ async function getClientById(req, res) {
 
 async function verify(req, res) {
   try {
-    const { phoneNumber, verified } = req.body;
+    const { phoneNumber, verified, currencyType } = req.body;
     console.log(req.body);
     const existing = await ClientService.getClientByPhoneNumber(phoneNumber);
 
@@ -218,7 +218,7 @@ async function verify(req, res) {
 
     // console.log(jwt, expiresAt);
     // check if new gpt user
-    const existingGptUser = await fetchGptUser(existing.id);
+    const existingGptUser = await fetchGptUser(existing.id, currencyType);
     // if (!existingGptUser)
     //   await GptServices.createGptUser(phoneNumber, existing.id);
 
@@ -463,7 +463,7 @@ async function googleAuthCallback(req, res) {
 
     // console.log(jwt, expiresAt);
     // check if new gpt user
-    const existingGptUser = await fetchGptUser(existing.id);
+    const existingGptUser = await fetchGptUser(existing.id, currencyType);
     if (!existingGptUser)
       await GptServices.createGptUser(phoneNumber, existing.id);
 

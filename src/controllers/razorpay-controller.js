@@ -396,7 +396,8 @@ async function loginUserWithPlanBuy(
   phoneNumber,
   verified,
   planName,
-  razorpay_subscription_id
+  razorpay_subscription_id,
+  currencyType
 ) {
   try {
     // const { phoneNumber, verified } = req.body;
@@ -419,7 +420,8 @@ async function loginUserWithPlanBuy(
         phoneNumber,
         client.id,
         planName,
-        razorpay_subscription_id
+        razorpay_subscription_id,
+        currencyType
       );
 
       const adiraPlan = await prisma.userAdiraPlan.findFirst({
@@ -475,7 +477,8 @@ async function loginUserWithPlanBuy(
         null,
         "",
         expiresAt,
-        99
+        99,
+        currencyType
       );
 
       console.log("plan created");
@@ -492,7 +495,8 @@ async function loginUserWithPlanBuy(
         null,
         "",
         expiresAt,
-        99
+        99,
+        currencyType
       );
 
       console.log("plan created");
@@ -513,7 +517,7 @@ async function loginUserWithPlanBuy(
     await existing.save();
 
     // check if new gpt user
-    const existingGptUser = await fetchGptUser(existing.id);
+    const existingGptUser = await fetchGptUser(existing.id, currencyType);
 
     const sessions = await GptServices.incrementNumberOfSessions(
       updatedClient.id,
@@ -567,6 +571,7 @@ async function createPayment(req, res) {
     billingCycle,
     user: fetchUser._id,
     paymentStatus: paymentStatus.INITIATED,
+    currencyType: currency,
   });
 
   try {
@@ -625,7 +630,8 @@ async function verifyPayment(req, res) {
         refferalCode,
         couponCode,
         expiresAt,
-        amount
+        amount,
+        (currencyType = placedOrder.currencyType)
       );
       // insert it into user purchase
 
@@ -696,6 +702,7 @@ async function verifySubscription(req, res) {
     razorpay_payment_id,
     razorpay_signature,
     phoneNumber,
+    currencyType,
   } = req.body;
 
   try {
@@ -710,7 +717,8 @@ async function verifySubscription(req, res) {
         phoneNumber,
         true,
         "Campaign-99",
-        razorpay_subscription_id
+        razorpay_subscription_id,
+        currencyType
       );
       res.status(200).json({
         status:

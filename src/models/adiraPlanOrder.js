@@ -39,6 +39,11 @@ const AdiraPlanOrderSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    currencyType: {
+      type: String,
+      trim: true,
+      default: "INR",
+    },
   },
   { timestamps: true }
 );
