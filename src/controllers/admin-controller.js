@@ -1072,30 +1072,175 @@ async function getUsers(req, res) {
 
 async function getSubscribedUsers(req, res) {
   try {
-    const nonFreeOrStudentUsers = await prisma.userAdiraPlan.findMany({
-      where: {
-        planName: {
-          notIn: ["FREE", "ADMIN"],
+    console.log("Fetching subscribed users...");
+
+    // Get users with different types of plans
+    const [usersWithAllPlan, usersWithNewPlan, usersWithAdiraPlan] = await Promise.all([
+      // All-in-One Plans
+      prisma.user.findMany({
+        where: {
+          UserAllPlan: {
+            some: {
+              isActive: true,
+              NOT: {
+                planName: {
+                  in: ["FREE", "ADMIN", "FREE_M"]
+                }
+              }
+            }
+          }
         },
-      },
-      include: {
-        user: true,
-      },
-    });
+        include: {
+          UserAllPlan: {
+            where: {
+              isActive: true,
+              NOT: {
+                planName: {
+                  in: ["FREE", "ADMIN", "FREE_M"]
+                }
+              }
+            },
+            include: { plan: true }
+          }
+        }
+      }),
 
-    console.log(nonFreeOrStudentUsers);
+      // New Plans
+      prisma.user.findMany({
+        where: {
+          newplans: {
+            some: {
+              isActive: true,
+              NOT: {
+                planName: {
+                  in: ["FREE", "ADMIN", "FREE_M"]
+                }
+              }
+            }
+          }
+        },
+        include: {
+          newplans: {
+            where: {
+              isActive: true
+            },
+            include: { plan: true }
+          }
+        }
+      }),
 
-    const filteredUsers = nonFreeOrStudentUsers.filter((user) => {
-      const phoneNumber = user.user.phoneNumber;
-      const startsWithValidDigit = /^[9876]/.test(phoneNumber);
-      const allDigitsSame = /^(\d)\1*$/.test(phoneNumber);
-      return startsWithValidDigit && !allDigitsSame;
-    });
+      // Adira Plans
+      prisma.user.findMany({
+        where: {
+          UserAdiraPlan: {
+            some: {
+              isActive: true,
+              NOT: {
+                planName: {
+                  in: ["FREE", "ADMIN", "FREE_M"]
+                }
+              }
+            }
+          }
+        },
+        include: {
+          UserAdiraPlan: {
+            where: {
+              isActive: true
+            },
+            include: { plan: true }
+          }
+        }
+      })
+    ]);
 
-    res.json(filteredUsers);
+    // Format the response data
+    const formattedUsers = [
+      ...usersWithAllPlan.map(user => ({
+        userId: user.mongoId,
+        phoneNumber: user.phoneNumber,
+        email: user.email || '',
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        plans: user.UserAllPlan.map(plan => ({
+          type: 'All-in-One',
+          planName: plan.planName,
+          startDate: plan.createdAt,
+          expiryDate: plan.expiresAt,
+          isActive: plan.isActive,
+          paidPrice: plan.Paidprice,
+          usage: {
+            legalGpt: {
+              used: plan.UsedlegalGptToken,
+              total: plan.plan?.legalGptToken || 0,
+              time: plan.UsedLegalGPTime
+            },
+            adira: {
+              used: plan.UsedAdiraToken,
+              total: plan.plan?.AdiraToken || 0,
+              time: plan.UsedAdiraTime
+            },
+            warroom: {
+              used: plan.UsedWarroomToken,
+              total: plan.plan?.WarroomToken || 0,
+              time: plan.UsedWarroomTime
+            }
+          }
+        }))
+      })),
+
+      ...usersWithNewPlan.map(user => ({
+        userId: user.mongoId,
+        phoneNumber: user.phoneNumber,
+        email: user.email || '',
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        plans: user.newplans.map(plan => ({
+          type: 'New Plan',
+          planName: plan.planName,
+          startDate: plan.createdAt,
+          expiryDate: plan.expiresAt,
+          isActive: plan.isActive,
+          paidPrice: plan.Paidprice
+        }))
+      })),
+
+      ...usersWithAdiraPlan.map(user => ({
+        userId: user.mongoId,
+        phoneNumber: user.phoneNumber,
+        email: user.email || '',
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        plans: user.UserAdiraPlan.map(plan => ({
+          type: 'Adira',
+          planName: plan.planName,
+          startDate: plan.createdAt,
+          expiryDate: plan.expiresAt,
+          isActive: plan.isActive,
+          paidPrice: plan.Paidprice,
+          documentsUsed: plan.totalDocumentsUsed || 0,
+          totalDocuments: plan.totalDocuments || 0
+        }))
+      }))
+    ];
+
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        users: formattedUsers,
+        total: formattedUsers.length,
+        breakdown: {
+          allInOne: usersWithAllPlan.length,
+          newPlan: usersWithNewPlan.length,
+          adira: usersWithAdiraPlan.length
+        }
+      })
+    );
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: error.message });
+    console.error("Error fetching subscribed users:", error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({
+        message: "Failed to fetch subscribed users",
+        error: error.message
+      }));
   }
 }
 

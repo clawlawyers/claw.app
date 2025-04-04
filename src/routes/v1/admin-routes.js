@@ -76,7 +76,9 @@ router.get("/referralcode", getReferralCodes);
 // router.post("/referralcode", createReferralCodes);  // deprecated
 router.get("/plan", getPlans);
 router.get("/user", getUsers);
-router.get("/subscribed-user", getSubscribedUsers);
+router.get("/subscribed-users", (req, res) => {
+    getSubscribedUsers(req, res);
+});
 router.get("/model", getModels);
 router.get("/session", getSessions);
 router.get("/message", getMessages);
@@ -230,5 +232,10 @@ router.get("/sessions/:userId", totalSessions);
 router.get("/sessionsHistory/:userId/:sessionId", sessionHistory);
 
 router.post("/create-plan", createPlan);
+
+// Add a test route to verify routing
+router.get("/test", (req, res) => {
+    res.json({ message: "Admin routes are working" });
+});
 
 module.exports = router;
