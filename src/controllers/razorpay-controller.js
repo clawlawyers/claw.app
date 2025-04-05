@@ -656,12 +656,26 @@ async function verifyPayment(req, res) {
 
 // Create subscription
 async function createSubscription(req, res) {
-  const { phoneNumber } = req.body;
+  const { phoneNumber, amount, planName, planId, billingCycle, currency } =
+    req.body;
+
+  const fetchUser = await ClientService.getClientByPhoneNumber(phoneNumber);
+
+  console.log(fetchUser._id.toHexString());
+
+  const order = await AdiraOrderService.createOrder({
+    price: amount,
+    planName,
+    billingCycle,
+    user: fetchUser._id,
+    paymentStatus: paymentStatus.INITIATED,
+    currencyType: currency,
+  });
 
   try {
     const subscriptionOptions = {
-      plan_id: "plan_PmUHtDg2UWQTqs", // live
-      // plan_id: "plan_PiqDuUsceqF696", // test
+      //  plan_id: "plan_PmUHtDg2UWQTqs", // live
+      plan_id: planId, // test
       customer_notify: 1,
       total_count: 12,
       notes: {
@@ -699,7 +713,7 @@ async function verifySubscription(req, res) {
     razorpay_payment_id,
     razorpay_signature,
     phoneNumber,
-    currencyType,
+    _id,
   } = req.body;
 
   try {
@@ -710,12 +724,14 @@ async function verifySubscription(req, res) {
       .digest("hex");
 
     if (generatedSignature === razorpay_signature) {
+      const placedOrder = await AdiraOrderService.updateOrder(_id, {
+        paymentStatus: paymentStatus.SUCCESS,
+      });
       let resp = await loginUserWithPlanBuy(
         phoneNumber,
         true,
         "Campaign-99",
-        razorpay_subscription_id,
-        currencyType
+        razorpay_subscription_id
       );
       res.status(200).json({
         status:
