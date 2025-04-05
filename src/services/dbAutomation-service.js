@@ -17,7 +17,7 @@ async function handleExpiredPlans() {
     oneYearAgo.setFullYear(now.getFullYear() - 1);
 
     // Find all user plans that have expired
-    const expiredPlans = await prisma.newUserPlan.findMany({
+    const expiredPlans = await prisma.userAllPlan.findMany({
       where: {
         OR: [
           {
@@ -51,7 +51,7 @@ async function handleExpiredPlans() {
       const { userId, planName } = userPlan;
 
       // Remove expired plan
-      await prisma.newUserPlan.delete({
+      await prisma.userAllPlan.delete({
         where: {
           userId_planName: {
             userId: userId,
