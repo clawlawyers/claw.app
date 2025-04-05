@@ -1984,7 +1984,7 @@ async function updateUserAdiraPlan(
           },
         });
       }
-    } else {
+    } else if (existingSubscription === "" && currencyType === "INR") {
       if (refferalCode || couponCode) {
         updatedUserPlan = await prisma.userAllPlan.create({
           data: {
@@ -2103,7 +2103,7 @@ async function updateUserAdiraPlan(
           },
         });
       }
-    } else {
+    } else if (existingSubscription === "" && currencyType === "USD") {
       if (refferalCode || couponCode) {
         updatedUserPlan = await prisma.userAllUSPlan.create({
           data: {
@@ -2222,7 +2222,7 @@ async function updateUserAdiraPlan(
           },
         });
       }
-    } else {
+    } else if (existingSubscription === "" && currencyType === "GBP") {
       if (refferalCode || couponCode) {
         updatedUserPlan = await prisma.userAllUKPlan.create({
           data: {
