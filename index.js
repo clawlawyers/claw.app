@@ -68,6 +68,8 @@ app.use("", (req, res) => {
 cron.schedule("0 0 * * *", async () => {
   console.log("Running scheduled task to handle expired plans");
   await DbAutomationService.handleExpiredPlans();
+  await DbAutomationService.handleExpiredPlansUK();
+  await DbAutomationService.handleExpiredPlansUS();
   await DbAutomationService.resetTotalUsedForAllClients();
 });
 
