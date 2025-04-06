@@ -50,7 +50,6 @@ async function sessionHistory(req, res) {
       .status(StatusCodes.OK)
       .json(SuccessResponse({ sessionMessages }));
   } catch (error) {
-    console.error(error);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error.message));
@@ -76,7 +75,6 @@ async function totalSessions(req, res) {
     });
     return res.status(StatusCodes.OK).json(SuccessResponse({ SessionList }));
   } catch (error) {
-    console.error(error);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error.message));
@@ -121,7 +119,6 @@ async function getFeedback(req, res) {
 
     return res.status(200).json(SuccessResponse({ feedbackWithDetails }));
   } catch (error) {
-    console.error(error);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error.message));
@@ -138,7 +135,7 @@ async function userPlanDist(req, res) {
         planName: true,
       },
     });
-    console.log(totalActiveUserPlan);
+
     // Group the plan names and count occurrences
     const groupedPlans = totalActiveUserPlan.reduce((acc, plan) => {
       acc[plan.planName] = (acc[plan.planName] || 0) + 1;
@@ -150,11 +147,10 @@ async function userPlanDist(req, res) {
       name: planName,
       value: groupedPlans[planName],
     }));
-    console.log(data);
+
     return res.status(201).json(SuccessResponse({ data: data }));
   } catch (error) {
-    console.log(error);
-    res
+    return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error.message));
   }
@@ -163,13 +159,11 @@ async function userPlanDist(req, res) {
 async function deleteTrialCoupon(req, res) {
   try {
     const { id } = req.body;
-    console.log(id);
     await TrialCourtroomCoupon.deleteOne(coupon);
     return res
       .status(201)
       .json(SuccessResponse({ status: "coupon deleted sucessfully" }));
   } catch (error) {
-    console.log(error);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error.message));
@@ -190,7 +184,6 @@ async function createTrialCoupon(req, res) {
     await newCoupon.save();
     return res.status(201).json(SuccessResponse({ coupon: newCoupon }));
   } catch (error) {
-    console.log(error);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error.message));
@@ -200,10 +193,8 @@ async function createTrialCoupon(req, res) {
 async function getTrialCoupon(req, res) {
   try {
     const coupons = await TrialCourtroomCoupon.find({});
-    console.log(coupons);
     return res.status(200).json(SuccessResponse({ coupons }));
   } catch (error) {
-    console.log(error);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error.message));
@@ -214,11 +205,9 @@ async function getAllAdminNumbers(req, res) {
   try {
     const users = await AdminUser.find({});
     const adminNumbers = users.map((user) => user.phoneNumber);
-    console.log(adminNumbers);
     return res.status(200).json(SuccessResponse({ users }));
   } catch (error) {
-    console.log(error);
-    res
+    return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
   }
@@ -226,10 +215,8 @@ async function getAllAdminNumbers(req, res) {
 
 async function addNewAdmin(req, res) {
   const { name, phoneNumber } = req.body;
-  console.log(phoneNumber);
   try {
     const existing = await AdminUser.findOne({ phoneNumber: phoneNumber });
-    console.log(existing);
     if (existing) {
       return res.status(400).json(SuccessResponse("Admin already exists"));
     }
@@ -237,26 +224,23 @@ async function addNewAdmin(req, res) {
     await newAdmin.save();
     return res
       .status(StatusCodes.OK)
-      .json(SuccessResponse("Admin already successfully"));
+      .json(SuccessResponse("Admin added successfully"));
   } catch (error) {
-    console.log(error);
-    res
+    return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
   }
 }
+
 async function deleteAdmin(req, res) {
   const { phoneNumber } = req.body;
-  console.log(phoneNumber);
   try {
     const existing = await AdminUser.findByIdAndDelete(phoneNumber);
-
     return res
       .status(StatusCodes.OK)
       .json(SuccessResponse("Admin deleted successfully"));
   } catch (error) {
-    console.log(error);
-    res
+    return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
   }
@@ -266,7 +250,6 @@ async function verifyAdminUser(req, res) {
   try {
     const token = req.headers["authorization"].split(" ")[1];
     const data = verifyToken(token);
-    console.log(data);
     const phoneNumber = data.phoneNumber;
     const admin = await AdminUser.findOne({ phoneNumber });
     if (!admin) {
@@ -279,8 +262,7 @@ async function verifyAdminUser(req, res) {
       .status(StatusCodes.OK)
       .json(SuccessResponse({ admin, ...newtoken }));
   } catch (error) {
-    console.log(error);
-    res
+    return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error.message));
   }
@@ -295,16 +277,12 @@ async function adminLogin(req, res) {
         .status(StatusCodes.NOT_FOUND)
         .json(ErrorResponse("Admin not found"));
     }
-    console.log(admin);
-
     const token = createToken({ phoneNumber });
-
     return res
       .status(StatusCodes.OK)
       .json(SuccessResponse({ admin, ...token }));
   } catch (error) {
-    console.log(error);
-    res
+    return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({ ...error.message }, error));
   }
@@ -318,7 +296,6 @@ async function deleteClientCourtroomBookings(req, res) {
       .status(StatusCodes.OK)
       .json(SuccessResponse("Client courtroom bookings deleted successfully"));
   } catch (error) {
-    console.log(error);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -330,7 +307,6 @@ async function getClientCourtroomBookings(req, res) {
     const clientUsers = await SpecificLawyerCourtroomUser.find({});
     return res.status(StatusCodes.OK).json(SuccessResponse(clientUsers));
   } catch (error) {
-    console.log(error);
     res.status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).j;
   }
 }
@@ -338,7 +314,6 @@ async function getClientCourtroomBookings(req, res) {
 async function updateClientCourtroomBooking(req, res) {
   try {
     const { updatedData } = req.body;
-    console.log(updatedData);
     const clientUser = await SpecificLawyerCourtroomUser.findOneAndUpdate(
       {
         Domain: updatedData.Domain,
@@ -352,7 +327,6 @@ async function updateClientCourtroomBooking(req, res) {
     );
     return res.status(StatusCodes.OK).json(SuccessResponse(clientUser));
   } catch (error) {
-    console.log(error);
     res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -390,16 +364,10 @@ async function updateUserTiming(req, res) {
       return res.status(404).send("User not found in this booking.");
     }
 
-    // console.log(booking.courtroomBookings[userIndex]);
-
     const existingUser = booking.courtroomBookings[userIndex];
-
-    console.log(existingUser);
 
     // Remove the user from the current slot
     booking.courtroomBookings.splice(userIndex, 1);
-
-    // console.log(booking);
 
     // Check if the new slot exists for the new date and hour
     let newBooking = await CourtRoomBooking.findOne({
@@ -415,8 +383,6 @@ async function updateUserTiming(req, res) {
         courtroomBookings: [],
       });
     }
-
-    console.log(newBooking);
 
     // Check if the total bookings exceed the limit in the new slot
     if (newBooking.courtroomBookings.length >= 4) {
@@ -440,18 +406,11 @@ async function updateUserTiming(req, res) {
       caseOverview: existingUser.recording,
     });
 
-    console.log(newCourtroomUser);
-
     // Save the new courtroom user
     const savedCourtroomUser = await newCourtroomUser.save();
 
-    console.log(savedCourtroomUser);
-
     // Add the new booking
     newBooking.courtroomBookings.push(savedCourtroomUser._id);
-
-    // Save the booking
-    await newCourtroomUser.save();
 
     // Save the new booking
     await newBooking.save();
@@ -461,7 +420,6 @@ async function updateUserTiming(req, res) {
 
     res.status(200).send("User slot timing successfully updated.");
   } catch (error) {
-    console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -472,8 +430,6 @@ async function updateUserDetails(req, res) {
   try {
     const { userId } = req.params;
     const { name, phoneNumber, email, recording } = req.body;
-
-    console.log(req.body);
 
     // Validate input
     if (!name && !phoneNumber && !email && !recording) {
@@ -498,7 +454,6 @@ async function updateUserDetails(req, res) {
 
     res.status(200).send("User data successfully updated.");
   } catch (error) {
-    console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -537,7 +492,6 @@ async function deleteBooking(req, res) {
         SuccessResponse({ response: "User successfully removed from booking." })
       );
   } catch (error) {
-    console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -559,7 +513,6 @@ async function getAllCourtRoomData(req, res) {
 
     return res.status(StatusCodes.OK).json(SuccessResponse(formattedBookings));
   } catch (error) {
-    console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -572,7 +525,6 @@ async function removeUserPlan(req, res) {
     const deletePlan = await GptServices.removeUserPlans(userId, planName);
     return res.status(StatusCodes.OK).json(SuccessResponse({ ...deletePlan }));
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ error: "An error occurred while removing user plan" });
@@ -586,7 +538,6 @@ async function isAdmin(req, res) {
 
     return res.status(200).json(isAdmin);
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ error: "An error occurred while checking admin status" });
@@ -600,7 +551,6 @@ async function removeAdminUser(req, res) {
     const updatedUser = await GptServices.removeAdminUser(adminId, userId);
     res.status(200).json(updatedUser);
   } catch (error) {
-    console.error(error);
     res.status(500).json({
       error: "An error occurred while removing the user from the admin",
     });
@@ -612,7 +562,6 @@ async function getAdmins(req, res) {
     const admins = await GptServices.getAdmins();
     res.status(200).json(admins);
   } catch (error) {
-    console.error(error);
     res.status(500).json({ error: "An error occurred while fetching admins" });
   }
 }
@@ -626,7 +575,6 @@ async function createAdmin(req, res) {
 
     res.status(200).json(updatedUser);
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ error: "An error occurred while adding the user to the admin" });
@@ -642,7 +590,6 @@ async function addFirstUser(req, res) {
 
     res.status(201).json({ admin: newAdmin, user: updatedUser });
   } catch (error) {
-    console.error(error);
     res.status(500).json({
       error: "An error occurred while creating the admin and adding the user",
     });
@@ -654,8 +601,6 @@ async function updateUserPlan(req, res) {
     let { id, planNames } = req.body;
     const userCurrPlans = await GptServices.getPlansByUserId(id);
 
-    console.log(planNames, userCurrPlans);
-
     let tempPlanNames = planNames;
     let tempUserCurrPlans = userCurrPlans;
 
@@ -666,9 +611,6 @@ async function updateUserPlan(req, res) {
     tempUserCurrPlans = tempUserCurrPlans.filter(
       (plan) => !planNames.includes(plan)
     );
-
-    console.log(tempPlanNames);
-    console.log(tempUserCurrPlans);
 
     if (tempUserCurrPlans.length > 0) {
       await GptServices.removeUserPlans(id, tempUserCurrPlans);
@@ -686,7 +628,6 @@ async function updateUserPlan(req, res) {
       .status(StatusCodes.OK)
       .json(SuccessResponse({ ...tempPlanNames }));
   } catch (error) {
-    console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -697,8 +638,6 @@ async function generateReferralCode(req, res) {
   try {
     const { _id, firstName, lastName, collegeName } = req.body.client;
 
-    // console.log(req.body.client);
-
     const updatedClient = await ClientService.updateClient(_id, {
       firstName,
       lastName,
@@ -706,13 +645,9 @@ async function generateReferralCode(req, res) {
       ambassador: true,
     });
 
-    // console.log(updatedClient);
-
     const referralCodeExist = await GptServices.CheckReferralCodeExistToUser(
       _id
     );
-
-    // console.log(referralCodeExist);
 
     if (referralCodeExist) {
       return res.status(StatusCodes.OK).json(
@@ -764,7 +699,6 @@ async function generateReferralCode(req, res) {
       })
     );
   } catch (error) {
-    console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -807,16 +741,12 @@ async function getReferralCodes(req, res) {
       userPhoneNumbers
     );
 
-    // console.log(SupaUsers);
-
     // Map through referral codes and merge user details
     const formattedReferralCodes = referralCodes.map((code) => {
       // Find generatedBy user
       const generatedByUser = users.find(
         (u) => u.phoneNumber === code.generatedBy.phoneNumber
       );
-
-      // console.log(generatedByUser);
 
       // Map redeemedBy users
       const redeemedByUsers = code.redeemedBy.map((redeemedUser) => {
@@ -870,21 +800,10 @@ async function getReferralCodes(req, res) {
           phoneNumber: code.generatedBy.phoneNumber,
           firstName: generatedByUser?.firstName || "",
           lastName: generatedByUser?.lastName || "",
-          // plan: generatedByUser
-          //   ? {
-          //       planName: generatedByUser.planName,
-          //       token: {
-          //         used: generatedByUser.tokenUsed,
-          //         total: generatedByUser.plan.token,
-          //       },
-          //     }
-          //   : null,
         },
         redeemedBy: redeemedByUsers,
       };
     });
-
-    // console.log(formattedReferralCodes);
 
     res.json(formattedReferralCodes);
   } catch (error) {
@@ -930,141 +849,208 @@ async function createPlan(req, res) {
     });
     return res.status(StatusCodes.CREATED).json(SuccessResponse({ newPlan }));
   } catch (error) {
-    console.log(error);
     res.status(error.statusCode).json(ErrorResponse({}, error.message));
   }
 }
 
 async function getUsers(req, res) {
   try {
-    // Fetch all users from Prisma
-    const users = await prisma.user.findMany({});
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const sortKey = req.query.sortKey || 'createdAt';
+    const sortDirection = req.query.sortDirection === 'desc' ? 'desc' : 'asc';
 
-    // Filter users on the server side
-    const filteredUsers = users.filter((user) => {
+    // Define which fields can be sorted in Prisma
+    const prismaDirectSortFields = ['createdAt', 'updatedAt', 'phoneNumber'];
+    
+    // Create sort object for Prisma query
+    const orderBy = prismaDirectSortFields.includes(sortKey) 
+      ? { [sortKey]: sortDirection }
+      : { createdAt: 'desc' }; // default sort
+
+    // Fetch ALL users from Prisma (without pagination)
+    const [users, totalCount] = await Promise.all([
+      prisma.user.findMany({
+        where: {
+          OR: [
+            { phoneNumber: { startsWith: '6' } },
+            { phoneNumber: { startsWith: '7' } },
+            { phoneNumber: { startsWith: '8' } },
+            { phoneNumber: { startsWith: '9' } }
+          ]
+        },
+        orderBy: prismaDirectSortFields.includes(sortKey) ? orderBy : undefined,
+        include: {
+          UserAllPlan: {
+            where: {
+              isActive: true
+            },
+            include: {
+              plan: true
+            }
+          }
+        }
+      }),
+      prisma.user.count({
+        where: {
+          OR: [
+            { phoneNumber: { startsWith: '6' } },
+            { phoneNumber: { startsWith: '7' } },
+            { phoneNumber: { startsWith: '8' } },
+            { phoneNumber: { startsWith: '9' } }
+          ]
+        }
+      })
+    ]);
+
+    // Filter out phone numbers where all digits are the same
+    const filteredUsers = users.filter(user => {
       const phoneNumber = user.phoneNumber;
-      const startsWithValidDigit = /^[9876]/.test(phoneNumber);
-      const allDigitsSame = /^(\d)\1*$/.test(phoneNumber);
-      return startsWithValidDigit && !allDigitsSame;
+      return !/^(\d)\1*$/.test(phoneNumber);
     });
 
-    const MongoUser = await ClientService.getAllClientsDetails();
+    // Fetch corresponding MongoDB users in bulk
+    const phoneNumbers = filteredUsers.map(user => user.phoneNumber);
+    const MongoUsers = await ClientService.getClientByPhoneNumbers(phoneNumbers);
 
-    const filteredUsersMongo = MongoUser.filter((Muser) => {
-      const phoneNumber = Muser.phoneNumber;
-      const startsWithValidDigit = /^[9876]/.test(phoneNumber);
-      const allDigitsSame = /^(\d)\1*$/.test(phoneNumber);
-      return startsWithValidDigit && !allDigitsSame;
-    });
-
-    // Fetch all user plans in one call and map them by user ID
-    const userPlans = await prisma.userPlan.findMany({
-      include: { plan: true },
-    });
-
-    const userPlansMap = userPlans.reduce((acc, userPlan) => {
-      if (!acc[userPlan.userId]) {
-        acc[userPlan.userId] = [];
-      }
-      acc[userPlan.userId].push(userPlan.plan.name);
+    // Create a map for faster lookups
+    const mongoUsersMap = MongoUsers.reduce((acc, user) => {
+      acc[user.phoneNumber] = user;
       return acc;
     }, {});
 
-    // Merge the filtered users from both MongoDB and Prisma
-    const mergedUsers = filteredUsers
-      .map((Muser) => {
-        const user = filteredUsersMongo.find(
-          (user) => user.phoneNumber === Muser.phoneNumber
+    // Process the data
+    let mergedUsers = filteredUsers.map(user => {
+      const mongoUser = mongoUsersMap[user.phoneNumber];
+      if (!mongoUser) return null;
+
+      const planNames = user.UserAllPlan.map(up => up.plan.name);
+
+      // Calculate engagement times with proper number conversion
+      const calculateEngagementTime = (timeMap) => {
+        if (!timeMap || !timeMap.values) return 0;
+        return parseFloat(
+          Array.from(timeMap.values())
+            .reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0)
+            .toFixed(2)
         );
+      };
 
-        if (user) {
-          // Fetch the plan names from the userPlansMap
-          const planNames = userPlansMap[Muser.mongoId] || [];
+      // Format engagement time
+      const engagementTime = mongoUser?.engagementTime ? {
+        daily: calculateEngagementTime(mongoUser.engagementTime.daily),
+        monthly: calculateEngagementTime(mongoUser.engagementTime.monthly),
+        yearly: calculateEngagementTime(mongoUser.engagementTime.yearly),
+        total: parseFloat((mongoUser.engagementTime.total || 0).toFixed(2))
+      } : {
+        daily: 0,
+        monthly: 0,
+        yearly: 0,
+        total: 0
+      };
 
-          // Format engagement time
-          const engagementTime = user?.engagementTime
-            ? {
-                daily: Array.from(user.engagementTime.daily.values())
-                  .reduce((a, b) => a + b, 0)
-                  .toFixed(2),
-                monthly: Array.from(user.engagementTime.monthly.values())
-                  .reduce((a, b) => a + b, 0)
-                  .toFixed(2),
-                yearly: Array.from(user.engagementTime.yearly.values())
-                  .reduce((a, b) => a + b, 0)
-                  .toFixed(2),
-                total: user.engagementTime.total.toFixed(2),
-              }
-            : null;
-          const adiraEngagement = user?.spcificEngagementTime.Adira
-            ? {
-                daily: Array.from(
-                  user.spcificEngagementTime.Adira.daily.values()
-                )
-                  .reduce((a, b) => a + b, 0)
-                  .toFixed(2),
-                monthly: Array.from(
-                  user.spcificEngagementTime.Adira.monthly.values()
-                )
-                  .reduce((a, b) => a + b, 0)
-                  .toFixed(2),
-                yearly: Array.from(
-                  user.spcificEngagementTime.Adira.yearly.values()
-                )
-                  .reduce((a, b) => a + b, 0)
-                  .toFixed(2),
-                total: user.spcificEngagementTime.Adira.total.toFixed(2),
-              }
-            : null;
-          const warroomEngagement = user?.spcificEngagementTime.Warroom
-            ? {
-                daily: Array.from(
-                  user.spcificEngagementTime.Warroom.daily.values()
-                )
-                  .reduce((a, b) => a + b, 0)
-                  .toFixed(2),
-                monthly: Array.from(
-                  user.spcificEngagementTime.Warroom.monthly.values()
-                )
-                  .reduce((a, b) => a + b, 0)
-                  .toFixed(2),
-                yearly: Array.from(
-                  user.spcificEngagementTime.Warroom.yearly.values()
-                )
-                  .reduce((a, b) => a + b, 0)
-                  .toFixed(2),
-                total: user.spcificEngagementTime.Warroom.total.toFixed(2),
-              }
-            : null;
+      const adiraEngagement = mongoUser?.spcificEngagementTime?.Adira ? {
+        daily: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.daily),
+        monthly: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.monthly),
+        yearly: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.yearly),
+        total: parseFloat((mongoUser.spcificEngagementTime.Adira.total || 0).toFixed(2))
+      } : {
+        daily: 0,
+        monthly: 0,
+        yearly: 0,
+        total: 0
+      };
 
-          return {
-            mongoId: Muser.mongoId,
-            phoneNumber: Muser.phoneNumber,
-            createdAt: Muser.createdAt,
-            updatedAt: Muser.updatedAt,
-            totalTokenUsed: Muser.totalTokenUsed,
-            StateLocation: Muser.StateLocation,
-            numberOfSessions: Muser.numberOfSessions,
-            planNames, // Use the fetched plan names here
-            ambassador: user.ambassador,
-            engagementTime: engagementTime,
-            adiraEngagement: adiraEngagement,
-            warroomEngagement: warroomEngagement,
-            adiraLastPage: user.spcificEngagementTime.Adira.lastPage,
-            warrromLastPage: user.spcificEngagementTime.Warroom.lastPage,
-            mainWebsite: user.engagementTime.lastPage,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            collegeName: user.collegeName,
-            averageSessionEngagementTime:
-              engagementTime?.total / Muser?.numberOfSessions,
-          };
-        }
-      })
-      .filter(Boolean); // Remove undefined entries
+      const warroomEngagement = mongoUser?.spcificEngagementTime?.Warroom ? {
+        daily: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.daily),
+        monthly: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.monthly),
+        yearly: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.yearly),
+        total: parseFloat((mongoUser.spcificEngagementTime.Warroom.total || 0).toFixed(2))
+      } : {
+        daily: 0,
+        monthly: 0,
+        yearly: 0,
+        total: 0
+      };
 
-    // Send the filtered users as response
-    res.json(mergedUsers);
+      const averageSessionEngagementTime = user.numberOfSessions > 0 
+        ? parseFloat((engagementTime.total / user.numberOfSessions).toFixed(2))
+        : 0;
+
+      return {
+        mongoId: user.mongoId,
+        phoneNumber: user.phoneNumber,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        totalTokenUsed: user.totalTokenUsed || 0,
+        StateLocation: user.StateLocation || '',
+        numberOfSessions: user.numberOfSessions || 0,
+        planNames,
+        ambassador: mongoUser.ambassador || false,
+        engagementTime,
+        adiraEngagement,
+        warroomEngagement,
+        adiraLastPage: mongoUser.spcificEngagementTime?.Adira?.lastPage || '',
+        warroomLastPage: mongoUser.spcificEngagementTime?.Warroom?.lastPage || '',
+        mainWebsite: mongoUser.engagementTime?.lastPage || '',
+        firstName: mongoUser.firstName || '',
+        lastName: mongoUser.lastName || '',
+        collegeName: mongoUser.collegeName || '',
+        averageSessionEngagementTime
+      };
+    }).filter(Boolean);
+
+    // Handle sorting for fields that need to be sorted after data processing
+    if (!prismaDirectSortFields.includes(sortKey)) {
+      const sortFields = {
+        'dailyEngagementTime': user => user.engagementTime.daily,
+        'monthlyEngagementTime': user => user.engagementTime.monthly,
+        'totalEngagementTime': user => user.engagementTime.total,
+        'adiraDailyEngagementTime': user => user.adiraEngagement.daily,
+        'warroomDailyEngagementTime': user => user.warroomEngagement.daily,
+        'adiraLastPage': user => user.adiraLastPage.toLowerCase(),
+        'mainWebsite': user => user.mainWebsite.toLowerCase(),
+        'warroomLastPage': user => user.warroomLastPage.toLowerCase(),
+        'averageSessionEngagementTime': user => user.averageSessionEngagementTime,
+        'numberOfSessions': user => user.numberOfSessions,
+        'totalTokenUsed': user => user.totalTokenUsed
+      };
+
+      if (sortFields[sortKey]) {
+        mergedUsers.sort((a, b) => {
+          const aValue = sortFields[sortKey](a);
+          const bValue = sortFields[sortKey](b);
+          
+          // Handle string comparisons
+          if (typeof aValue === 'string' && typeof bValue === 'string') {
+            return sortDirection === 'asc' 
+              ? aValue.localeCompare(bValue)
+              : bValue.localeCompare(aValue);
+          }
+          
+          // Handle number comparisons
+          return sortDirection === 'asc' 
+            ? aValue - bValue
+            : bValue - aValue;
+        });
+      }
+    }
+
+    // Apply pagination after sorting
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedUsers = mergedUsers.slice(startIndex, endIndex);
+
+    // Send the response with pagination metadata
+    res.json({
+      users: paginatedUsers,
+      pagination: {
+        total: mergedUsers.length,
+        page,
+        limit,
+        totalPages: Math.ceil(mergedUsers.length / limit)
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -1072,30 +1058,174 @@ async function getUsers(req, res) {
 
 async function getSubscribedUsers(req, res) {
   try {
-    const nonFreeOrStudentUsers = await prisma.userAdiraPlan.findMany({
-      where: {
-        planName: {
-          notIn: ["FREE", "ADMIN"],
+    console.log("Fetching subscribed users...");
+
+    // Get users with different types of plans
+    const [usersWithAllPlan, usersWithNewPlan, usersWithAdiraPlan] = await Promise.all([
+      // All-in-One Plans
+      prisma.user.findMany({
+        where: {
+          UserAllPlan: {
+            some: {
+              isActive: true,
+              NOT: {
+                planName: {
+                  in: ["FREE", "ADMIN", "FREE_M"]
+                }
+              }
+            }
+          }
         },
-      },
-      include: {
-        user: true,
-      },
-    });
+        include: {
+          UserAllPlan: {
+            where: {
+              isActive: true,
+              NOT: {
+                planName: {
+                  in: ["FREE", "ADMIN", "FREE_M"]
+                }
+              }
+            },
+            include: { plan: true }
+          }
+        }
+      }),
 
-    console.log(nonFreeOrStudentUsers);
+      // New Plans
+      prisma.user.findMany({
+        where: {
+          newplans: {
+            some: {
+              isActive: true,
+              NOT: {
+                planName: {
+                  in: ["FREE", "ADMIN", "FREE_M"]
+                }
+              }
+            }
+          }
+        },
+        include: {
+          newplans: {
+            where: {
+              isActive: true
+            },
+            include: { plan: true }
+          }
+        }
+      }),
 
-    const filteredUsers = nonFreeOrStudentUsers.filter((user) => {
-      const phoneNumber = user.user.phoneNumber;
-      const startsWithValidDigit = /^[9876]/.test(phoneNumber);
-      const allDigitsSame = /^(\d)\1*$/.test(phoneNumber);
-      return startsWithValidDigit && !allDigitsSame;
-    });
+      // Adira Plans
+      prisma.user.findMany({
+        where: {
+          UserAdiraPlan: {
+            some: {
+              isActive: true,
+              NOT: {
+                planName: {
+                  in: ["FREE", "ADMIN", "FREE_M"]
+                }
+              }
+            }
+          }
+        },
+        include: {
+          UserAdiraPlan: {
+            where: {
+              isActive: true
+            },
+            include: { plan: true }
+          }
+        }
+      })
+    ]);
 
-    res.json(filteredUsers);
+    // Format the response data
+    const formattedUsers = [
+      ...usersWithAllPlan.map(user => ({
+        userId: user.mongoId,
+        phoneNumber: user.phoneNumber,
+        email: user.email || '',
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        plans: user.UserAllPlan.map(plan => ({
+          type: 'All-in-One',
+          planName: plan.planName,
+          startDate: plan.createdAt,
+          expiryDate: plan.expiresAt,
+          isActive: plan.isActive,
+          paidPrice: plan.Paidprice,
+          usage: {
+            legalGpt: {
+              used: plan.UsedlegalGptToken,
+              total: plan.plan?.legalGptToken || 0,
+              time: plan.UsedLegalGPTime
+            },
+            adira: {
+              used: plan.UsedAdiraToken,
+              total: plan.plan?.AdiraToken || 0,
+              time: plan.UsedAdiraTime
+            },
+            warroom: {
+              used: plan.UsedWarroomToken,
+              total: plan.plan?.WarroomToken || 0,
+              time: plan.UsedWarroomTime
+            }
+          }
+        }))
+      })),
+
+      ...usersWithNewPlan.map(user => ({
+        userId: user.mongoId,
+        phoneNumber: user.phoneNumber,
+        email: user.email || '',
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        plans: user.newplans.map(plan => ({
+          type: 'New Plan',
+          planName: plan.planName,
+          startDate: plan.createdAt,
+          expiryDate: plan.expiresAt,
+          isActive: plan.isActive,
+          paidPrice: plan.Paidprice
+        }))
+      })),
+
+      ...usersWithAdiraPlan.map(user => ({
+        userId: user.mongoId,
+        phoneNumber: user.phoneNumber,
+        email: user.email || '',
+        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        plans: user.UserAdiraPlan.map(plan => ({
+          type: 'Adira',
+          planName: plan.planName,
+          startDate: plan.createdAt,
+          expiryDate: plan.expiresAt,
+          isActive: plan.isActive,
+          paidPrice: plan.Paidprice,
+          documentsUsed: plan.totalDocumentsUsed || 0,
+          totalDocuments: plan.totalDocuments || 0
+        }))
+      }))
+    ];
+
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        users: formattedUsers,
+        total: formattedUsers.length,
+        breakdown: {
+          allInOne: usersWithAllPlan.length,
+          newPlan: usersWithNewPlan.length,
+          adira: usersWithAdiraPlan.length
+        }
+      })
+    );
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: error.message });
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({
+        message: "Failed to fetch subscribed users",
+        error: error.message
+      }));
   }
 }
 
@@ -1626,7 +1756,6 @@ async function allAllowedBooking(req, res) {
       .status(StatusCodes.OK)
       .json(SuccessResponse({ ...allAllowedBookings }));
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ error: "An error occurred while removing user plan" });
@@ -1641,7 +1770,6 @@ async function deleteAllowBooking(req, res) {
       .status(StatusCodes.OK)
       .json(SuccessResponse({ data: "deleted successfully " }));
   } catch (error) {
-    console.error(error);
     res
       .status(500)
       .json({ error: "An error occurred while removing user plan" });
@@ -1669,7 +1797,6 @@ async function updateAllowedBooking(req, res) {
 
     return res.status(200).json({ data: updatedUserPlan });
   } catch (error) {
-    console.error(error);
     return res
       .status(500)
       .json({ error: "An error occurred while updating user plan" });
@@ -1691,7 +1818,6 @@ async function allowedLogin(req, res) {
 
     return res.status(StatusCodes.OK).json(SuccessResponse(formattedBookings));
   } catch (error) {
-    console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -1730,7 +1856,6 @@ async function deleteAllowedLogin(req, res) {
         SuccessResponse({ response: "User successfully removed from booking." })
       );
   } catch (error) {
-    console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -1767,7 +1892,6 @@ async function UpdateUserDetailsAllowedLogin(req, res) {
 
     res.status(200).send("User data successfully updated.");
   } catch (error) {
-    console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -1805,16 +1929,10 @@ async function UpdateUserTimingAllowedLogin(req, res) {
       return res.status(404).send("User not found in this booking.");
     }
 
-    // console.log(booking.courtroomBookings[userIndex]);
-
     const existingUser = booking.courtroomBookings[userIndex];
-
-    console.log(existingUser);
 
     // Remove the user from the current slot
     booking.courtroomBookings.splice(userIndex, 1);
-
-    // console.log(booking);
 
     // Check if the new slot exists for the new date and hour
     let newBooking = await TrailCourtRoomBooking.findOne({
@@ -1831,8 +1949,6 @@ async function UpdateUserTimingAllowedLogin(req, res) {
       });
     }
 
-    console.log(newBooking);
-
     // Check if the total bookings exceed the limit in the new slot
     if (newBooking.courtroomBookings.length >= 4) {
       console.log(
@@ -1845,30 +1961,8 @@ async function UpdateUserTimingAllowedLogin(req, res) {
         );
     }
 
-    // // Create a new courtroom user
-    // const newCourtroomUser = new TrailCourtRoomBooking({
-    //   name: existingUser.name,
-    //   phoneNumber: existingUser.phoneNumber,
-    //   email: existingUser.email,
-    //   password: existingUser.password,
-    //   recording: existingUser.recording, // Assuming recording is required and set to true
-    //   caseOverview: existingUser.recording,
-    // });
-
-    // console.log(newCourtroomUser);
-
-    // // Save the new courtroom user
-    // const savedCourtroomUser = await newCourtroomUser.save();
-
-    // console.log(savedCourtroomUser);
-
     // Add the new booking
     newBooking.courtroomBookings.push(existingUser._id);
-
-    console.log(newBooking);
-
-    // // Save the booking
-    // await newCourtroomUser.save();
 
     // Save the new booking
     await newBooking.save();
@@ -1878,7 +1972,6 @@ async function UpdateUserTimingAllowedLogin(req, res) {
 
     res.status(200).send("User slot timing successfully updated.");
   } catch (error) {
-    console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -1897,26 +1990,17 @@ async function getallVisitors(req, res) {
 async function deleterefralcode(req, res) {
   try {
     const { id } = req.params;
-
-    console.log(id);
-
     const getRefferalCode = await prisma.referralCode.findFirst({
       where: { id: id },
     });
-
-    console.log(getRefferalCode);
-
-    // Delete the referral code from Prisma DB
     const deletedCode = await prisma.referralCode.delete({
       where: { referralCode: getRefferalCode.referralCode },
     });
-
-    res
+    return res
       .status(200)
       .json({ message: "Referral code deleted successfully", deletedCode });
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 }
 async function removeUser(req, res) {
@@ -1924,7 +2008,6 @@ async function removeUser(req, res) {
   try {
     const { id } = req.body;
     console.log(id);
-
     const deletedCode = await prisma.user.delete({
       where: { mongoId: id },
     });
@@ -1936,20 +2019,14 @@ async function removeUser(req, res) {
 async function createReferralCodes(req, res) {
   try {
     const { phoneNumber, firstName, lastName, collegeName, email } = req.body;
-
-    // console.log(req.body.client);
-    console.log(phoneNumber);
-    console.log("asdasd");
     const resp = await ClientService.getClientByPhoneNumber(phoneNumber);
     let _id;
     if (resp === null) {
       const resp = await createNewUser(phoneNumber, true);
-      console.log(resp);
       _id = resp.mongoId;
     } else {
       _id = resp._id.toString();
     }
-    console.log(_id);
 
     const updatedClient = await ClientService.updateClient(_id, {
       firstName,
@@ -1959,13 +2036,7 @@ async function createReferralCodes(req, res) {
       ambassador: true,
     });
 
-    // console.log(updatedClient);
-
-    const referralCodeExist = await GptServices.CheckReferralCodeExistToUser(
-      _id
-    );
-
-    // console.log(referralCodeExist);
+    const referralCodeExist = await GptServices.CheckReferralCodeExistToUser(_id);
 
     if (referralCodeExist) {
       return res.status(StatusCodes.OK).json(
@@ -1992,17 +2063,6 @@ async function createReferralCodes(req, res) {
     });
 
     if (exitingPlan.length === 0) {
-      // await GptServices.updateUserPlan(
-      //   _id,
-      //   "FREE_M",
-      //   "ambassador",
-      //   "",
-      //   createAt,
-      //   null,
-      //   "",
-      //   expiresAt,
-      //   0
-      // );
       await prisma.user.update({
         where: {
           mongoId: _id,
@@ -2051,7 +2111,6 @@ async function createReferralCodes(req, res) {
       })
     );
   } catch (error) {
-    console.log(error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
@@ -2089,14 +2148,6 @@ async function bookClientAdira(req, res) {
       endDate,
       totalHours,
     });
-
-    // await sendConfirmationEmail(
-    //   email,
-    //   name,
-    //   phoneNumber,
-    //   password,
-    //   totalHours,
-    // );
 
     res
       .status(201)
