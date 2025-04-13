@@ -598,39 +598,73 @@ async function addFirstUser(req, res) {
 
 async function updateUserPlan(req, res) {
   try {
-    let { id, planNames } = req.body;
-    const userCurrPlans = await GptServices.getPlansByUserId(id);
+    const { id, planName, expiryDate } = req.body;
 
-    let tempPlanNames = planNames;
-    let tempUserCurrPlans = userCurrPlans;
-
-    tempPlanNames = tempPlanNames.filter(
-      (plan) => !userCurrPlans.includes(plan)
-    );
-
-    tempUserCurrPlans = tempUserCurrPlans.filter(
-      (plan) => !planNames.includes(plan)
-    );
-
-    if (tempUserCurrPlans.length > 0) {
-      await GptServices.removeUserPlans(id, tempUserCurrPlans);
-    }
-    if (tempPlanNames.length > 0) {
-      await Promise.all(
-        tempPlanNames?.map(async (plan) => {
-          await GptServices.updateUserPlan(id, plan);
-        })
+    // Validate required fields
+    if (!id || !planName) {
+      return res.status(StatusCodes.BAD_REQUEST).json(
+        ErrorResponse({}, "User ID and plan name are required")
       );
     }
 
-    res.setHeader("Content-Type", "application/json");
-    return res
-      .status(StatusCodes.OK)
-      .json(SuccessResponse({ ...tempPlanNames }));
+    // Find the user
+    const user = await prisma.user.findUnique({
+      where: { mongoId: id }
+    });
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND).json(
+        ErrorResponse({}, "User not found")
+      );
+    }
+
+    // Check if the plan exists
+    const plan = await prisma.allPlan.findUnique({
+      where: { name: planName }
+    });
+
+    if (!plan) {
+      return res.status(StatusCodes.NOT_FOUND).json(
+        ErrorResponse({}, "Plan not found")
+      );
+    }
+
+    // First, deactivate any existing active plans
+    await prisma.userAllPlan.updateMany({
+      where: {
+        userId: id,
+        isActive: true
+      },
+      data: {
+        isActive: false,
+        updatedAt: new Date()
+      }
+    });
+
+    // Create the new plan
+    const newUserPlan = await prisma.userAllPlan.create({
+      data: {
+        userId: id,
+        planName: planName,
+        isActive: true,
+        expiresAt: expiryDate ? new Date(expiryDate) : null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    });
+
+    return res.status(StatusCodes.OK).json(
+      SuccessResponse({
+        message: "User plan updated successfully",
+        userPlan: newUserPlan
+      })
+    );
+
   } catch (error) {
-    return res
-      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse({}, error));
+    console.error("Error updating user plan:", error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(
+      ErrorResponse({}, error.message)
+    );
   }
 }
 
@@ -1455,60 +1489,27 @@ async function userEveryDayData(req, res) {
       { $match: { timestamp: { $gte: startOfDay, $lte: endOfDay } } },
       {
         $group: {
-          _id: {
-            path: "$path",
-            isUser: {
-              $cond: {
-                if: { $ne: ["$userId", null] },
-                then: true,
-                else: false,
-              },
-            },
-          },
+          _id: null,
           totalVisits: { $sum: 1 },
-          totalDuration: { $sum: "$visitDuration" },
         },
       },
       {
         $project: {
           _id: 0,
-          path: "$_id.path",
-          isUser: "$_id.isUser",
           totalVisits: 1,
-          totalDuration: 1,
-        },
-      },
-      {
-        $group: {
-          _id: "$path",
-          visits: {
-            $push: {
-              isUser: "$isUser",
-              totalVisits: "$totalVisits",
-              totalDuration: "$totalDuration",
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          path: "$_id",
-          visits: 1,
         },
       },
     ]);
     data.push(dailyData);
   }
-  const todayIndex = moment().day(); // For example, if today is Wednesday, todayIndex will be 3
+  const todayIndex = moment().day();
 
   // Shuffle the array so that today's day is at index 0
   const shuffledData = [
-    ...data.slice(todayIndex - 1), // Slice from today's index to the end of the week
-    ...data.slice(0, todayIndex - 1), // Concatenate the beginning of the week to today's index
+    ...data.slice(todayIndex - 1),
+    ...data.slice(0, todayIndex - 1),
   ];
 
-  console.log(todayIndex);
   res.json(shuffledData);
 }
 
@@ -1580,56 +1581,24 @@ async function userEveryMonthData(req, res) {
       { $match: { timestamp: { $gte: startOfMonth, $lte: endOfMonth } } },
       {
         $group: {
-          _id: {
-            path: "$path",
-            isUser: {
-              $cond: {
-                if: { $ne: ["$userId", null] },
-                then: true,
-                else: false,
-              },
-            },
-          },
+          _id: null,
           totalVisits: { $sum: 1 },
-          totalDuration: { $sum: "$visitDuration" },
         },
       },
       {
         $project: {
           _id: 0,
-          path: "$_id.path",
-          isUser: "$_id.isUser",
           totalVisits: 1,
-          totalDuration: 1,
-        },
-      },
-      {
-        $group: {
-          _id: "$path",
-          visits: {
-            $push: {
-              isUser: "$isUser",
-              totalVisits: "$totalVisits",
-              totalDuration: "$totalDuration",
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          path: "$_id",
-          visits: 1,
         },
       },
     ]);
     data.push(monthlyData);
   }
-  const currentMonthIndex = moment().month(); // For example, if today is September, currentMonthIndex will be 8
+  const currentMonthIndex = moment().month();
 
   // Shuffle the array so that the current month is at index 0
   const shuffledData = [
-    ...data.slice(currentMonthIndex - 1), // Slice from the current month to the end of the year
+    ...data.slice(currentMonthIndex - 1),
     ...data.slice(0, currentMonthIndex - 1),
   ];
   res.json(shuffledData);
@@ -1644,46 +1613,14 @@ async function useryearlyvisit(req, res) {
     { $match: { timestamp: { $gte: startOfYear, $lte: endOfYear } } },
     {
       $group: {
-        _id: {
-          path: "$path",
-          isUser: {
-            $cond: {
-              if: { $ne: ["$userId", null] },
-              then: true,
-              else: false,
-            },
-          },
-        },
+        _id: null, // No grouping by user type
         totalVisits: { $sum: 1 },
-        totalDuration: { $sum: "$visitDuration" },
       },
     },
     {
       $project: {
         _id: 0,
-        path: "$_id.path",
-        isUser: "$_id.isUser",
         totalVisits: 1,
-        totalDuration: 1,
-      },
-    },
-    {
-      $group: {
-        _id: "$path",
-        visits: {
-          $push: {
-            isUser: "$isUser",
-            totalVisits: "$totalVisits",
-            totalDuration: "$totalDuration",
-          },
-        },
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        path: "$_id",
-        visits: 1,
       },
     },
   ]);
@@ -1700,46 +1637,14 @@ async function userEveryYearData(req, res) {
       { $match: { timestamp: { $gte: startOfYear, $lte: endOfYear } } },
       {
         $group: {
-          _id: {
-            path: "$path",
-            isUser: {
-              $cond: {
-                if: { $ne: ["$userId", null] },
-                then: true,
-                else: false,
-              },
-            },
-          },
+          _id: null, // No grouping by user type
           totalVisits: { $sum: 1 },
-          totalDuration: { $sum: "$visitDuration" },
         },
       },
       {
         $project: {
           _id: 0,
-          path: "$_id.path",
-          isUser: "$_id.isUser",
           totalVisits: 1,
-          totalDuration: 1,
-        },
-      },
-      {
-        $group: {
-          _id: "$path",
-          visits: {
-            $push: {
-              isUser: "$isUser",
-              totalVisits: "$totalVisits",
-              totalDuration: "$totalDuration",
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          path: "$_id",
-          visits: 1,
         },
       },
     ]);
@@ -1979,12 +1884,31 @@ async function UpdateUserTimingAllowedLogin(req, res) {
 }
 async function getallVisitors(req, res) {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = 20;
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination
+    const totalCount = await Tracking.countDocuments();
+
     const userTrackingData = await Tracking.find({})
-      .populate("userId") // Populates the userId with the actual User details
+      .populate("userId")
+      .sort({ timestamp: -1 }) // Sort by timestamp in descending order (latest first)
+      .skip(skip)
+      .limit(limit)
       .exec();
-    res.status(200).json(userTrackingData);
-  } catch (e) {
-    res.status(500);
+
+    res.status(200).json({
+      data: userTrackingData,
+      pagination: {
+        total: totalCount,
+        page,
+        limit,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 }
 async function deleterefralcode(req, res) {
@@ -2160,6 +2084,154 @@ async function bookClientAdira(req, res) {
   }
 }
 
+async function getUserById(req, res) {
+  try {
+    const { userId } = req.params;
+
+    // Get user from Prisma DB
+    const user = await prisma.user.findUnique({
+      where: {
+        mongoId: userId
+      },
+      include: {
+        UserAllPlan: {
+          include: {
+            plan: true
+          }
+        },
+        sessions: {
+          orderBy: {
+            updatedAt: 'desc'
+          },
+          take: 10,
+          include: {
+            messages: {
+              orderBy: {
+                createdAt: 'desc'
+              },
+              take: 5
+            }
+          }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(StatusCodes.NOT_FOUND)
+        .json(ErrorResponse({}, "User not found"));
+    }
+
+    // Get user from MongoDB
+    const mongoUser = await Client.findById(userId);
+
+    if (!mongoUser) {
+      return res.status(StatusCodes.NOT_FOUND)
+        .json(ErrorResponse({}, "User not found in MongoDB"));
+    }
+
+    // Calculate engagement times
+    const calculateEngagementTime = (timeMap) => {
+      if (!timeMap || !timeMap.values) return 0;
+      return parseFloat(
+        Array.from(timeMap.values())
+          .reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0)
+          .toFixed(2)
+      );
+    };
+
+    // Format engagement time
+    const engagementTime = mongoUser?.engagementTime ? {
+      daily: calculateEngagementTime(mongoUser.engagementTime.daily),
+      monthly: calculateEngagementTime(mongoUser.engagementTime.monthly),
+      yearly: calculateEngagementTime(mongoUser.engagementTime.yearly),
+      total: parseFloat((mongoUser.engagementTime.total || 0).toFixed(2)),
+      lastPage: mongoUser.engagementTime.lastPage || ''
+    } : {
+      daily: 0,
+      monthly: 0,
+      yearly: 0,
+      total: 0,
+      lastPage: ''
+    };
+
+    // Format platform-specific engagement
+    const adiraEngagement = mongoUser?.spcificEngagementTime?.Adira ? {
+      daily: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.daily),
+      monthly: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.monthly),
+      yearly: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.yearly),
+      total: parseFloat((mongoUser.spcificEngagementTime.Adira.total || 0).toFixed(2)),
+      lastPage: mongoUser.spcificEngagementTime.Adira.lastPage || ''
+    } : {
+      daily: 0,
+      monthly: 0,
+      yearly: 0,
+      total: 0,
+      lastPage: ''
+    };
+
+    const warroomEngagement = mongoUser?.spcificEngagementTime?.Warroom ? {
+      daily: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.daily),
+      monthly: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.monthly),
+      yearly: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.yearly),
+      total: parseFloat((mongoUser.spcificEngagementTime.Warroom.total || 0).toFixed(2)),
+      lastPage: mongoUser.spcificEngagementTime.Warroom.lastPage || ''
+    } : {
+      daily: 0,
+      monthly: 0,
+      yearly: 0,
+      total: 0,
+      lastPage: ''
+    };
+
+    // Combine all user data
+    const userData = {
+      id: user.id,
+      mongoId: user.mongoId,
+      phoneNumber: user.phoneNumber,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      numberOfSessions: user.numberOfSessions || 0,
+      totalTokenUsed: user.totalTokenUsed || 0,
+      currencyType: user.currencyType,
+      plans: user.UserAllPlan.map(up => ({
+        name: up.plan.name,
+        isActive: up.isActive,
+        createdAt: up.createdAt,
+        expiresAt: up.expiresAt
+      })),
+      recentSessions: user.sessions.map(session => ({
+        id: session.id,
+        name: session.name,
+        updatedAt: session.updatedAt,
+        recentMessages: session.messages.map(msg => ({
+          text: msg.text,
+          isUser: msg.isUser,
+          createdAt: msg.createdAt
+        }))
+      })),
+      personalInfo: {
+        firstName: mongoUser.firstName || '',
+        lastName: mongoUser.lastName || '',
+        email: mongoUser.email || '',
+        collegeName: mongoUser.collegeName || '',
+        stateLocation: mongoUser.StateLocation || ''
+      },
+      engagement: {
+        overall: engagementTime,
+        adira: adiraEngagement,
+        warroom: warroomEngagement
+      }
+    };
+
+    return res.status(StatusCodes.OK).json(SuccessResponse({ user: userData }));
+  } catch (error) {
+    console.error('Error in getUserById:', error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
+  }
+}
+
 module.exports = {
   getReferralCodes,
   getPlans,
@@ -2221,4 +2293,5 @@ module.exports = {
   totalSessions,
   sessionHistory,
   createPlan,
+  getUserById,
 };

@@ -63,6 +63,7 @@ const {
   totalSessions,
   sessionHistory,
   createPlan,
+  getUserById,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -97,7 +98,7 @@ router.get("/monthlyuserpagevisit", usermonthlyvisit);
 router.get("/everyYearData", userEveryYearData);
 router.get("/yearlyuserpagevisit", useryearlyvisit);
 router.patch("/updateUserLocation", setLocation);
-router.patch("/updateUserPlans", updateUserPlan);
+router.patch("/updateUserPlan", updateUserPlan);
 router.post("/addFirstAdminUser", addFirstUser);
 router.post("/:adminId/addAdminUser", createAdmin);
 router.get("/getAdmins", getAdmins);
@@ -237,5 +238,7 @@ router.post("/create-plan", createPlan);
 router.get("/test", (req, res) => {
     res.json({ message: "Admin routes are working" });
 });
+
+router.get("/users/:userId", getUserById);
 
 module.exports = router;
