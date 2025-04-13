@@ -68,6 +68,141 @@ async function handleExpiredPlans() {
     console.error("Error handling expired plans:", error);
   }
 }
+async function handleExpiredPlansUK() {
+  try {
+    const utcDate = new Date(); // Get the current UTC time
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30 in milliseconds
+    const now = new Date(utcDate.getTime() + istOffset);
+
+    console.log(now);
+
+    // Calculate dates for comparison
+    const oneMonthAgo = new Date(now);
+    oneMonthAgo.setMonth(now.getMonth() - 1);
+
+    const oneYearAgo = new Date(now);
+    oneYearAgo.setFullYear(now.getFullYear() - 1);
+
+    // Find all user plans that have expired
+    const expiredPlans = await prisma.userAllUKPlan.findMany({
+      where: {
+        OR: [
+          {
+            plan: {
+              duration: "monthly",
+            },
+            createdAt: {
+              lte: oneMonthAgo,
+            },
+          },
+          {
+            plan: {
+              duration: "yearly",
+            },
+            createdAt: {
+              lte: oneYearAgo,
+            },
+          },
+          {
+            expiresAt: {
+              lte: now,
+            },
+          },
+        ],
+      },
+    });
+
+    console.log(expiredPlans);
+
+    for (const userPlan of expiredPlans) {
+      const { userId, planName } = userPlan;
+
+      // Remove expired plan
+      await prisma.userAllUKPlan.delete({
+        where: {
+          userId_planName: {
+            userId: userId,
+            planName: planName,
+          },
+        },
+      });
+      console.log(`Removed expired plan ${planName} for user ${userId}`);
+
+      // Update tokens
+      // await updateUserTokens(userId, planName);
+    }
+  } catch (error) {
+    console.error("Error handling expired plans:", error);
+  }
+}
+
+async function handleExpiredPlansUS() {
+  try {
+    const utcDate = new Date(); // Get the current UTC time
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30 in milliseconds
+    const now = new Date(utcDate.getTime() + istOffset);
+
+    console.log(now);
+
+    // Calculate dates for comparison
+    const oneMonthAgo = new Date(now);
+    oneMonthAgo.setMonth(now.getMonth() - 1);
+
+    const oneYearAgo = new Date(now);
+    oneYearAgo.setFullYear(now.getFullYear() - 1);
+
+    // Find all user plans that have expired
+    const expiredPlans = await prisma.userAllUSPlan.findMany({
+      where: {
+        OR: [
+          {
+            plan: {
+              duration: "monthly",
+            },
+            createdAt: {
+              lte: oneMonthAgo,
+            },
+          },
+          {
+            plan: {
+              duration: "yearly",
+            },
+            createdAt: {
+              lte: oneYearAgo,
+            },
+          },
+          {
+            expiresAt: {
+              lte: now,
+            },
+          },
+        ],
+      },
+    });
+
+    console.log(expiredPlans);
+
+    for (const userPlan of expiredPlans) {
+      const { userId, planName } = userPlan;
+
+      // Remove expired plan
+      await prisma.userAllUSPlan.delete({
+        where: {
+          userId_planName: {
+            userId: userId,
+            planName: planName,
+          },
+        },
+      });
+      console.log(`Removed expired plan ${planName} for user ${userId}`);
+
+      // Update tokens
+      // await updateUserTokens(userId, planName);
+    }
+  } catch (error) {
+    console.error("Error handling expired plans:", error);
+  }
+}
 
 const resetTotalUsedForAllClients = async () => {
   try {
@@ -242,4 +377,6 @@ module.exports = {
   activateTodaysNewUserPlans,
   deactivateExpiredUserPlans,
   resetTotalUsedForAllClients,
+  handleExpiredPlansUK,
+  handleExpiredPlansUS,
 };

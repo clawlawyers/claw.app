@@ -147,9 +147,10 @@ async function verify(req, res) {
         sessions: 1,
         mongoId: client.id,
         stateLocation: "",
-        adiraPlan,
+        currentPlan: adiraPlan,
         totalUsed: 0,
         email: email,
+        currencyType: createdUser.currencyType,
       };
 
       if (verified) {
