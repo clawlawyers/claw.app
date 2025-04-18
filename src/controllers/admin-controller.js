@@ -9,6 +9,7 @@ const CourtroomUser = require("../models/CourtroomUser");
 const TrailBooking = require("../models/trailBookingAllow");
 const TrailCourtRoomBooking = require("../models/trailCourtRoomBooking");
 const TrailCourtroomUser = require("../models/trailCourtRoomUser");
+const { Client } = require("../models");
 const SpecificLawyerCourtroomUser = require("../models/SpecificLawyerCourtroomUser");
 const AdminUser = require("../models/adminUser");
 const { createToken, verifyToken } = require("../utils/common/auth");
@@ -1489,28 +1490,34 @@ async function userEveryDayData(req, res) {
       { $match: { timestamp: { $gte: startOfDay, $lte: endOfDay } } },
       {
         $group: {
-          _id: null,
+          _id: {
+            path: "$path",
+            isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+          },
           totalVisits: { $sum: 1 },
-        },
+          totalDuration: { $sum: "$visitDuration" }
+        }
       },
       {
-        $project: {
-          _id: 0,
-          totalVisits: 1,
-        },
-      },
+        $group: {
+          _id: "$_id.isUser",
+          totalVisits: { $sum: "$totalVisits" },
+          totalDuration: { $sum: "$totalDuration" }
+        }
+      }
     ]);
-    data.push(dailyData);
+
+    data.push({
+      date: moment().subtract(i, "days").format("YYYY-MM-DD"),
+      registeredUsers: dailyData.find(d => d._id === true)?.totalVisits || 0,
+      visitors: dailyData.find(d => d._id === false)?.totalVisits || 0
+    });
   }
-  const todayIndex = moment().day();
 
-  // Shuffle the array so that today's day is at index 0
-  const shuffledData = [
-    ...data.slice(todayIndex - 1),
-    ...data.slice(0, todayIndex - 1),
-  ];
-
-  res.json(shuffledData);
+  return res.status(200).json({
+    data: data.reverse(),
+    type: "daily"
+  });
 }
 
 // User Visit for monthly data
@@ -1581,18 +1588,28 @@ async function userEveryMonthData(req, res) {
       { $match: { timestamp: { $gte: startOfMonth, $lte: endOfMonth } } },
       {
         $group: {
-          _id: null,
+          _id: {
+            path: "$path",
+            isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+          },
           totalVisits: { $sum: 1 },
-        },
+          totalDuration: { $sum: "$visitDuration" }
+        }
       },
       {
-        $project: {
-          _id: 0,
-          totalVisits: 1,
-        },
-      },
+        $group: {
+          _id: "$_id.isUser",
+          totalVisits: { $sum: "$totalVisits" },
+          totalDuration: { $sum: "$totalDuration" }
+        }
+      }
     ]);
-    data.push(monthlyData);
+
+    data.push({
+      month: moment().subtract(i, "months").format("YYYY-MM"),
+      registeredUsers: monthlyData.find(d => d._id === true)?.totalVisits || 0,
+      visitors: monthlyData.find(d => d._id === false)?.totalVisits || 0
+    });
   }
   const currentMonthIndex = moment().month();
 
@@ -1629,29 +1646,42 @@ async function useryearlyvisit(req, res) {
 }
 async function userEveryYearData(req, res) {
   var data = [];
-  for (var i = 0; i < 1; i++) {
-    const startOfYear = moment().startOf("year").toDate();
-    const endOfYear = moment().endOf("year").toDate();
+  for (var i = 0; i < 5; i++) {
+    const startOfYear = moment().subtract(i, "years").startOf("year").toDate();
+    const endOfYear = moment().subtract(i, "years").endOf("year").toDate();
 
     const yearlyData = await Tracking.aggregate([
       { $match: { timestamp: { $gte: startOfYear, $lte: endOfYear } } },
       {
         $group: {
-          _id: null, // No grouping by user type
+          _id: {
+            path: "$path",
+            isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+          },
           totalVisits: { $sum: 1 },
-        },
+          totalDuration: { $sum: "$visitDuration" }
+        }
       },
       {
-        $project: {
-          _id: 0,
-          totalVisits: 1,
-        },
-      },
+        $group: {
+          _id: "$_id.isUser",
+          totalVisits: { $sum: "$totalVisits" },
+          totalDuration: { $sum: "$totalDuration" }
+        }
+      }
     ]);
-    data.push(yearlyData);
+
+    data.push({
+      year: moment().subtract(i, "years").format("YYYY"),
+      registeredUsers: yearlyData.find(d => d._id === true)?.totalVisits || 0,
+      visitors: yearlyData.find(d => d._id === false)?.totalVisits || 0
+    });
   }
 
-  res.json(data);
+  return res.status(200).json({
+    data: data.reverse(),
+    type: "yearly"
+  });
 }
 
 async function allAllowedBooking(req, res) {
@@ -1882,35 +1912,159 @@ async function UpdateUserTimingAllowedLogin(req, res) {
       .json(ErrorResponse({}, error));
   }
 }
+
 async function getallVisitors(req, res) {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = 20;
-    const skip = (page - 1) * limit;
+    const page = req.query.page;
 
-    // Get total count for pagination
+    if (page === "everyDayData") {
+      var data = [];
+      for (var i = 0; i < 7; i++) {
+        const startOfDay = moment().subtract(i, "days").startOf("day").toDate();
+        const endOfDay = moment().subtract(i, "days").endOf("day").toDate();
+
+        const dailyData = await Tracking.aggregate([
+          { $match: { timestamp: { $gte: startOfDay, $lte: endOfDay } } },
+          {
+            $group: {
+              _id: {
+                path: "$path",
+                isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+              },
+              totalVisits: { $sum: 1 },
+              totalDuration: { $sum: "$visitDuration" }
+            }
+          },
+          {
+            $group: {
+              _id: "$_id.isUser",
+              totalVisits: { $sum: "$totalVisits" },
+              totalDuration: { $sum: "$totalDuration" }
+            }
+          }
+        ]);
+
+        data.push({
+          date: moment().subtract(i, "days").format("YYYY-MM-DD"),
+          registeredUsers: dailyData.find(d => d._id === true)?.totalVisits || 0,
+          visitors: dailyData.find(d => d._id === false)?.totalVisits || 0
+        });
+      }
+
+      return res.status(200).json({
+        data: data.reverse(),
+        type: "daily"
+      });
+    }
+
+    if (page === "everyMonthData") {
+      var data = [];
+      for (var i = 0; i < 12; i++) {
+        const startOfMonth = moment().subtract(i, "months").startOf("month").toDate();
+        const endOfMonth = moment().subtract(i, "months").endOf("month").toDate();
+
+        const monthlyData = await Tracking.aggregate([
+          { $match: { timestamp: { $gte: startOfMonth, $lte: endOfMonth } } },
+          {
+            $group: {
+              _id: {
+                path: "$path",
+                isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+              },
+              totalVisits: { $sum: 1 },
+              totalDuration: { $sum: "$visitDuration" }
+            }
+          },
+          {
+            $group: {
+              _id: "$_id.isUser",
+              totalVisits: { $sum: "$totalVisits" },
+              totalDuration: { $sum: "$totalDuration" }
+            }
+          }
+        ]);
+
+        data.push({
+          month: moment().subtract(i, "months").format("YYYY-MM"),
+          registeredUsers: monthlyData.find(d => d._id === true)?.totalVisits || 0,
+          visitors: monthlyData.find(d => d._id === false)?.totalVisits || 0
+        });
+      }
+
+      return res.status(200).json({
+        data: data.reverse(),
+        type: "monthly"
+      });
+    }
+
+    if (page === "everyYearData") {
+      var data = [];
+      for (var i = 0; i < 5; i++) {
+        const startOfYear = moment().subtract(i, "years").startOf("year").toDate();
+        const endOfYear = moment().subtract(i, "years").endOf("year").toDate();
+
+        const yearlyData = await Tracking.aggregate([
+          { $match: { timestamp: { $gte: startOfYear, $lte: endOfYear } } },
+          {
+            $group: {
+              _id: {
+                path: "$path",
+                isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+              },
+              totalVisits: { $sum: 1 },
+              totalDuration: { $sum: "$visitDuration" }
+            }
+          },
+          {
+            $group: {
+              _id: "$_id.isUser",
+              totalVisits: { $sum: "$totalVisits" },
+              totalDuration: { $sum: "$totalDuration" }
+            }
+          }
+        ]);
+
+        data.push({
+          year: moment().subtract(i, "years").format("YYYY"),
+          registeredUsers: yearlyData.find(d => d._id === true)?.totalVisits || 0,
+          visitors: yearlyData.find(d => d._id === false)?.totalVisits || 0
+        });
+      }
+
+      return res.status(200).json({
+        data: data.reverse(),
+        type: "yearly"
+      });
+    }
+
+    // Default pagination behavior
+    const limit = 20;
+    const skip = (parseInt(page) - 1) * limit || 0;
+
     const totalCount = await Tracking.countDocuments();
 
     const userTrackingData = await Tracking.find({})
       .populate("userId")
-      .sort({ timestamp: -1 }) // Sort by timestamp in descending order (latest first)
+      .sort({ timestamp: -1 })
       .skip(skip)
       .limit(limit)
       .exec();
 
-    res.status(200).json({
+    return res.status(200).json({
       data: userTrackingData,
       pagination: {
         total: totalCount,
-        page,
+        page: parseInt(page) || 1,
         limit,
         totalPages: Math.ceil(totalCount / limit)
-      }
+      },
+      type: "paginated"
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 }
+
 async function deleterefralcode(req, res) {
   try {
     const { id } = req.params;
@@ -1927,6 +2081,7 @@ async function deleterefralcode(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
+
 async function removeUser(req, res) {
   console.log("hi");
   try {
@@ -1940,6 +2095,7 @@ async function removeUser(req, res) {
     res.status(500).json({ message: e.message });
   }
 }
+
 async function createReferralCodes(req, res) {
   try {
     const { phoneNumber, firstName, lastName, collegeName, email } = req.body;
@@ -2295,3 +2451,5 @@ module.exports = {
   createPlan,
   getUserById,
 };
+
+
