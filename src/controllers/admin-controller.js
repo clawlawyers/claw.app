@@ -3,6 +3,7 @@ const { ErrorResponse, SuccessResponse } = require("../utils/common");
 const { StatusCodes } = require("http-status-codes");
 const Coupon = require("../models/coupon");
 const Tracking = require("../models/tracking");
+const Navigation = require("../models/navigation");
 const moment = require("moment");
 const CourtRoomBooking = require("../models/courtRoomBooking");
 const CourtroomUser = require("../models/CourtroomUser");
@@ -603,43 +604,43 @@ async function updateUserPlan(req, res) {
 
     // Validate required fields
     if (!id || !planName) {
-      return res.status(StatusCodes.BAD_REQUEST).json(
-        ErrorResponse({}, "User ID and plan name are required")
-      );
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(ErrorResponse({}, "User ID and plan name are required"));
     }
 
     // Find the user
     const user = await prisma.user.findUnique({
-      where: { mongoId: id }
+      where: { mongoId: id },
     });
 
     if (!user) {
-      return res.status(StatusCodes.NOT_FOUND).json(
-        ErrorResponse({}, "User not found")
-      );
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(ErrorResponse({}, "User not found"));
     }
 
     // Check if the plan exists
     const plan = await prisma.allPlan.findUnique({
-      where: { name: planName }
+      where: { name: planName },
     });
 
     if (!plan) {
-      return res.status(StatusCodes.NOT_FOUND).json(
-        ErrorResponse({}, "Plan not found")
-      );
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json(ErrorResponse({}, "Plan not found"));
     }
 
     // First, deactivate any existing active plans
     await prisma.userAllPlan.updateMany({
       where: {
         userId: id,
-        isActive: true
+        isActive: true,
       },
       data: {
         isActive: false,
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     // Create the new plan
@@ -650,22 +651,21 @@ async function updateUserPlan(req, res) {
         isActive: true,
         expiresAt: expiryDate ? new Date(expiryDate) : null,
         createdAt: new Date(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     return res.status(StatusCodes.OK).json(
       SuccessResponse({
         message: "User plan updated successfully",
-        userPlan: newUserPlan
+        userPlan: newUserPlan,
       })
     );
-
   } catch (error) {
     console.error("Error updating user plan:", error);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(
-      ErrorResponse({}, error.message)
-    );
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, error.message));
   }
 }
 
@@ -892,61 +892,63 @@ async function getUsers(req, res) {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const sortKey = req.query.sortKey || 'createdAt';
-    const sortDirection = req.query.sortDirection === 'desc' ? 'desc' : 'asc';
+    const sortKey = req.query.sortKey || "createdAt";
+    const sortDirection = req.query.sortDirection === "desc" ? "desc" : "asc";
 
     // Define which fields can be sorted in Prisma
-    const prismaDirectSortFields = ['createdAt', 'updatedAt', 'phoneNumber'];
-    
+    const prismaDirectSortFields = ["createdAt", "updatedAt", "phoneNumber"];
+
     // Create sort object for Prisma query
-    const orderBy = prismaDirectSortFields.includes(sortKey) 
+    const orderBy = prismaDirectSortFields.includes(sortKey)
       ? { [sortKey]: sortDirection }
-      : { createdAt: 'desc' }; // default sort
+      : { createdAt: "desc" }; // default sort
 
     // Fetch ALL users from Prisma (without pagination)
     const [users, totalCount] = await Promise.all([
       prisma.user.findMany({
         where: {
           OR: [
-            { phoneNumber: { startsWith: '6' } },
-            { phoneNumber: { startsWith: '7' } },
-            { phoneNumber: { startsWith: '8' } },
-            { phoneNumber: { startsWith: '9' } }
-          ]
+            { phoneNumber: { startsWith: "6" } },
+            { phoneNumber: { startsWith: "7" } },
+            { phoneNumber: { startsWith: "8" } },
+            { phoneNumber: { startsWith: "9" } },
+          ],
         },
         orderBy: prismaDirectSortFields.includes(sortKey) ? orderBy : undefined,
         include: {
           UserAllPlan: {
             where: {
-              isActive: true
+              isActive: true,
             },
             include: {
-              plan: true
-            }
-          }
-        }
+              plan: true,
+            },
+          },
+        },
       }),
       prisma.user.count({
         where: {
           OR: [
-            { phoneNumber: { startsWith: '6' } },
-            { phoneNumber: { startsWith: '7' } },
-            { phoneNumber: { startsWith: '8' } },
-            { phoneNumber: { startsWith: '9' } }
-          ]
-        }
-      })
+            { phoneNumber: { startsWith: "6" } },
+            { phoneNumber: { startsWith: "7" } },
+            { phoneNumber: { startsWith: "8" } },
+            { phoneNumber: { startsWith: "9" } },
+          ],
+        },
+      }),
     ]);
 
     // Filter out phone numbers where all digits are the same
-    const filteredUsers = users.filter(user => {
+    const filteredUsers = users.filter((user) => {
       const phoneNumber = user.phoneNumber;
       return !/^(\d)\1*$/.test(phoneNumber);
     });
 
     // Fetch corresponding MongoDB users in bulk
-    const phoneNumbers = filteredUsers.map(user => user.phoneNumber);
-    const MongoUsers = await ClientService.getClientByPhoneNumbers(phoneNumbers);
+    const phoneNumbers = filteredUsers.map((user) => user.phoneNumber);
+    const MongoUsers = await ClientService.getClientByPhoneNumbers(
+      phoneNumbers
+    );
 
     // Create a map for faster lookups
     const mongoUsersMap = MongoUsers.reduce((acc, user) => {
@@ -955,118 +957,149 @@ async function getUsers(req, res) {
     }, {});
 
     // Process the data
-    let mergedUsers = filteredUsers.map(user => {
-      const mongoUser = mongoUsersMap[user.phoneNumber];
-      if (!mongoUser) return null;
+    let mergedUsers = filteredUsers
+      .map((user) => {
+        const mongoUser = mongoUsersMap[user.phoneNumber];
+        if (!mongoUser) return null;
 
-      const planNames = user.UserAllPlan.map(up => up.plan.name);
+        const planNames = user.UserAllPlan.map((up) => up.plan.name);
 
-      // Calculate engagement times with proper number conversion
-      const calculateEngagementTime = (timeMap) => {
-        if (!timeMap || !timeMap.values) return 0;
-        return parseFloat(
-          Array.from(timeMap.values())
-            .reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0)
-            .toFixed(2)
-        );
-      };
+        // Calculate engagement times with proper number conversion
+        const calculateEngagementTime = (timeMap) => {
+          if (!timeMap || !timeMap.values) return 0;
+          return parseFloat(
+            Array.from(timeMap.values())
+              .reduce((a, b) => a + (typeof b === "number" ? b : 0), 0)
+              .toFixed(2)
+          );
+        };
 
-      // Format engagement time
-      const engagementTime = mongoUser?.engagementTime ? {
-        daily: calculateEngagementTime(mongoUser.engagementTime.daily),
-        monthly: calculateEngagementTime(mongoUser.engagementTime.monthly),
-        yearly: calculateEngagementTime(mongoUser.engagementTime.yearly),
-        total: parseFloat((mongoUser.engagementTime.total || 0).toFixed(2))
-      } : {
-        daily: 0,
-        monthly: 0,
-        yearly: 0,
-        total: 0
-      };
+        // Format engagement time
+        const engagementTime = mongoUser?.engagementTime
+          ? {
+              daily: calculateEngagementTime(mongoUser.engagementTime.daily),
+              monthly: calculateEngagementTime(
+                mongoUser.engagementTime.monthly
+              ),
+              yearly: calculateEngagementTime(mongoUser.engagementTime.yearly),
+              total: parseFloat(
+                (mongoUser.engagementTime.total || 0).toFixed(2)
+              ),
+            }
+          : {
+              daily: 0,
+              monthly: 0,
+              yearly: 0,
+              total: 0,
+            };
 
-      const adiraEngagement = mongoUser?.spcificEngagementTime?.Adira ? {
-        daily: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.daily),
-        monthly: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.monthly),
-        yearly: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.yearly),
-        total: parseFloat((mongoUser.spcificEngagementTime.Adira.total || 0).toFixed(2))
-      } : {
-        daily: 0,
-        monthly: 0,
-        yearly: 0,
-        total: 0
-      };
+        const adiraEngagement = mongoUser?.spcificEngagementTime?.Adira
+          ? {
+              daily: calculateEngagementTime(
+                mongoUser.spcificEngagementTime.Adira.daily
+              ),
+              monthly: calculateEngagementTime(
+                mongoUser.spcificEngagementTime.Adira.monthly
+              ),
+              yearly: calculateEngagementTime(
+                mongoUser.spcificEngagementTime.Adira.yearly
+              ),
+              total: parseFloat(
+                (mongoUser.spcificEngagementTime.Adira.total || 0).toFixed(2)
+              ),
+            }
+          : {
+              daily: 0,
+              monthly: 0,
+              yearly: 0,
+              total: 0,
+            };
 
-      const warroomEngagement = mongoUser?.spcificEngagementTime?.Warroom ? {
-        daily: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.daily),
-        monthly: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.monthly),
-        yearly: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.yearly),
-        total: parseFloat((mongoUser.spcificEngagementTime.Warroom.total || 0).toFixed(2))
-      } : {
-        daily: 0,
-        monthly: 0,
-        yearly: 0,
-        total: 0
-      };
+        const warroomEngagement = mongoUser?.spcificEngagementTime?.Warroom
+          ? {
+              daily: calculateEngagementTime(
+                mongoUser.spcificEngagementTime.Warroom.daily
+              ),
+              monthly: calculateEngagementTime(
+                mongoUser.spcificEngagementTime.Warroom.monthly
+              ),
+              yearly: calculateEngagementTime(
+                mongoUser.spcificEngagementTime.Warroom.yearly
+              ),
+              total: parseFloat(
+                (mongoUser.spcificEngagementTime.Warroom.total || 0).toFixed(2)
+              ),
+            }
+          : {
+              daily: 0,
+              monthly: 0,
+              yearly: 0,
+              total: 0,
+            };
 
-      const averageSessionEngagementTime = user.numberOfSessions > 0 
-        ? parseFloat((engagementTime.total / user.numberOfSessions).toFixed(2))
-        : 0;
+        const averageSessionEngagementTime =
+          user.numberOfSessions > 0
+            ? parseFloat(
+                (engagementTime.total / user.numberOfSessions).toFixed(2)
+              )
+            : 0;
 
-      return {
-        mongoId: user.mongoId,
-        phoneNumber: user.phoneNumber,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        totalTokenUsed: user.totalTokenUsed || 0,
-        StateLocation: user.StateLocation || '',
-        numberOfSessions: user.numberOfSessions || 0,
-        planNames,
-        ambassador: mongoUser.ambassador || false,
-        engagementTime,
-        adiraEngagement,
-        warroomEngagement,
-        adiraLastPage: mongoUser.spcificEngagementTime?.Adira?.lastPage || '',
-        warroomLastPage: mongoUser.spcificEngagementTime?.Warroom?.lastPage || '',
-        mainWebsite: mongoUser.engagementTime?.lastPage || '',
-        firstName: mongoUser.firstName || '',
-        lastName: mongoUser.lastName || '',
-        collegeName: mongoUser.collegeName || '',
-        averageSessionEngagementTime
-      };
-    }).filter(Boolean);
+        return {
+          mongoId: user.mongoId,
+          phoneNumber: user.phoneNumber,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+          totalTokenUsed: user.totalTokenUsed || 0,
+          StateLocation: user.StateLocation || "",
+          numberOfSessions: user.numberOfSessions || 0,
+          planNames,
+          ambassador: mongoUser.ambassador || false,
+          engagementTime,
+          adiraEngagement,
+          warroomEngagement,
+          adiraLastPage: mongoUser.spcificEngagementTime?.Adira?.lastPage || "",
+          warroomLastPage:
+            mongoUser.spcificEngagementTime?.Warroom?.lastPage || "",
+          mainWebsite: mongoUser.engagementTime?.lastPage || "",
+          firstName: mongoUser.firstName || "",
+          lastName: mongoUser.lastName || "",
+          collegeName: mongoUser.collegeName || "",
+          averageSessionEngagementTime,
+        };
+      })
+      .filter(Boolean);
 
     // Handle sorting for fields that need to be sorted after data processing
     if (!prismaDirectSortFields.includes(sortKey)) {
       const sortFields = {
-        'dailyEngagementTime': user => user.engagementTime.daily,
-        'monthlyEngagementTime': user => user.engagementTime.monthly,
-        'totalEngagementTime': user => user.engagementTime.total,
-        'adiraDailyEngagementTime': user => user.adiraEngagement.daily,
-        'warroomDailyEngagementTime': user => user.warroomEngagement.daily,
-        'adiraLastPage': user => user.adiraLastPage.toLowerCase(),
-        'mainWebsite': user => user.mainWebsite.toLowerCase(),
-        'warroomLastPage': user => user.warroomLastPage.toLowerCase(),
-        'averageSessionEngagementTime': user => user.averageSessionEngagementTime,
-        'numberOfSessions': user => user.numberOfSessions,
-        'totalTokenUsed': user => user.totalTokenUsed
+        dailyEngagementTime: (user) => user.engagementTime.daily,
+        monthlyEngagementTime: (user) => user.engagementTime.monthly,
+        totalEngagementTime: (user) => user.engagementTime.total,
+        adiraDailyEngagementTime: (user) => user.adiraEngagement.daily,
+        warroomDailyEngagementTime: (user) => user.warroomEngagement.daily,
+        adiraLastPage: (user) => user.adiraLastPage.toLowerCase(),
+        mainWebsite: (user) => user.mainWebsite.toLowerCase(),
+        warroomLastPage: (user) => user.warroomLastPage.toLowerCase(),
+        averageSessionEngagementTime: (user) =>
+          user.averageSessionEngagementTime,
+        numberOfSessions: (user) => user.numberOfSessions,
+        totalTokenUsed: (user) => user.totalTokenUsed,
       };
 
       if (sortFields[sortKey]) {
         mergedUsers.sort((a, b) => {
           const aValue = sortFields[sortKey](a);
           const bValue = sortFields[sortKey](b);
-          
+
           // Handle string comparisons
-          if (typeof aValue === 'string' && typeof bValue === 'string') {
-            return sortDirection === 'asc' 
+          if (typeof aValue === "string" && typeof bValue === "string") {
+            return sortDirection === "asc"
               ? aValue.localeCompare(bValue)
               : bValue.localeCompare(aValue);
           }
-          
+
           // Handle number comparisons
-          return sortDirection === 'asc' 
-            ? aValue - bValue
-            : bValue - aValue;
+          return sortDirection === "asc" ? aValue - bValue : bValue - aValue;
         });
       }
     }
@@ -1083,8 +1116,8 @@ async function getUsers(req, res) {
         total: mergedUsers.length,
         page,
         limit,
-        totalPages: Math.ceil(mergedUsers.length / limit)
-      }
+        totalPages: Math.ceil(mergedUsers.length / limit),
+      },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -1096,94 +1129,95 @@ async function getSubscribedUsers(req, res) {
     console.log("Fetching subscribed users...");
 
     // Get users with different types of plans
-    const [usersWithAllPlan, usersWithNewPlan, usersWithAdiraPlan] = await Promise.all([
-      // All-in-One Plans
-      prisma.user.findMany({
-        where: {
-          UserAllPlan: {
-            some: {
-              isActive: true,
-              NOT: {
-                planName: {
-                  in: ["FREE", "ADMIN", "FREE_M"]
-                }
-              }
-            }
-          }
-        },
-        include: {
-          UserAllPlan: {
-            where: {
-              isActive: true,
-              NOT: {
-                planName: {
-                  in: ["FREE", "ADMIN", "FREE_M"]
-                }
-              }
+    const [usersWithAllPlan, usersWithNewPlan, usersWithAdiraPlan] =
+      await Promise.all([
+        // All-in-One Plans
+        prisma.user.findMany({
+          where: {
+            UserAllPlan: {
+              some: {
+                isActive: true,
+                NOT: {
+                  planName: {
+                    in: ["FREE", "ADMIN", "FREE_M"],
+                  },
+                },
+              },
             },
-            include: { plan: true }
-          }
-        }
-      }),
+          },
+          include: {
+            UserAllPlan: {
+              where: {
+                isActive: true,
+                NOT: {
+                  planName: {
+                    in: ["FREE", "ADMIN", "FREE_M"],
+                  },
+                },
+              },
+              include: { plan: true },
+            },
+          },
+        }),
 
-      // New Plans
-      prisma.user.findMany({
-        where: {
-          newplans: {
-            some: {
-              isActive: true,
-              NOT: {
-                planName: {
-                  in: ["FREE", "ADMIN", "FREE_M"]
-                }
-              }
-            }
-          }
-        },
-        include: {
-          newplans: {
-            where: {
-              isActive: true
+        // New Plans
+        prisma.user.findMany({
+          where: {
+            newplans: {
+              some: {
+                isActive: true,
+                NOT: {
+                  planName: {
+                    in: ["FREE", "ADMIN", "FREE_M"],
+                  },
+                },
+              },
             },
-            include: { plan: true }
-          }
-        }
-      }),
+          },
+          include: {
+            newplans: {
+              where: {
+                isActive: true,
+              },
+              include: { plan: true },
+            },
+          },
+        }),
 
-      // Adira Plans
-      prisma.user.findMany({
-        where: {
-          UserAdiraPlan: {
-            some: {
-              isActive: true,
-              NOT: {
-                planName: {
-                  in: ["FREE", "ADMIN", "FREE_M"]
-                }
-              }
-            }
-          }
-        },
-        include: {
-          UserAdiraPlan: {
-            where: {
-              isActive: true
+        // Adira Plans
+        prisma.user.findMany({
+          where: {
+            UserAdiraPlan: {
+              some: {
+                isActive: true,
+                NOT: {
+                  planName: {
+                    in: ["FREE", "ADMIN", "FREE_M"],
+                  },
+                },
+              },
             },
-            include: { plan: true }
-          }
-        }
-      })
-    ]);
+          },
+          include: {
+            UserAdiraPlan: {
+              where: {
+                isActive: true,
+              },
+              include: { plan: true },
+            },
+          },
+        }),
+      ]);
 
     // Format the response data
     const formattedUsers = [
-      ...usersWithAllPlan.map(user => ({
+      ...usersWithAllPlan.map((user) => ({
         userId: user.mongoId,
         phoneNumber: user.phoneNumber,
-        email: user.email || '',
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-        plans: user.UserAllPlan.map(plan => ({
-          type: 'All-in-One',
+        email: user.email || "",
+        name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        plans: user.UserAllPlan.map((plan) => ({
+          type: "All-in-One",
           planName: plan.planName,
           startDate: plan.createdAt,
           expiryDate: plan.expiresAt,
@@ -1193,53 +1227,53 @@ async function getSubscribedUsers(req, res) {
             legalGpt: {
               used: plan.UsedlegalGptToken,
               total: plan.plan?.legalGptToken || 0,
-              time: plan.UsedLegalGPTime
+              time: plan.UsedLegalGPTime,
             },
             adira: {
               used: plan.UsedAdiraToken,
               total: plan.plan?.AdiraToken || 0,
-              time: plan.UsedAdiraTime
+              time: plan.UsedAdiraTime,
             },
             warroom: {
               used: plan.UsedWarroomToken,
               total: plan.plan?.WarroomToken || 0,
-              time: plan.UsedWarroomTime
-            }
-          }
-        }))
+              time: plan.UsedWarroomTime,
+            },
+          },
+        })),
       })),
 
-      ...usersWithNewPlan.map(user => ({
+      ...usersWithNewPlan.map((user) => ({
         userId: user.mongoId,
         phoneNumber: user.phoneNumber,
-        email: user.email || '',
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-        plans: user.newplans.map(plan => ({
-          type: 'New Plan',
+        email: user.email || "",
+        name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        plans: user.newplans.map((plan) => ({
+          type: "New Plan",
           planName: plan.planName,
           startDate: plan.createdAt,
           expiryDate: plan.expiresAt,
           isActive: plan.isActive,
-          paidPrice: plan.Paidprice
-        }))
+          paidPrice: plan.Paidprice,
+        })),
       })),
 
-      ...usersWithAdiraPlan.map(user => ({
+      ...usersWithAdiraPlan.map((user) => ({
         userId: user.mongoId,
         phoneNumber: user.phoneNumber,
-        email: user.email || '',
-        name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-        plans: user.UserAdiraPlan.map(plan => ({
-          type: 'Adira',
+        email: user.email || "",
+        name: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        plans: user.UserAdiraPlan.map((plan) => ({
+          type: "Adira",
           planName: plan.planName,
           startDate: plan.createdAt,
           expiryDate: plan.expiresAt,
           isActive: plan.isActive,
           paidPrice: plan.Paidprice,
           documentsUsed: plan.totalDocumentsUsed || 0,
-          totalDocuments: plan.totalDocuments || 0
-        }))
-      }))
+          totalDocuments: plan.totalDocuments || 0,
+        })),
+      })),
     ];
 
     return res.status(StatusCodes.OK).json(
@@ -1249,18 +1283,19 @@ async function getSubscribedUsers(req, res) {
         breakdown: {
           allInOne: usersWithAllPlan.length,
           newPlan: usersWithNewPlan.length,
-          adira: usersWithAdiraPlan.length
-        }
+          adira: usersWithAdiraPlan.length,
+        },
       })
     );
-
   } catch (error) {
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
-      .json(ErrorResponse({
-        message: "Failed to fetch subscribed users",
-        error: error.message
-      }));
+      .json(
+        ErrorResponse({
+          message: "Failed to fetch subscribed users",
+          error: error.message,
+        })
+      );
   }
 }
 
@@ -1428,6 +1463,59 @@ async function usertracking(req, res) {
   }
 }
 
+// User navigation tracking
+async function trackUserNavigation(req, res) {
+  try {
+    const {
+      userId,
+      isAuthenticated,
+      sessionId,
+      currentPath,
+      previousPath,
+      timestamp,
+      referrer,
+      userAgent,
+      timeSpentOnPreviousPage,
+    } = req.body;
+
+    // Validate required fields
+    if (!userId || !currentPath || !sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: userId, currentPath, or sessionId",
+      });
+    }
+
+    // Create a new navigation record
+    const navigationData = new Navigation({
+      userId,
+      isAuthenticated,
+      sessionStartTime: new Date(sessionId),
+      navigationStep: {
+        path: currentPath,
+        previousPath: previousPath || "/",
+        timestamp: new Date(timestamp || Date.now()),
+      },
+      referrer: referrer || "direct",
+      userAgent,
+      timeSpentOnPreviousPage,
+    });
+
+    // Save the navigation data
+    await navigationData.save();
+
+    res.status(200).json({
+      success: true,
+      data: navigationData,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+}
+
 // User Visit for daily data
 
 async function userdailyvisit(req, res) {
@@ -1492,31 +1580,37 @@ async function userEveryDayData(req, res) {
         $group: {
           _id: {
             path: "$path",
-            isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+            isUser: {
+              $cond: {
+                if: { $ne: ["$userId", null] },
+                then: true,
+                else: false,
+              },
+            },
           },
           totalVisits: { $sum: 1 },
-          totalDuration: { $sum: "$visitDuration" }
-        }
+          totalDuration: { $sum: "$visitDuration" },
+        },
       },
       {
         $group: {
           _id: "$_id.isUser",
           totalVisits: { $sum: "$totalVisits" },
-          totalDuration: { $sum: "$totalDuration" }
-        }
-      }
+          totalDuration: { $sum: "$totalDuration" },
+        },
+      },
     ]);
 
     data.push({
       date: moment().subtract(i, "days").format("YYYY-MM-DD"),
-      registeredUsers: dailyData.find(d => d._id === true)?.totalVisits || 0,
-      visitors: dailyData.find(d => d._id === false)?.totalVisits || 0
+      registeredUsers: dailyData.find((d) => d._id === true)?.totalVisits || 0,
+      visitors: dailyData.find((d) => d._id === false)?.totalVisits || 0,
     });
   }
 
   return res.status(200).json({
     data: data.reverse(),
-    type: "daily"
+    type: "daily",
   });
 }
 
@@ -1590,25 +1684,32 @@ async function userEveryMonthData(req, res) {
         $group: {
           _id: {
             path: "$path",
-            isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+            isUser: {
+              $cond: {
+                if: { $ne: ["$userId", null] },
+                then: true,
+                else: false,
+              },
+            },
           },
           totalVisits: { $sum: 1 },
-          totalDuration: { $sum: "$visitDuration" }
-        }
+          totalDuration: { $sum: "$visitDuration" },
+        },
       },
       {
         $group: {
           _id: "$_id.isUser",
           totalVisits: { $sum: "$totalVisits" },
-          totalDuration: { $sum: "$totalDuration" }
-        }
-      }
+          totalDuration: { $sum: "$totalDuration" },
+        },
+      },
     ]);
 
     data.push({
       month: moment().subtract(i, "months").format("YYYY-MM"),
-      registeredUsers: monthlyData.find(d => d._id === true)?.totalVisits || 0,
-      visitors: monthlyData.find(d => d._id === false)?.totalVisits || 0
+      registeredUsers:
+        monthlyData.find((d) => d._id === true)?.totalVisits || 0,
+      visitors: monthlyData.find((d) => d._id === false)?.totalVisits || 0,
     });
   }
   const currentMonthIndex = moment().month();
@@ -1656,31 +1757,37 @@ async function userEveryYearData(req, res) {
         $group: {
           _id: {
             path: "$path",
-            isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+            isUser: {
+              $cond: {
+                if: { $ne: ["$userId", null] },
+                then: true,
+                else: false,
+              },
+            },
           },
           totalVisits: { $sum: 1 },
-          totalDuration: { $sum: "$visitDuration" }
-        }
+          totalDuration: { $sum: "$visitDuration" },
+        },
       },
       {
         $group: {
           _id: "$_id.isUser",
           totalVisits: { $sum: "$totalVisits" },
-          totalDuration: { $sum: "$totalDuration" }
-        }
-      }
+          totalDuration: { $sum: "$totalDuration" },
+        },
+      },
     ]);
 
     data.push({
       year: moment().subtract(i, "years").format("YYYY"),
-      registeredUsers: yearlyData.find(d => d._id === true)?.totalVisits || 0,
-      visitors: yearlyData.find(d => d._id === false)?.totalVisits || 0
+      registeredUsers: yearlyData.find((d) => d._id === true)?.totalVisits || 0,
+      visitors: yearlyData.find((d) => d._id === false)?.totalVisits || 0,
     });
   }
 
   return res.status(200).json({
     data: data.reverse(),
-    type: "yearly"
+    type: "yearly",
   });
 }
 
@@ -1929,39 +2036,52 @@ async function getallVisitors(req, res) {
             $group: {
               _id: {
                 path: "$path",
-                isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+                isUser: {
+                  $cond: {
+                    if: { $ne: ["$userId", null] },
+                    then: true,
+                    else: false,
+                  },
+                },
               },
               totalVisits: { $sum: 1 },
-              totalDuration: { $sum: "$visitDuration" }
-            }
+              totalDuration: { $sum: "$visitDuration" },
+            },
           },
           {
             $group: {
               _id: "$_id.isUser",
               totalVisits: { $sum: "$totalVisits" },
-              totalDuration: { $sum: "$totalDuration" }
-            }
-          }
+              totalDuration: { $sum: "$totalDuration" },
+            },
+          },
         ]);
 
         data.push({
           date: moment().subtract(i, "days").format("YYYY-MM-DD"),
-          registeredUsers: dailyData.find(d => d._id === true)?.totalVisits || 0,
-          visitors: dailyData.find(d => d._id === false)?.totalVisits || 0
+          registeredUsers:
+            dailyData.find((d) => d._id === true)?.totalVisits || 0,
+          visitors: dailyData.find((d) => d._id === false)?.totalVisits || 0,
         });
       }
 
       return res.status(200).json({
         data: data.reverse(),
-        type: "daily"
+        type: "daily",
       });
     }
 
     if (page === "everyMonthData") {
       var data = [];
       for (var i = 0; i < 12; i++) {
-        const startOfMonth = moment().subtract(i, "months").startOf("month").toDate();
-        const endOfMonth = moment().subtract(i, "months").endOf("month").toDate();
+        const startOfMonth = moment()
+          .subtract(i, "months")
+          .startOf("month")
+          .toDate();
+        const endOfMonth = moment()
+          .subtract(i, "months")
+          .endOf("month")
+          .toDate();
 
         const monthlyData = await Tracking.aggregate([
           { $match: { timestamp: { $gte: startOfMonth, $lte: endOfMonth } } },
@@ -1969,38 +2089,48 @@ async function getallVisitors(req, res) {
             $group: {
               _id: {
                 path: "$path",
-                isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+                isUser: {
+                  $cond: {
+                    if: { $ne: ["$userId", null] },
+                    then: true,
+                    else: false,
+                  },
+                },
               },
               totalVisits: { $sum: 1 },
-              totalDuration: { $sum: "$visitDuration" }
-            }
+              totalDuration: { $sum: "$visitDuration" },
+            },
           },
           {
             $group: {
               _id: "$_id.isUser",
               totalVisits: { $sum: "$totalVisits" },
-              totalDuration: { $sum: "$totalDuration" }
-            }
-          }
+              totalDuration: { $sum: "$totalDuration" },
+            },
+          },
         ]);
 
         data.push({
           month: moment().subtract(i, "months").format("YYYY-MM"),
-          registeredUsers: monthlyData.find(d => d._id === true)?.totalVisits || 0,
-          visitors: monthlyData.find(d => d._id === false)?.totalVisits || 0
+          registeredUsers:
+            monthlyData.find((d) => d._id === true)?.totalVisits || 0,
+          visitors: monthlyData.find((d) => d._id === false)?.totalVisits || 0,
         });
       }
 
       return res.status(200).json({
         data: data.reverse(),
-        type: "monthly"
+        type: "monthly",
       });
     }
 
     if (page === "everyYearData") {
       var data = [];
       for (var i = 0; i < 5; i++) {
-        const startOfYear = moment().subtract(i, "years").startOf("year").toDate();
+        const startOfYear = moment()
+          .subtract(i, "years")
+          .startOf("year")
+          .toDate();
         const endOfYear = moment().subtract(i, "years").endOf("year").toDate();
 
         const yearlyData = await Tracking.aggregate([
@@ -2009,31 +2139,38 @@ async function getallVisitors(req, res) {
             $group: {
               _id: {
                 path: "$path",
-                isUser: { $cond: { if: { $ne: ["$userId", null] }, then: true, else: false } }
+                isUser: {
+                  $cond: {
+                    if: { $ne: ["$userId", null] },
+                    then: true,
+                    else: false,
+                  },
+                },
               },
               totalVisits: { $sum: 1 },
-              totalDuration: { $sum: "$visitDuration" }
-            }
+              totalDuration: { $sum: "$visitDuration" },
+            },
           },
           {
             $group: {
               _id: "$_id.isUser",
               totalVisits: { $sum: "$totalVisits" },
-              totalDuration: { $sum: "$totalDuration" }
-            }
-          }
+              totalDuration: { $sum: "$totalDuration" },
+            },
+          },
         ]);
 
         data.push({
           year: moment().subtract(i, "years").format("YYYY"),
-          registeredUsers: yearlyData.find(d => d._id === true)?.totalVisits || 0,
-          visitors: yearlyData.find(d => d._id === false)?.totalVisits || 0
+          registeredUsers:
+            yearlyData.find((d) => d._id === true)?.totalVisits || 0,
+          visitors: yearlyData.find((d) => d._id === false)?.totalVisits || 0,
         });
       }
 
       return res.status(200).json({
         data: data.reverse(),
-        type: "yearly"
+        type: "yearly",
       });
     }
 
@@ -2056,9 +2193,9 @@ async function getallVisitors(req, res) {
         total: totalCount,
         page: parseInt(page) || 1,
         limit,
-        totalPages: Math.ceil(totalCount / limit)
+        totalPages: Math.ceil(totalCount / limit),
       },
-      type: "paginated"
+      type: "paginated",
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -2116,7 +2253,9 @@ async function createReferralCodes(req, res) {
       ambassador: true,
     });
 
-    const referralCodeExist = await GptServices.CheckReferralCodeExistToUser(_id);
+    const referralCodeExist = await GptServices.CheckReferralCodeExistToUser(
+      _id
+    );
 
     if (referralCodeExist) {
       return res.status(StatusCodes.OK).json(
@@ -2247,33 +2386,39 @@ async function getUserById(req, res) {
     // Get user from Prisma DB
     const user = await prisma.user.findUnique({
       where: {
-        mongoId: userId
+        mongoId: userId,
       },
       include: {
         UserAllPlan: {
           include: {
-            plan: true
-          }
+            plan: true,
+          },
         },
         sessions: {
           orderBy: {
-            updatedAt: 'desc'
+            updatedAt: "desc",
           },
           take: 10,
           include: {
             messages: {
               orderBy: {
-                createdAt: 'desc'
+                createdAt: "desc",
               },
-              take: 5
-            }
-          }
-        }
-      }
+              take: 5,
+              select: {
+                text: true,
+                isUser: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user) {
-      return res.status(StatusCodes.NOT_FOUND)
+      return res
+        .status(StatusCodes.NOT_FOUND)
         .json(ErrorResponse({}, "User not found"));
     }
 
@@ -2281,7 +2426,8 @@ async function getUserById(req, res) {
     const mongoUser = await Client.findById(userId);
 
     if (!mongoUser) {
-      return res.status(StatusCodes.NOT_FOUND)
+      return res
+        .status(StatusCodes.NOT_FOUND)
         .json(ErrorResponse({}, "User not found in MongoDB"));
     }
 
@@ -2290,54 +2436,76 @@ async function getUserById(req, res) {
       if (!timeMap || !timeMap.values) return 0;
       return parseFloat(
         Array.from(timeMap.values())
-          .reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0)
+          .reduce((a, b) => a + (typeof b === "number" ? b : 0), 0)
           .toFixed(2)
       );
     };
 
     // Format engagement time
-    const engagementTime = mongoUser?.engagementTime ? {
-      daily: calculateEngagementTime(mongoUser.engagementTime.daily),
-      monthly: calculateEngagementTime(mongoUser.engagementTime.monthly),
-      yearly: calculateEngagementTime(mongoUser.engagementTime.yearly),
-      total: parseFloat((mongoUser.engagementTime.total || 0).toFixed(2)),
-      lastPage: mongoUser.engagementTime.lastPage || ''
-    } : {
-      daily: 0,
-      monthly: 0,
-      yearly: 0,
-      total: 0,
-      lastPage: ''
-    };
+    const engagementTime = mongoUser?.engagementTime
+      ? {
+          daily: calculateEngagementTime(mongoUser.engagementTime.daily),
+          monthly: calculateEngagementTime(mongoUser.engagementTime.monthly),
+          yearly: calculateEngagementTime(mongoUser.engagementTime.yearly),
+          total: parseFloat((mongoUser.engagementTime.total || 0).toFixed(2)),
+          lastPage: mongoUser.engagementTime.lastPage || "",
+        }
+      : {
+          daily: 0,
+          monthly: 0,
+          yearly: 0,
+          total: 0,
+          lastPage: "",
+        };
 
     // Format platform-specific engagement
-    const adiraEngagement = mongoUser?.spcificEngagementTime?.Adira ? {
-      daily: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.daily),
-      monthly: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.monthly),
-      yearly: calculateEngagementTime(mongoUser.spcificEngagementTime.Adira.yearly),
-      total: parseFloat((mongoUser.spcificEngagementTime.Adira.total || 0).toFixed(2)),
-      lastPage: mongoUser.spcificEngagementTime.Adira.lastPage || ''
-    } : {
-      daily: 0,
-      monthly: 0,
-      yearly: 0,
-      total: 0,
-      lastPage: ''
-    };
+    const adiraEngagement = mongoUser?.spcificEngagementTime?.Adira
+      ? {
+          daily: calculateEngagementTime(
+            mongoUser.spcificEngagementTime.Adira.daily
+          ),
+          monthly: calculateEngagementTime(
+            mongoUser.spcificEngagementTime.Adira.monthly
+          ),
+          yearly: calculateEngagementTime(
+            mongoUser.spcificEngagementTime.Adira.yearly
+          ),
+          total: parseFloat(
+            (mongoUser.spcificEngagementTime.Adira.total || 0).toFixed(2)
+          ),
+          lastPage: mongoUser.spcificEngagementTime.Adira.lastPage || "",
+        }
+      : {
+          daily: 0,
+          monthly: 0,
+          yearly: 0,
+          total: 0,
+          lastPage: "",
+        };
 
-    const warroomEngagement = mongoUser?.spcificEngagementTime?.Warroom ? {
-      daily: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.daily),
-      monthly: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.monthly),
-      yearly: calculateEngagementTime(mongoUser.spcificEngagementTime.Warroom.yearly),
-      total: parseFloat((mongoUser.spcificEngagementTime.Warroom.total || 0).toFixed(2)),
-      lastPage: mongoUser.spcificEngagementTime.Warroom.lastPage || ''
-    } : {
-      daily: 0,
-      monthly: 0,
-      yearly: 0,
-      total: 0,
-      lastPage: ''
-    };
+    const warroomEngagement = mongoUser?.spcificEngagementTime?.Warroom
+      ? {
+          daily: calculateEngagementTime(
+            mongoUser.spcificEngagementTime.Warroom.daily
+          ),
+          monthly: calculateEngagementTime(
+            mongoUser.spcificEngagementTime.Warroom.monthly
+          ),
+          yearly: calculateEngagementTime(
+            mongoUser.spcificEngagementTime.Warroom.yearly
+          ),
+          total: parseFloat(
+            (mongoUser.spcificEngagementTime.Warroom.total || 0).toFixed(2)
+          ),
+          lastPage: mongoUser.spcificEngagementTime.Warroom.lastPage || "",
+        }
+      : {
+          daily: 0,
+          monthly: 0,
+          yearly: 0,
+          total: 0,
+          lastPage: "",
+        };
 
     // Combine all user data
     const userData = {
@@ -2349,39 +2517,39 @@ async function getUserById(req, res) {
       numberOfSessions: user.numberOfSessions || 0,
       totalTokenUsed: user.totalTokenUsed || 0,
       currencyType: user.currencyType,
-      plans: user.UserAllPlan.map(up => ({
+      plans: user.UserAllPlan.map((up) => ({
         name: up.plan.name,
         isActive: up.isActive,
         createdAt: up.createdAt,
-        expiresAt: up.expiresAt
+        expiresAt: up.expiresAt,
       })),
-      recentSessions: user.sessions.map(session => ({
+      recentSessions: user.sessions.map((session) => ({
         id: session.id,
         name: session.name,
         updatedAt: session.updatedAt,
-        recentMessages: session.messages.map(msg => ({
+        recentMessages: session.messages.map((msg) => ({
           text: msg.text,
           isUser: msg.isUser,
-          createdAt: msg.createdAt
-        }))
+          createdAt: msg.createdAt,
+        })),
       })),
       personalInfo: {
-        firstName: mongoUser.firstName || '',
-        lastName: mongoUser.lastName || '',
-        email: mongoUser.email || '',
-        collegeName: mongoUser.collegeName || '',
-        stateLocation: mongoUser.StateLocation || ''
+        firstName: mongoUser.firstName || "",
+        lastName: mongoUser.lastName || "",
+        email: mongoUser.email || "",
+        collegeName: mongoUser.collegeName || "",
+        stateLocation: mongoUser.StateLocation || "",
       },
       engagement: {
         overall: engagementTime,
         adira: adiraEngagement,
-        warroom: warroomEngagement
-      }
+        warroom: warroomEngagement,
+      },
     };
 
     return res.status(StatusCodes.OK).json(SuccessResponse({ user: userData }));
   } catch (error) {
-    console.error('Error in getUserById:', error);
+    console.error("Error in getUserById:", error);
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error.message));
@@ -2404,6 +2572,7 @@ module.exports = {
   deleteCoupon,
   allCoupon,
   usertracking,
+  trackUserNavigation,
   userdailyvisit,
   userEveryYearData,
   usermonthlyvisit,
@@ -2451,5 +2620,3 @@ module.exports = {
   createPlan,
   getUserById,
 };
-
-
