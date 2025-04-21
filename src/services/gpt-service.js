@@ -1457,6 +1457,7 @@ async function updateUserPlanPayment(phoneNumber, paymentId, currencyType) {
     console.log(phoneNumber, paymentId, currencyType);
     let userPlanData;
     phoneNumber = String(phoneNumber);
+    currencyType = String(currencyType);
 
     if (phoneNumber.startsWith("+")) {
       phoneNumber = phoneNumber.substring(3);
