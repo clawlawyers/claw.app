@@ -1454,6 +1454,7 @@ async function updateUserSubscription(
 
 async function updateUserPlanPayment(phoneNumber, paymentId, currencyType) {
   try {
+    console.log(phoneNumber, paymentId, currencyType);
     let userPlanData;
     phoneNumber = String(phoneNumber);
 
