@@ -1048,7 +1048,8 @@ async function razorpayWebhook(req, res) {
       // Update subscription payment details in the database
       const paymentDatails = await GptServices.updateUserPlanPayment(
         phoneNumber,
-        paymentId
+        paymentId,
+        currencyType
       );
       console.log(paymentDatails);
 
