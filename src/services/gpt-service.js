@@ -1496,7 +1496,7 @@ async function updateUserPlanPayment(phoneNumber, paymentId, currencyType) {
     }
 
     if (currencyType === "USD") {
-      userPlan = await prisma.userAllPlan.findFirst({
+      userPlan = await prisma.userAllUSPlan.findFirst({
         where: {
           userId: id,
         },
@@ -1537,7 +1537,7 @@ async function updateUserPlanPayment(phoneNumber, paymentId, currencyType) {
         );
 
         // Update the user's plan with the new expiration date
-        userPlanData = await prisma.userAllPlan.update({
+        userPlanData = await prisma.userAllUKPlan.update({
           where: {
             userId_planName: {
               userId: id,
