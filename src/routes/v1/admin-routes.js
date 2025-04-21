@@ -17,6 +17,7 @@ const {
   allCoupon,
   generateReferralCode,
   usertracking,
+  trackUserNavigation,
   userdailyvisit,
   usermonthlyvisit,
   useryearlyvisit,
@@ -63,6 +64,7 @@ const {
   totalSessions,
   sessionHistory,
   createPlan,
+  getUserById,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -77,7 +79,7 @@ router.get("/referralcode", getReferralCodes);
 router.get("/plan", getPlans);
 router.get("/user", getUsers);
 router.get("/subscribed-users", (req, res) => {
-    getSubscribedUsers(req, res);
+  getSubscribedUsers(req, res);
 });
 router.get("/model", getModels);
 router.get("/session", getSessions);
@@ -90,6 +92,7 @@ router.delete("/delete", deleteCoupon);
 router.get("/allcoupons", allCoupon);
 router.patch("/generateReferralCode", generateReferralCode);
 router.post("/usertrack", usertracking);
+router.post("/track-navigation", trackUserNavigation);
 router.get("/dailyuserpagevisit", userdailyvisit);
 router.get("/everyDayData", userEveryDayData);
 router.get("/everyMonthData", userEveryMonthData);
@@ -97,7 +100,7 @@ router.get("/monthlyuserpagevisit", usermonthlyvisit);
 router.get("/everyYearData", userEveryYearData);
 router.get("/yearlyuserpagevisit", useryearlyvisit);
 router.patch("/updateUserLocation", setLocation);
-router.patch("/updateUserPlans", updateUserPlan);
+router.patch("/updateUserPlan", updateUserPlan);
 router.post("/addFirstAdminUser", addFirstUser);
 router.post("/:adminId/addAdminUser", createAdmin);
 router.get("/getAdmins", getAdmins);
@@ -235,7 +238,9 @@ router.post("/create-plan", createPlan);
 
 // Add a test route to verify routing
 router.get("/test", (req, res) => {
-    res.json({ message: "Admin routes are working" });
+  res.json({ message: "Admin routes are working" });
 });
+
+router.get("/users/:userId", getUserById);
 
 module.exports = router;
