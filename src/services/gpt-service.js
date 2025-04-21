@@ -245,15 +245,35 @@ async function createModel(name, version) {
   }
 }
 
-async function createSession(userId, initialPrompt, modelName) {
+async function createSession(userId, initialPrompt, modelName, currencyType) {
   try {
-    const newSession = await prisma.session.create({
-      data: {
-        userId,
-        name: initialPrompt,
-        modelName,
-      },
-    });
+    let newSession;
+    if (currencyType === "INR") {
+      newSession = await prisma.session.create({
+        data: {
+          userId,
+          name: initialPrompt,
+          modelName,
+        },
+      });
+    } else if (currencyType === "USD") {
+      newSession = await prisma.uSSession.create({
+        data: {
+          userId,
+          name: initialPrompt,
+          modelName,
+        },
+      });
+    } else if (currencyType === "GBP") {
+      newSession = await prisma.uKSession.create({
+        data: {
+          userId,
+          name: initialPrompt,
+          modelName,
+        },
+      });
+    }
+
     return newSession;
   } catch (error) {
     console.log(error);
@@ -422,18 +442,43 @@ async function createSocketMessage(
   isDocument,
   contextId, // Can be null if no context
   isUser,
-  sessionId
+  sessionId,
+  currencyType
 ) {
   try {
-    const newMessage = await prisma.message.create({
-      data: {
-        text,
-        isDocument,
-        contextId, // Can be null if no context
-        isUser,
-        sessionId,
-      },
-    });
+    let newMessage;
+    if (currencyType === "INR") {
+      newMessage = await prisma.message.create({
+        data: {
+          text,
+          isDocument,
+          contextId, // Can be null if no context
+          isUser,
+          sessionId: sessionId,
+        },
+      });
+    } else if (currencyType === "USD") {
+      newMessage = await prisma.message.create({
+        data: {
+          text,
+          isDocument,
+          contextId, // Can be null if no context
+          isUser,
+          usSessionId: sessionId,
+        },
+      });
+    } else if (currencyType === "GBP") {
+      newMessage = await prisma.message.create({
+        data: {
+          text,
+          isDocument,
+          contextId, // Can be null if no context
+          isUser,
+          ukSessionId: sessionId,
+        },
+      });
+    }
+
     return newMessage;
   } catch (error) {
     console.log(error);
@@ -782,6 +827,50 @@ async function caseSearchOn(phoneNumber) {
   }
 }
 
+async function storeRegeneratedMessage(sesssionId, response, currencyType) {
+  try {
+    let getAllMessages;
+    if (currencyType === "INR") {
+      getAllMessages = await prisma.message.findMany({
+        where: {
+          sessionId: sesssionId,
+        },
+      });
+    } else if (currencyType === "USD") {
+      getAllMessages = await prisma.message.findMany({
+        where: {
+          usSessionId: sesssionId,
+        },
+      });
+    } else if (currencyType === "GBP") {
+      getAllMessages = await prisma.message.findMany({
+        where: {
+          ukSessionId: sesssionId,
+        },
+      });
+    }
+
+    const lastMessage = getAllMessages[getAllMessages.length - 1];
+
+    const updatedMessage = await prisma.message.update({
+      where: {
+        id: lastMessage.id,
+      },
+      data: {
+        text: response,
+      },
+    });
+    console.log("Updated message:", updatedMessage);
+    return updatedMessage;
+  } catch (error) {
+    console.log(error);
+    throw new AppError(
+      "Error while storing regenerated message",
+      StatusCodes.INTERNAL_SERVER_ERROR
+    );
+  }
+}
+
 async function fetchSessionBySessionId(sessionId) {
   try {
     const session = await prisma.session.findUnique({
@@ -807,23 +896,55 @@ async function fetchSessionBySessionId(sessionId) {
   }
 }
 
-async function fetchSessions(userId, model) {
+async function fetchSessions(userId, model, currencyType) {
   try {
-    const userSessions = await prisma.session.findMany({
-      where: {
-        userId,
-        modelName: model,
-      },
-      orderBy: {
-        updatedAt: "desc",
-      },
-      select: {
-        name: true,
-        updatedAt: true,
-        id: true,
-      },
-    });
-
+    let userSessions;
+    if (currencyType === "INR") {
+      userSessions = await prisma.session.findMany({
+        where: {
+          userId,
+          modelName: model,
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+        select: {
+          name: true,
+          updatedAt: true,
+          id: true,
+        },
+      });
+    } else if (currencyType === "USD") {
+      userSessions = await prisma.uSSession.findMany({
+        where: {
+          userId,
+          modelName: model,
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+        select: {
+          name: true,
+          updatedAt: true,
+          id: true,
+        },
+      });
+    } else if (currencyType === "GBP") {
+      userSessions = await prisma.uKSession.findMany({
+        where: {
+          userId,
+          modelName: model,
+        },
+        orderBy: {
+          updatedAt: "desc",
+        },
+        select: {
+          name: true,
+          updatedAt: true,
+          id: true,
+        },
+      });
+    }
     return userSessions;
   } catch (error) {
     console.log(error);
@@ -834,29 +955,76 @@ async function fetchSessions(userId, model) {
   }
 }
 
-async function fetchSessionMessages(sessionId) {
+async function fetchSessionMessages(sessionId, currencyType) {
   try {
-    const sessionMessages = await prisma.session.findUnique({
-      where: {
-        id: sessionId,
-      },
-      include: {
-        messages: {
-          orderBy: {
-            createdAt: "asc",
-          },
-          select: {
-            id: true,
-            text: true,
-            isUser: true,
-            createdAt: true,
-            contextId: true,
-            contextMessage: true,
-            isDocument: true,
+    let sessionMessages;
+    if (currencyType === "INR") {
+      sessionMessages = await prisma.session.findUnique({
+        where: {
+          id: sessionId,
+        },
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              text: true,
+              isUser: true,
+              createdAt: true,
+              contextId: true,
+              contextMessage: true,
+              isDocument: true,
+            },
           },
         },
-      },
-    });
+      });
+    } else if (currencyType === "USD") {
+      sessionMessages = await prisma.uSSession.findUnique({
+        where: {
+          id: sessionId,
+        },
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              text: true,
+              isUser: true,
+              createdAt: true,
+              contextId: true,
+              contextMessage: true,
+              isDocument: true,
+            },
+          },
+        },
+      });
+    } else if (currencyType === "GBP") {
+      sessionMessages = await prisma.uKSession.findUnique({
+        where: {
+          id: sessionId,
+        },
+        include: {
+          messages: {
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+              text: true,
+              isUser: true,
+              createdAt: true,
+              contextId: true,
+              contextMessage: true,
+              isDocument: true,
+            },
+          },
+        },
+      });
+    }
 
     return sessionMessages;
   } catch (error) {
@@ -1284,7 +1452,7 @@ async function updateUserSubscription(
   }
 }
 
-async function updateUserPlanPayment(phoneNumber, paymentId) {
+async function updateUserPlanPayment(phoneNumber, paymentId, currencyType) {
   try {
     let userPlanData;
     phoneNumber = String(phoneNumber);
@@ -1295,34 +1463,91 @@ async function updateUserPlanPayment(phoneNumber, paymentId) {
     const userData = await Client.findOne({ phoneNumber });
 
     const id = userData._id.toHexString();
-
-    const userPlan = await prisma.userAdiraPlan.findFirst({
-      where: {
-        userId: id,
-      },
-    });
-    // Check if the user plan exists
-    if (userPlan) {
-      // Add 30 days to the existing `expiresAt`
-      const newExpiresAt = new Date(
-        userPlan.expiresAt.getTime() + 30 * 24 * 60 * 60 * 1000
-      );
-
-      // Update the user's plan with the new expiration date
-      userPlanData = await prisma.userAdiraPlan.update({
+    let userPlan;
+    if (currencyType === "INR") {
+      userPlan = await prisma.userAllPlan.findFirst({
         where: {
-          userId_planName: {
-            userId: id,
-            planName: userPlan.planName, // Ensure `planName` is included
-          },
-        },
-        data: {
-          expiresAt: newExpiresAt,
-          totalDocuments: {
-            increment: 3,
-          },
+          userId: id,
         },
       });
+      // Check if the user plan exists
+      if (userPlan) {
+        // Add 30 days to the existing `expiresAt`
+        const newExpiresAt = new Date(
+          userPlan.expiresAt.getTime() + 30 * 24 * 60 * 60 * 1000
+        );
+
+        // Update the user's plan with the new expiration date
+        userPlanData = await prisma.userAllPlan.update({
+          where: {
+            userId_planName: {
+              userId: id,
+              planName: userPlan.planName, // Ensure `planName` is included
+            },
+          },
+          data: {
+            expiresAt: newExpiresAt,
+            UsedAdiraToken: 0,
+          },
+        });
+      }
+    }
+
+    if (currencyType === "USD") {
+      userPlan = await prisma.userAllPlan.findFirst({
+        where: {
+          userId: id,
+        },
+      });
+      // Check if the user plan exists
+      if (userPlan) {
+        // Add 30 days to the existing `expiresAt`
+        const newExpiresAt = new Date(
+          userPlan.expiresAt.getTime() + 30 * 24 * 60 * 60 * 1000
+        );
+
+        // Update the user's plan with the new expiration date
+        userPlanData = await prisma.userAllUSPlan.update({
+          where: {
+            userId_planName: {
+              userId: id,
+              planName: userPlan.planName, // Ensure `planName` is included
+            },
+          },
+          data: {
+            expiresAt: newExpiresAt,
+            UsedAdiraToken: 0,
+          },
+        });
+      }
+    }
+    if (currencyType === "GBP") {
+      userPlan = await prisma.userAllUKPlan.findFirst({
+        where: {
+          userId: id,
+        },
+      });
+      // Check if the user plan exists
+      if (userPlan) {
+        // Add 30 days to the existing `expiresAt`
+        const newExpiresAt = new Date(
+          userPlan.expiresAt.getTime() + 30 * 24 * 60 * 60 * 1000
+        );
+
+        // Update the user's plan with the new expiration date
+        userPlanData = await prisma.userAllPlan.update({
+          where: {
+            userId_planName: {
+              userId: id,
+              planName: userPlan.planName, // Ensure `planName` is included
+            },
+          },
+          data: {
+            expiresAt: newExpiresAt,
+            UsedAdiraToken: 0,
+          },
+        });
+      }
     }
 
     return userPlanData;
@@ -2507,32 +2732,72 @@ async function deleteSessions(mongoId, modelName) {
   }
 }
 
-async function storeUsedTimeService(id) {
+async function storeUsedTimeService(id, currencyType) {
   try {
     // const user = await Client.findByIdAndUpdate(id, {
     //   $inc: {
     //     totalUsed: 1,
     //   },
     // });
-
-    const userPlanData = await prisma.userAllPlan.findFirst({
-      where: {
-        userId: id,
-      },
-    });
-
-    const user = await prisma.userAllPlan.update({
-      where: {
-        userId_planName: {
-          userId: id, // Make sure this is the correct field name
-          planName: userPlanData?.planName, // Assuming you have planName from the userPlanData
+    let userPlanData;
+    if (currencyType === "INR") {
+      userPlanData = await prisma.userAllPlan.findFirst({
+        where: {
+          userId: id,
         },
-      },
-      data: {
-        UsedLegalGPTime: { increment: 1 },
-      },
-    });
+      });
+    } else if (currencyType === "USD") {
+      userPlanData = await prisma.userAllUSPlan.findFirst({
+        where: {
+          userId: id,
+        },
+      });
+    } else if (currencyType === "GBP") {
+      userPlanData = await prisma.userAllUKPlan.findFirst({
+        where: {
+          userId: id,
+        },
+      });
+    }
 
+    let user;
+    if (currencyType === "INR") {
+      user = await prisma.userAllPlan.update({
+        where: {
+          userId_planName: {
+            userId: id, // Make sure this is the correct field name
+            planName: userPlanData?.planName, // Assuming you have planName from the userPlanData
+          },
+        },
+        data: {
+          UsedLegalGPTime: { increment: 1 },
+        },
+      });
+    } else if (currencyType === "USD") {
+      user = await prisma.userAllUSPlan.update({
+        where: {
+          userId_planName: {
+            userId: id, // Make sure this is the correct field name
+            planName: userPlanData?.planName, // Assuming you have planName from the userPlanData
+          },
+        },
+        data: {
+          UsedLegalGPTime: { increment: 1 },
+        },
+      });
+    } else if (currencyType === "GBP") {
+      user = await prisma.userAllUKPlan.update({
+        where: {
+          userId_planName: {
+            userId: id, // Make sure this is the correct field name
+            planName: userPlanData?.planName, // Assuming you have planName from the userPlanData
+          },
+        },
+        data: {
+          UsedLegalGPTime: { increment: 1 },
+        },
+      });
+    }
     return user;
   } catch (error) {
     console.error(error);
@@ -2863,4 +3128,5 @@ module.exports = {
   storeUsedTimeService,
   createGptUserForCompain,
   updateCurrency,
+  storeRegeneratedMessage,
 };

@@ -71,9 +71,14 @@ async function startSession(req, res) {
   try {
     const { _id } = req.body.client;
     const userId = _id.toString();
-    const { prompt, model } = req.body;
+    const { prompt, model, currencyType } = req.body;
     // Fetch Context
-    const session = await GptServices.createSession(userId, prompt, model);
+    const session = await GptServices.createSession(
+      userId,
+      prompt,
+      model,
+      currencyType
+    );
 
     return res.status(StatusCodes.OK).json(SuccessResponse(session));
   } catch (error) {
@@ -83,14 +88,16 @@ async function startSession(req, res) {
 }
 
 async function appendMessageByScocket(req, res) {
-  const { text, isDocument, contextId, isUser, sessionId } = req.body;
+  const { text, isDocument, contextId, isUser, sessionId, currencyType } =
+    req.body;
   try {
     const newMessage = await GptServices.createSocketMessage(
       text,
       isDocument,
       contextId, // Can be null if no context
       isUser,
-      sessionId
+      sessionId,
+      currencyType
     );
 
     return res.status(StatusCodes.OK).json(SuccessResponse(newMessage));
@@ -222,34 +229,15 @@ async function appendMessage(req, res) {
 
 async function appendRegeneratedMessage(req, res) {
   try {
-    const { prompt, sessionId } = req.body;
+    const { response, sessionId, currencyType } = req.body;
 
-    const { modelName, user } = await GptServices.fetchSessionBySessionId(
-      sessionId
-    );
-    if (!modelName)
-      throw new AppError("Invalid sessionId", StatusCodes.BAD_REQUEST);
-
-    // Fetch Context
-    const context = await GptServices.fetchContextForRegenerate(sessionId);
-
-    // Save User Prompt
-    // await GptServices.createMessage(sessionId, prompt, true, user.mongoId);
-
-    // Make a call to gpt for generating response
-    console.log("called by mode", modelName);
-    const gptApiResponse = await fetchGptApi({ prompt, context });
-
-    // Save Gpt Response
-    const gptResponse = await GptServices.RegenertaedMessage(
+    const updatedMessage = await GptServices.storeRegeneratedMessage(
       sessionId,
-      gptApiResponse.gptResponse,
-      false
+      response,
+      currencyType
     );
 
-    return res
-      .status(StatusCodes.OK)
-      .json(SuccessResponse({ sessionId, gptResponse }));
+    return res.status(StatusCodes.OK).json(SuccessResponse(updatedMessage));
   } catch (error) {
     console.log(error);
     res
@@ -384,8 +372,8 @@ async function fetchGptRelatedCases(context, courtName) {
 
 async function suggestQuestions(req, res) {
   try {
-    const { context } = req.body;
-    const Fetchedquestions = await Fetchquestions(context);
+    const { context, currencyType } = req.body;
+    const Fetchedquestions = await Fetchquestions(context, currencyType);
     return res.status(StatusCodes.OK).json(SuccessResponse(Fetchedquestions));
   } catch (error) {
     console.log(error);
@@ -395,16 +383,35 @@ async function suggestQuestions(req, res) {
   }
 }
 
-async function Fetchquestions(context) {
+async function Fetchquestions(context, currencyType) {
   console.log(context);
   try {
-    const response = await fetch(`${FLASK_API_ENDPOINT}/gpt/questions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ context }),
-    });
+    let response;
+    if (currencyType === "INR") {
+      response = await fetch(`${FLASK_API_ENDPOINT}/gpt/questions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ context }),
+      });
+    } else if (currencyType === "USD") {
+      response = await fetch(`${FLASK_API_ENDPOINT}/gpt/us_questions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ context }),
+      });
+    } else if (currencyType === "GBP") {
+      response = await fetch(`${FLASK_API_ENDPOINT}/gpt/uk_questions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ context }),
+      });
+    }
 
     if (!response.ok) {
       const errorBody = await response.text();
@@ -451,10 +458,14 @@ async function getRelatedCases(req, res) {
 
 async function getUserSessions(req, res) {
   try {
-    const { model } = req.params;
+    const { model, currencyType } = req.params;
     const { _id } = req.body.client;
     const userId = _id.toString();
-    const sessions = await GptServices.fetchSessions(userId, model);
+    const sessions = await GptServices.fetchSessions(
+      userId,
+      model,
+      currencyType
+    );
 
     return res.status(StatusCodes.OK).json(SuccessResponse(sessions));
   } catch (error) {
@@ -467,8 +478,11 @@ async function getUserSessions(req, res) {
 
 async function getSessionMessages(req, res) {
   try {
-    const { sessionId } = req.params;
-    const messages = await GptServices.fetchSessionMessages(sessionId);
+    const { sessionId, currencyType } = req.params;
+    const messages = await GptServices.fetchSessionMessages(
+      sessionId,
+      currencyType
+    );
 
     return res.status(StatusCodes.OK).json(SuccessResponse(messages));
   } catch (error) {
@@ -1153,7 +1167,12 @@ async function storeUsedTime(req, res) {
   try {
     const userId = req.body.client._id;
 
-    const storedTime = await GptServices.storeUsedTimeService(userId);
+    const { currencyType } = req.body;
+
+    const storedTime = await GptServices.storeUsedTimeService(
+      userId,
+      currencyType
+    );
     console.log(storedTime);
     return res.status(StatusCodes.OK).json({
       message: "Time stored successfully",

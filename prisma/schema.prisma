@@ -88,6 +88,10 @@ model User {
   UserAllUKPlan UserAllUKPlan[]
 
   UserAllUSPlan UserAllUSPlan[]
+
+  UKSession UKSession[]
+
+  USSession USSession[]
 }
 
 model UserPlan {
@@ -334,6 +338,10 @@ model Model {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   sessions  Session[]
+
+  UKSession UKSession[]
+
+  USSession USSession[]
 }
 
 model Session {
@@ -350,20 +358,51 @@ model Session {
   @@index([userId])
 }
 
+model UKSession {
+  id        String    @id @default(uuid())
+  name      String
+  userId    String
+  modelName String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+  model     Model     @relation(fields: [modelName], references: [name])
+  user      User      @relation(fields: [userId], references: [mongoId], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model USSession {
+  id        String    @id @default(uuid())
+  name      String
+  userId    String
+  modelName String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+  model     Model     @relation(fields: [modelName], references: [name])
+  user      User      @relation(fields: [userId], references: [mongoId], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model Message {
-  id             String    @id @default(uuid())
+  id             String     @id @default(uuid())
   text           String
   isUser         Boolean
-  sessionId      String
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  textArray      String[]  @default([])
+  sessionId      String?
+  ukSessionId    String?
+  usSessionId    String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
   contextId      String?
   isDocument     String?
   feedback       Feedback?
-  contextMessage Message?  @relation("MessageContext", fields: [contextId], references: [id])
-  Message        Message[] @relation("MessageContext")
-  session        Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  contextMessage Message?   @relation("MessageContext", fields: [contextId], references: [id])
+  Message        Message[]  @relation("MessageContext")
+  session        Session?   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  UKSession      UKSession? @relation(fields: [ukSessionId], references: [id], onDelete: Cascade, map: "Message_UKSession_fkey")
+  USSession      USSession? @relation(fields: [usSessionId], references: [id], onDelete: Cascade, map: "Message_USSession_fkey")
 
   @@index([sessionId])
 }

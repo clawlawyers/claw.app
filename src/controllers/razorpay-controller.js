@@ -680,6 +680,7 @@ async function createSubscription(req, res) {
       total_count: 12,
       notes: {
         phoneNumber: phoneNumber,
+        currencyType: currency,
       },
     };
 
@@ -1028,6 +1029,7 @@ async function razorpayWebhook(req, res) {
       const paymentId = paymentDetails.id;
       // const customerMobile = paymentDetails.customer.contact;
       const phoneNumber = paymentDetails.notes.phoneNumber; // Assuming phoneNumber is stored in notes
+      const currencyType = paymentDetails.notes.currencyType; // Assuming phoneNumber is stored in notes
       const amountPaid = req.body.payload.payment.entity.amount / 100;
 
       console.log(paymentDetails);

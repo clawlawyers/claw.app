@@ -23,19 +23,15 @@ let inMemoryEngagementData = {};
 let AdirainMemoryEngagementData = {};
 let WarroominMemoryEngagementData = {};
 
-const  flushInMemoryDataToDatabase = async () => {
+const flushInMemoryDataToDatabase = async () => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  console.log(AdirainMemoryEngagementData)
-
-
+  // console.log(AdirainMemoryEngagementData);
 
   try {
     for (const phoneNumber in inMemoryEngagementData) {
       const userEngagement = inMemoryEngagementData[phoneNumber];
-      console.log(userEngagement)
-
-      
+      // console.log(userEngagement);
 
       // console.log(phoneNumber);
 
@@ -54,10 +50,9 @@ const  flushInMemoryDataToDatabase = async () => {
             monthly: {},
             yearly: {},
             total: 0,
-            lastPage:""
+            lastPage: "",
           };
         }
-       
 
         // console.log(user.engagementTime);
 
@@ -69,12 +64,10 @@ const  flushInMemoryDataToDatabase = async () => {
         user.engagementTime.total += totalEngagementTime;
         await ClientService.updateClientByPhoneNumberWithSession(
           phoneNumber,
-          { $set:{
-
-          
-              [`engagementTime.lastPage`]: userEngagement.lastPage ,
-            
-          }
+          {
+            $set: {
+              [`engagementTime.lastPage`]: userEngagement.lastPage,
+            },
           },
           session
         );
@@ -210,23 +203,23 @@ const  flushInMemoryDataToDatabase = async () => {
         session
       );
 
-      if (user) {  
+      if (user) {
         if (!user.spcificEngagementTime) {
           user.spcificEngagementTime = {
-            Adira:{
+            Adira: {
               daily: {},
               monthly: {},
               yearly: {},
               total: 0,
-              lastPage:""
+              lastPage: "",
             },
-            Warroom:{
+            Warroom: {
               daily: {},
               monthly: {},
               yearly: {},
               total: 0,
-              lastPage:""
-            }
+              lastPage: "",
+            },
           };
         }
         const totalEngagementTime = Object.values(userEngagement.daily).reduce(
@@ -234,32 +227,33 @@ const  flushInMemoryDataToDatabase = async () => {
           0
         );
         user.spcificEngagementTime.Adira.total += totalEngagementTime;
-        console.log(userEngagement.lastPage)
-        console.log("lastpage")
+        console.log(userEngagement.lastPage);
+        console.log("lastpage");
         await ClientService.updateClientByPhoneNumberWithSession(
           phoneNumber,
-          { $set:{
-
-          
-              [`spcificEngagementTime.Adira.lastPage`]: userEngagement.lastPage ,
-            
-          }
+          {
+            $set: {
+              [`spcificEngagementTime.Adira.lastPage`]: userEngagement.lastPage,
+            },
           },
           session
         );
 
         for (const [day, time] of Object.entries(userEngagement.daily)) {
           const dailyIncrement = time / 60; // Convert seconds to minutes
-          const dailyDate = [...user?.spcificEngagementTime?.Adira?.daily?.keys()][0];
+          const dailyDate = [
+            ...user?.spcificEngagementTime?.Adira?.daily?.keys(),
+          ][0];
           if (dailyDate === day) {
             await ClientService.updateClientByPhoneNumberWithSession(
               phoneNumber,
-              { $set:{
-
-                $inc: {
-                  [`spcificEngagementTime.Adira.daily.${day}`]: dailyIncrement,
+              {
+                $set: {
+                  $inc: {
+                    [`spcificEngagementTime.Adira.daily.${day}`]:
+                      dailyIncrement,
+                  },
                 },
-              }
               },
               session
             );
@@ -268,7 +262,9 @@ const  flushInMemoryDataToDatabase = async () => {
               phoneNumber,
               {
                 $set: {
-                  [`spcificEngagementTime.Adira.daily`]: { [`${day}`]: dailyIncrement },
+                  [`spcificEngagementTime.Adira.daily`]: {
+                    [`${day}`]: dailyIncrement,
+                  },
                 },
               },
               session
@@ -277,13 +273,16 @@ const  flushInMemoryDataToDatabase = async () => {
         }
         for (const [month, time] of Object.entries(userEngagement.monthly)) {
           const monthlyIncrement = time / 3600; // Convert seconds to hours
-          const monthlyDate = [...user?.spcificEngagementTime?.Adira?.monthly?.keys()][0];
+          const monthlyDate = [
+            ...user?.spcificEngagementTime?.Adira?.monthly?.keys(),
+          ][0];
           if (monthlyDate === month) {
             await ClientService.updateClientByPhoneNumberWithSession(
               phoneNumber,
               {
                 $inc: {
-                  [`spcificEngagementTime.Adira.monthly.${month}`]: monthlyIncrement,
+                  [`spcificEngagementTime.Adira.monthly.${month}`]:
+                    monthlyIncrement,
                 },
               },
               session
@@ -305,13 +304,16 @@ const  flushInMemoryDataToDatabase = async () => {
 
         for (const [year, time] of Object.entries(userEngagement.yearly)) {
           const yearlyIncrement = time / 3600; // Convert seconds to hours
-          const yearlyDate = [...user?.spcificEngagementTime?.Adira?.yearly?.keys()][0];
+          const yearlyDate = [
+            ...user?.spcificEngagementTime?.Adira?.yearly?.keys(),
+          ][0];
           if (yearlyDate === year) {
             await ClientService.updateClientByPhoneNumberWithSession(
               phoneNumber,
               {
                 $inc: {
-                  [`spcificEngagementTime.Adira.yearly.${year}`]: yearlyIncrement,
+                  [`spcificEngagementTime.Adira.yearly.${year}`]:
+                    yearlyIncrement,
                 },
               },
               session
@@ -352,21 +354,21 @@ const  flushInMemoryDataToDatabase = async () => {
         session
       );
 
-      if (user) {  
+      if (user) {
         if (!user.spcificEngagementTime) {
           user.spcificEngagementTime = {
-            Adira:{
+            Adira: {
               daily: {},
               monthly: {},
               yearly: {},
               total: 0,
             },
-            Warroom:{
+            Warroom: {
               daily: {},
               monthly: {},
               yearly: {},
               total: 0,
-            }
+            },
           };
         }
         const totalEngagementTime = Object.values(userEngagement.daily).reduce(
@@ -377,16 +379,19 @@ const  flushInMemoryDataToDatabase = async () => {
 
         for (const [day, time] of Object.entries(userEngagement.daily)) {
           const dailyIncrement = time / 60; // Convert seconds to minutes
-          const dailyDate = [...user?.spcificEngagementTime?.Warroom?.daily?.keys()][0];
+          const dailyDate = [
+            ...user?.spcificEngagementTime?.Warroom?.daily?.keys(),
+          ][0];
           if (dailyDate === day) {
             await ClientService.updateClientByPhoneNumberWithSession(
               phoneNumber,
-              { $set:{
-
-                $inc: {
-                  [`spcificEngagementTime.Warroom.daily.${day}`]: dailyIncrement,
+              {
+                $set: {
+                  $inc: {
+                    [`spcificEngagementTime.Warroom.daily.${day}`]:
+                      dailyIncrement,
+                  },
                 },
-              }
               },
               session
             );
@@ -395,7 +400,9 @@ const  flushInMemoryDataToDatabase = async () => {
               phoneNumber,
               {
                 $set: {
-                  [`spcificEngagementTime.Warroom.daily`]: { [`${day}`]: dailyIncrement },
+                  [`spcificEngagementTime.Warroom.daily`]: {
+                    [`${day}`]: dailyIncrement,
+                  },
                 },
               },
               session
@@ -404,13 +411,16 @@ const  flushInMemoryDataToDatabase = async () => {
         }
         for (const [month, time] of Object.entries(userEngagement.monthly)) {
           const monthlyIncrement = time / 3600; // Convert seconds to hours
-          const monthlyDate = [...user?.spcificEngagementTime?.Warroom?.monthly?.keys()][0];
+          const monthlyDate = [
+            ...user?.spcificEngagementTime?.Warroom?.monthly?.keys(),
+          ][0];
           if (monthlyDate === month) {
             await ClientService.updateClientByPhoneNumberWithSession(
               phoneNumber,
               {
                 $inc: {
-                  [`spcificEngagementTime.Warroom.monthly.${month}`]: monthlyIncrement,
+                  [`spcificEngagementTime.Warroom.monthly.${month}`]:
+                    monthlyIncrement,
                 },
               },
               session
@@ -432,13 +442,16 @@ const  flushInMemoryDataToDatabase = async () => {
 
         for (const [year, time] of Object.entries(userEngagement.yearly)) {
           const yearlyIncrement = time / 3600; // Convert seconds to hours
-          const yearlyDate = [...user?.spcificEngagementTime?.Warroom?.yearly?.keys()][0];
+          const yearlyDate = [
+            ...user?.spcificEngagementTime?.Warroom?.yearly?.keys(),
+          ][0];
           if (yearlyDate === year) {
             await ClientService.updateClientByPhoneNumberWithSession(
               phoneNumber,
               {
                 $inc: {
-                  [`spcificEngagementTime.Warroom.yearly.${year}`]: yearlyIncrement,
+                  [`spcificEngagementTime.Warroom.yearly.${year}`]:
+                    yearlyIncrement,
                 },
               },
               session
@@ -483,91 +496,96 @@ const  flushInMemoryDataToDatabase = async () => {
 };
 
 router.post("/specificEengagement/time", (req, res) => {
-  console.log("platform")
+  console.log("platform");
   const engagementData = req.body.engagementData;
   const platform = req.body.platform;
 
-  engagementData.forEach(({ phoneNumber,LastPage, engagementTime, timestamp }) => {
-    const date = new Date(timestamp); // Convert seconds to milliseconds
-    const day = date.toISOString().slice(0, 10);
-    const month = date.toISOString().slice(0, 7);
-    const year = date.getFullYear();
-    console.log(LastPage)
-    if (platform == "Adira") {
-      if (!AdirainMemoryEngagementData[phoneNumber]) {
-        AdirainMemoryEngagementData[phoneNumber] = {
-          daily: {},
-          monthly: {},
-          yearly: {},
-          total: 0,
-          lastPage:LastPage
-        };
+  engagementData.forEach(
+    ({ phoneNumber, LastPage, engagementTime, timestamp }) => {
+      const date = new Date(timestamp); // Convert seconds to milliseconds
+      const day = date.toISOString().slice(0, 10);
+      const month = date.toISOString().slice(0, 7);
+      const year = date.getFullYear();
+      console.log(LastPage);
+      if (platform == "Adira") {
+        if (!AdirainMemoryEngagementData[phoneNumber]) {
+          AdirainMemoryEngagementData[phoneNumber] = {
+            daily: {},
+            monthly: {},
+            yearly: {},
+            total: 0,
+            lastPage: LastPage,
+          };
+        }
+        AdirainMemoryEngagementData[phoneNumber].lastPage = LastPagey;
+        AdirainMemoryEngagementData[phoneNumber].daily[day] =
+          (AdirainMemoryEngagementData[phoneNumber].daily[day] || 0) +
+          engagementTime;
+        AdirainMemoryEngagementData[phoneNumber].monthly[month] =
+          (AdirainMemoryEngagementData[phoneNumber].monthly[month] || 0) +
+          engagementTime;
+        AdirainMemoryEngagementData[phoneNumber].yearly[year] =
+          (AdirainMemoryEngagementData[phoneNumber].yearly[year] || 0) +
+          engagementTime;
+        AdirainMemoryEngagementData[phoneNumber].total += engagementTime; // Add to total engagement time
+        // AdirainMemoryEngagementData[phoneNumber].lastPage += engagementTime; // Add to total engagement time
+      } else if (platform == "warroom") {
+        if (!WarroominMemoryEngagementData[phoneNumber]) {
+          WarroominMemoryEngagementData[phoneNumber] = {
+            daily: {},
+            monthly: {},
+            yearly: {},
+            total: 0,
+            lastPage: "",
+          };
+        }
+        WarroominMemoryEngagementData[phoneNumber].daily[day] =
+          (WarroominMemoryEngagementData[phoneNumber].daily[day] || 0) +
+          engagementTime;
+        WarroominMemoryEngagementData[phoneNumber].monthly[month] =
+          (WarroominMemoryEngagementData[phoneNumber].monthly[month] || 0) +
+          engagementTime;
+        WarroominMemoryEngagementData[phoneNumber].yearly[year] =
+          (WarroominMemoryEngagementData[phoneNumber].yearly[year] || 0) +
+          engagementTime;
+        WarroominMemoryEngagementData[phoneNumber].total += engagementTime; //
       }
-      AdirainMemoryEngagementData[phoneNumber].lastPage=LastPagey
-      AdirainMemoryEngagementData[phoneNumber].daily[day] =
-        (AdirainMemoryEngagementData[phoneNumber].daily[day] || 0) +
-        engagementTime;
-      AdirainMemoryEngagementData[phoneNumber].monthly[month] =
-        (AdirainMemoryEngagementData[phoneNumber].monthly[month] || 0) +
-        engagementTime;
-      AdirainMemoryEngagementData[phoneNumber].yearly[year] =
-        (AdirainMemoryEngagementData[phoneNumber].yearly[year] || 0) +
-        engagementTime;
-      AdirainMemoryEngagementData[phoneNumber].total += engagementTime; // Add to total engagement time
-      // AdirainMemoryEngagementData[phoneNumber].lastPage += engagementTime; // Add to total engagement time
-    } else if (platform == "warroom") {
-      if (!WarroominMemoryEngagementData[phoneNumber]) {
-        WarroominMemoryEngagementData[phoneNumber] = {
-          daily: {},
-          monthly: {},
-          yearly: {},
-          total: 0,
-          lastPage:""
-        };
-      }
-      WarroominMemoryEngagementData[phoneNumber].daily[day] =
-        (WarroominMemoryEngagementData[phoneNumber].daily[day] || 0) +
-        engagementTime;
-      WarroominMemoryEngagementData[phoneNumber].monthly[month] =
-        (WarroominMemoryEngagementData[phoneNumber].monthly[month] || 0) +
-        engagementTime;
-      WarroominMemoryEngagementData[phoneNumber].yearly[year] =
-        (WarroominMemoryEngagementData[phoneNumber].yearly[year] || 0) +
-        engagementTime;
-      WarroominMemoryEngagementData[phoneNumber].total += engagementTime; //
     }
-  });
+  );
 
   res.status(200).json({ message: "Engagement data received" });
 });
 router.post("/engagement/time", (req, res) => {
   const engagementData = req.body;
 
-  engagementData.forEach(({ phoneNumber,LastPage, engagementTime, timestamp }) => {
-    const date = new Date(timestamp); // Convert seconds to milliseconds
-    const day = date.toISOString().slice(0, 10);
-    const month = date.toISOString().slice(0, 7);
-    const year = date.getFullYear();
+  engagementData.forEach(
+    ({ phoneNumber, LastPage, engagementTime, timestamp }) => {
+      const date = new Date(timestamp); // Convert seconds to milliseconds
+      const day = date.toISOString().slice(0, 10);
+      const month = date.toISOString().slice(0, 7);
+      const year = date.getFullYear();
 
-    if (!inMemoryEngagementData[phoneNumber]) {
-      inMemoryEngagementData[phoneNumber] = {
-        daily: {},
-        monthly: {},
-        yearly: {},
-        total: 0,
-        lastPage:LastPage
-      };
+      if (!inMemoryEngagementData[phoneNumber]) {
+        inMemoryEngagementData[phoneNumber] = {
+          daily: {},
+          monthly: {},
+          yearly: {},
+          total: 0,
+          lastPage: LastPage,
+        };
+      }
+      inMemoryEngagementData[phoneNumber].lastPage = LastPage;
+      inMemoryEngagementData[phoneNumber].daily[day] =
+        (inMemoryEngagementData[phoneNumber].daily[day] || 0) + engagementTime;
+      inMemoryEngagementData[phoneNumber].monthly[month] =
+        (inMemoryEngagementData[phoneNumber].monthly[month] || 0) +
+        engagementTime;
+      inMemoryEngagementData[phoneNumber].yearly[year] =
+        (inMemoryEngagementData[phoneNumber].yearly[year] || 0) +
+        engagementTime;
+      inMemoryEngagementData[phoneNumber].total += engagementTime; // Add to total engagement time
     }
-    inMemoryEngagementData[phoneNumber].lastPage=LastPage
-    inMemoryEngagementData[phoneNumber].daily[day] =
-      (inMemoryEngagementData[phoneNumber].daily[day] || 0) + engagementTime;
-    inMemoryEngagementData[phoneNumber].monthly[month] =
-      (inMemoryEngagementData[phoneNumber].monthly[month] || 0) +
-      engagementTime;
-    inMemoryEngagementData[phoneNumber].yearly[year] =
-      (inMemoryEngagementData[phoneNumber].yearly[year] || 0) + engagementTime;
-    inMemoryEngagementData[phoneNumber].total += engagementTime; // Add to total engagement time
-  });
+  );
 
   res.status(200).json({ message: "Engagement data received" });
 });

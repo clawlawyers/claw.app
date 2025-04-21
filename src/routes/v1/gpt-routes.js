@@ -27,8 +27,11 @@ router.post(
   GptController.getLegalgptSummaryDetails
 );
 router.post("/case/search", GptController.queryCase);
-router.get("/session/:sessionId", GptController.getSessionMessages);
-router.get("/sessions/:model", GptController.getUserSessions);
+router.get(
+  "/session/:sessionId/:currencyType",
+  GptController.getSessionMessages
+);
+router.get("/sessions/:model/:currencyType", GptController.getUserSessions);
 router.delete("/sessions/:model", GptController.deleteUserSessions);
 router.post("/user", GptController.initGptUser);
 
