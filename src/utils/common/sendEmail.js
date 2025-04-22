@@ -3,6 +3,8 @@ const {
   MAIL_HOST,
   MAIL_USER,
   MAIL_PASS,
+  CLAW_EMAIL,
+  CLAW_PASS,
 } = require("../../config/server-config");
 const fs = require("fs");
 const path = require("path");
@@ -408,8 +410,329 @@ async function sendAdminContactUsNotification(contactDetails) {
   }
 }
 
+const htmlTemplateForUserConfirmation = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>You're In! Legal Alerts Are Coming Your Way</title>
+  </head>
+  <body
+    style="
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      padding: 20px;
+      margin: 0;
+    "
+  >
+    <div
+      style="
+        max-width: 600px;
+        margin: auto;
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      "
+    >
+      <h2 style="color: #333333">
+        🎉 You’re In! Legal Alerts Are Coming Your Way
+      </h2>
+      <p style="font-size: 16px; color: #555555">
+        Hey
+      </p>
+
+      <p style="font-size: 16px; color: #555555">
+        Welcome to the smarter side of law practice ⚖<br />
+        You just made a sharp move by signing up for our
+        <strong>Legal Alerts & Automation Services</strong>. Sit back and
+        relax—we’ll keep your cases on track while you focus on winning them.
+      </p>
+
+      <h3 style="color: #333333">Here’s what we’ve received from you:</h3>
+
+      <table style="width: 100%; border-collapse: collapse; margin-top: 15px">
+        <tr style="background-color: #f0f0f0">
+          <th style="text-align: left; padding: 10px; border: 1px solid #ddd">
+            Field
+          </th>
+          <th style="text-align: left; padding: 10px; border: 1px solid #ddd">
+            Details
+          </th>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd;">Name</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">{{name}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd">Email</td>
+          <td style="padding: 10px; border: 1px solid #ddd">{{email}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd">Phone Number</td>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            {{phone_number}}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            Services Interested In
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            {{services_interested}}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            Firm / Individual
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            {{firm_or_individual}}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            Additional Information
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            {{additional_info}}
+          </td>
+        </tr>
+      </table>
+
+      <p style="font-size: 16px; color: #555555; margin-top: 20px">
+        👨‍💻 Our team will get in touch shortly to help you get started.<br />
+        Meanwhile, if you have questions, feel free to reach out to us at
+        <a
+          href="mailto:contact@clawlaw.in"
+          style="color: #007bff; text-decoration: none"
+          >contact@clawlaw.in</a
+        >
+        or call us at <strong>+91 63523 21550</strong>.
+      </p>
+
+      <p style="font-size: 16px; color: #333333; margin-top: 30px">
+        Welcome aboard,<br />
+        <strong>Team Claw Legal Tech</strong>
+      </p>
+    </div>
+  </body>
+</html>
+
+
+
+`;
+
+const templateForUserConfirmation = handlebars.compile(
+  htmlTemplateForUserConfirmation
+);
+
+const sendConfirmationEmailForUserConfirmation = async (email, data) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    port: 465,
+    secure: true, // true for 465, false for other ports
+    logger: true,
+    debug: true,
+    secureConnection: true,
+    auth: {
+      user: CLAW_EMAIL, // Replace with your email
+      pass: CLAW_PASS, // Replace with your email password
+    },
+    tls: {
+      rejectUnauthorized: true,
+    },
+  });
+
+  const filledTemplate = templateForUserConfirmation({
+    additional_info: data.additional_info,
+    firm_or_individual: data.firm_or_individual,
+    services_interested: data.services_interested,
+    phone_number: data.phone_number,
+    email: data.email,
+    name: data.name,
+  });
+
+  const mailOptions = {
+    from: "claw enterprise",
+    to: email,
+    subject: "🎉 You’re In! Legal Alerts Are Coming Your Way",
+    html: filledTemplate,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent: ", info.response);
+  } catch (error) {
+    console.error("Error sending email: ", error);
+  }
+  // console.log(info);
+};
+
+const htmlTemplateForAdminConfirmation = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>You're In! Legal Alerts Are Coming Your Way</title>
+  </head>
+  <body
+    style="
+      font-family: Arial, sans-serif;
+      background-color: #f5f5f5;
+      padding: 20px;
+      margin: 0;
+    "
+  >
+    <div
+      style="
+        max-width: 600px;
+        margin: auto;
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      "
+    >
+      <h2 style="color: #333333">
+        🎉 You’re In! Legal Alerts Are Coming Your Way
+      </h2>
+      <p style="font-size: 16px; color: #555555">
+        Hey
+      </p>
+
+      <p style="font-size: 16px; color: #555555">
+        Welcome to the smarter side of law practice ⚖<br />
+        You just made a sharp move by signing up for our
+        <strong>Legal Alerts & Automation Services</strong>. Sit back and
+        relax—we’ll keep your cases on track while you focus on winning them.
+      </p>
+
+      <h3 style="color: #333333">Here’s what we’ve received from you:</h3>
+
+      <table style="width: 100%; border-collapse: collapse; margin-top: 15px">
+        <tr style="background-color: #f0f0f0">
+          <th style="text-align: left; padding: 10px; border: 1px solid #ddd">
+            Field
+          </th>
+          <th style="text-align: left; padding: 10px; border: 1px solid #ddd">
+            Details
+          </th>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd;">Name</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">{{name}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd">Email</td>
+          <td style="padding: 10px; border: 1px solid #ddd">{{email}}</td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd">Phone Number</td>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            {{phone_number}}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            Services Interested In
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            {{services_interested}}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            Firm / Individual
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            {{firm_or_individual}}
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            Additional Information
+          </td>
+          <td style="padding: 10px; border: 1px solid #ddd">
+            {{additional_info}}
+          </td>
+        </tr>
+      </table>
+
+      <p style="font-size: 16px; color: #555555; margin-top: 20px">
+        👨‍💻 Our team will get in touch shortly to help you get started.<br />
+        Meanwhile, if you have questions, feel free to reach out to us at
+        <a
+          href="mailto:contact@clawlaw.in"
+          style="color: #007bff; text-decoration: none"
+          >contact@clawlaw.in</a
+        >
+        or call us at <strong>+91 63523 21550</strong>.
+      </p>
+
+      <p style="font-size: 16px; color: #333333; margin-top: 30px">
+        Welcome aboard,<br />
+        <strong>Team Claw Legal Tech</strong>
+      </p>
+    </div>
+  </body>
+</html>
+
+
+
+`;
+
+const templateForAdminConfirmation = handlebars.compile(
+  htmlTemplateForAdminConfirmation
+);
+
+const sendConfirmationEmailForAdminConfirmation = async (data) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    port: 465,
+    secure: true, // true for 465, false for other ports
+    logger: true,
+    debug: true,
+    secureConnection: true,
+    auth: {
+      user: MAIL_USER, // Replace with your email
+      pass: MAIL_PASS, // Replace with your email password
+    },
+    tls: {
+      rejectUnauthorized: true,
+    },
+  });
+
+  const filledTemplate = templateForAdminConfirmation({
+    additional_info: data.additional_info,
+    firm_or_individual: data.firm_or_individual,
+    services_interested: data.services_interested,
+    phone_number: data.phone_number,
+    email: data.email,
+    name: data.name,
+  });
+
+  const mailOptions = {
+    from: "claw enterprise",
+    to: "claw.lawyers@gmail.com",
+    subject:
+      "New Contact Us Query Received :- via Legal Alerts & Automation Services",
+    html: filledTemplate,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent: ", info.response);
+  } catch (error) {
+    console.error("Error sending email: ", error);
+  }
+  // console.log(info);
+};
+
 module.exports = {
   sendConfirmationEmailForAmbas,
   sendAdminContactUsNotification,
   sendConfirmationEmailForAmbasForFreePlan,
+  sendConfirmationEmailForUserConfirmation,
+  sendConfirmationEmailForAdminConfirmation,
 };

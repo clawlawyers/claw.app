@@ -96,4 +96,6 @@ router.patch(
 
 router.post("/validate-user", ClientController.validateUser);
 
+router.post("/automation-form", ClientController.legalAutomationForm);
+
 module.exports = router;
