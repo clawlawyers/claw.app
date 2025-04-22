@@ -439,7 +439,8 @@ const htmlTemplateForUserConfirmation = `
         🎉 You’re In! Legal Alerts Are Coming Your Way
       </h2>
       <p style="font-size: 16px; color: #555555">
-        Hey
+        Hey, 
+        <strong>{{name}}</strong>,
       </p>
 
       <p style="font-size: 16px; color: #555555">
@@ -461,40 +462,40 @@ const htmlTemplateForUserConfirmation = `
           </th>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd;">Name</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">{{name}}</td>
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">Name</td>
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">{{name}}</td>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd">Email</td>
-          <td style="padding: 10px; border: 1px solid #ddd">{{email}}</td>
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">Email</td>
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">{{email}}</td>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd">Phone Number</td>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">Phone Number</td>
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             {{phone_number}}
           </td>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             Services Interested In
           </td>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             {{services_interested}}
           </td>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             Firm / Individual
           </td>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             {{firm_or_individual}}
           </td>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             Additional Information
           </td>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             {{additional_info}}
           </td>
         </tr>
@@ -574,7 +575,7 @@ const htmlTemplateForAdminConfirmation = `
 <html>
   <head>
     <meta charset="UTF-8" />
-    <title>You're In! Legal Alerts Are Coming Your Way</title>
+    <title>New Contact Us Query Received :- via Legal Alerts & Automation Services</title>
   </head>
   <body
     style="
@@ -595,7 +596,7 @@ const htmlTemplateForAdminConfirmation = `
       "
     >
       <h2 style="color: #333333">
-        🎉 You’re In! Legal Alerts Are Coming Your Way
+        New Contact Us Query Received :- via Legal Alerts & Automation Services
       </h2>
       <p style="font-size: 16px; color: #555555">
         Hey
@@ -620,59 +621,52 @@ const htmlTemplateForAdminConfirmation = `
           </th>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd;">Name</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">{{name}}</td>
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">Name</td>
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">{{name}}</td>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd">Email</td>
-          <td style="padding: 10px; border: 1px solid #ddd">{{email}}</td>
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">Email</td>
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">{{email}}</td>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd">Phone Number</td>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">Phone Number</td>
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             {{phone_number}}
           </td>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             Services Interested In
           </td>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             {{services_interested}}
           </td>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             Firm / Individual
           </td>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             {{firm_or_individual}}
           </td>
         </tr>
         <tr>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             Additional Information
           </td>
-          <td style="padding: 10px; border: 1px solid #ddd">
+          <td style="padding: 10px; border: 1px solid #ddd; word-break: break-word;">
             {{additional_info}}
           </td>
         </tr>
       </table>
 
       <p style="font-size: 16px; color: #555555; margin-top: 20px">
-        👨‍💻 Our team will get in touch shortly to help you get started.<br />
-        Meanwhile, if you have questions, feel free to reach out to us at
-        <a
-          href="mailto:contact@clawlaw.in"
-          style="color: #007bff; text-decoration: none"
-          >contact@clawlaw.in</a
-        >
-        or call us at <strong>+91 63523 21550</strong>.
+        👨‍💻 Please reach out to the user at the earliest to onboard them. <br />
       </p>
 
       <p style="font-size: 16px; color: #333333; margin-top: 30px">
-        Welcome aboard,<br />
-        <strong>Team Claw Legal Tech</strong>
+        Cheers,<br />
+        <strong>Claw Dev Team</strong>
       </p>
     </div>
   </body>

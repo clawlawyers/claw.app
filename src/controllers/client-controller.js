@@ -10,6 +10,7 @@ const { fetchGptUser } = require("../services/gpt-service");
 const {
   sendConfirmationEmailForAmbasForFreePlan,
   sendConfirmationEmailForAdminConfirmation,
+  sendConfirmationEmailForUserConfirmation,
 } = require("../utils/common/sendEmail");
 const sessionCleanup = require("../utils/common/sessionHelper");
 const { default: mongoose } = require("mongoose");
@@ -661,7 +662,8 @@ async function legalAutomationForm(req, res) {
     const userAlert = await sendConfirmationEmailForAdminConfirmation(
       AlertData
     );
-    const adminAlert = await sendConfirmationEmailForAdminConfirmation(
+    const adminAlert = await sendConfirmationEmailForUserConfirmation(
+      email,
       AlertData
     );
 
