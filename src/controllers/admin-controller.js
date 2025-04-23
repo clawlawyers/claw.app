@@ -1478,8 +1478,24 @@ async function trackUserNavigation(req, res) {
       timeSpentOnPreviousPage,
     } = req.body;
 
+    // Add detailed console logging
+    console.log("=== Track Navigation Request Data ===");
+    console.log("Full Request Body:", req.body);
+    console.log("Detailed Fields:");
+    console.log("- userId:", userId);
+    console.log("- isAuthenticated:", isAuthenticated);
+    console.log("- sessionId:", sessionId);
+    console.log("- currentPath:", currentPath);
+    console.log("- previousPath:", previousPath);
+    console.log("- timestamp:", timestamp);
+    console.log("- referrer:", referrer);
+    console.log("- userAgent:", userAgent);
+    console.log("- timeSpentOnPreviousPage:", timeSpentOnPreviousPage);
+    console.log("================================");
+
     // Validate required fields
     if (!userId || !currentPath || !sessionId) {
+      console.log("Validation Failed - Missing Required Fields");
       return res.status(400).json({
         success: false,
         message: "Missing required fields: userId, currentPath, or sessionId",
@@ -1501,6 +1517,9 @@ async function trackUserNavigation(req, res) {
       timeSpentOnPreviousPage,
     });
 
+    // Log the created navigation data
+    console.log("Created Navigation Data:", navigationData);
+
     // Save the navigation data
     await navigationData.save();
 
@@ -1509,6 +1528,7 @@ async function trackUserNavigation(req, res) {
       data: navigationData,
     });
   } catch (error) {
+    console.error("Track Navigation Error:", error);
     res.status(500).json({
       success: false,
       message: error.message,
