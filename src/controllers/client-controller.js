@@ -9,11 +9,14 @@ const prisma = require("../config/prisma-client");
 const { fetchGptUser } = require("../services/gpt-service");
 const {
   sendConfirmationEmailForAmbasForFreePlan,
+  sendConfirmationEmailForAdminConfirmation,
+  sendConfirmationEmailForUserConfirmation,
 } = require("../utils/common/sendEmail");
 const sessionCleanup = require("../utils/common/sessionHelper");
 const { default: mongoose } = require("mongoose");
 const { OAuth2Client } = require("google-auth-library");
 const { Client } = require("../models");
+const LegalAutomation = require("../models/legalAutomationForm");
 require("../services/passport");
 
 /**
@@ -627,6 +630,56 @@ async function getAllClients(req, res) {
   }
 }
 
+async function legalAutomationForm(req, res) {
+  try {
+    const {
+      name,
+      email,
+      phoneNumber,
+      serviceInterested,
+      firmOrIndividual,
+      additionalInfo,
+    } = req.body;
+    const legalAutomation = new LegalAutomation({
+      name,
+      email,
+      phoneNumber,
+      serviceInterested,
+      firmOrIndividual,
+      additionalInfo,
+    });
+    await legalAutomation.save();
+
+    const AlertData = {
+      additional_info: additionalInfo,
+      firm_or_individual: firmOrIndividual,
+      services_interested: serviceInterested,
+      phone_number: phoneNumber,
+      email: email,
+      name: name,
+    };
+
+    const userAlert = await sendConfirmationEmailForAdminConfirmation(
+      AlertData
+    );
+    const adminAlert = await sendConfirmationEmailForUserConfirmation(
+      email,
+      AlertData
+    );
+
+    return res.status(StatusCodes.CREATED).json({
+      message: "Legal automation form submitted successfully",
+      data: legalAutomation,
+    });
+  } catch (error) {
+    console.log(error);
+    const errorResponse = ErrorResponse({}, error);
+    return res
+      .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(errorResponse);
+  }
+}
+
 async function validateUser(req, res) {
   try {
     const data = req.body;
@@ -680,4 +733,5 @@ module.exports = {
   googleAuthCallback,
   googleAuthCallbackTemp,
   validateUser,
+  legalAutomationForm,
 };
