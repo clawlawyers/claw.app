@@ -65,6 +65,7 @@ const {
   sessionHistory,
   createPlan,
   getUserById,
+  createUserByAdmin,
 } = require("../../controllers/admin-controller");
 const { setLocation } = require("../../controllers/client-controller");
 const {
@@ -242,5 +243,13 @@ router.get("/test", (req, res) => {
 });
 
 router.get("/users/:userId", getUserById);
+
+router.post("/create-user", async (req, res) => {
+  try {
+    await createUserByAdmin(req, res);
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 module.exports = router;

@@ -20,6 +20,7 @@ const { createNewUser } = require("../services/common-service");
 const ClientAdiraUser = require("../models/cleintAdiraUser");
 const { sendConfirmationEmailForAmbas } = require("../utils/common/sendEmail");
 const { hashPassword } = require("../utils/coutroom/auth");
+const { ObjectId } = require("mongodb");
 
 async function sessionHistory(req, res) {
   try {
@@ -1478,47 +1479,22 @@ async function trackUserNavigation(req, res) {
       timeSpentOnPreviousPage,
     } = req.body;
 
-    // Add detailed console logging
-    console.log("=== Track Navigation Request Data ===");
-    console.log("Full Request Body:", req.body);
-    console.log("Detailed Fields:");
-    console.log("- userId:", userId);
-    console.log("- isAuthenticated:", isAuthenticated);
-    console.log("- sessionId:", sessionId);
-    console.log("- currentPath:", currentPath);
-    console.log("- previousPath:", previousPath);
-    console.log("- timestamp:", timestamp);
-    console.log("- referrer:", referrer);
-    console.log("- userAgent:", userAgent);
-    console.log("- timeSpentOnPreviousPage:", timeSpentOnPreviousPage);
-    console.log("================================");
+    // Remove validation check that was requiring fields
 
-    // Validate required fields
-    if (!userId || !currentPath || !sessionId) {
-      console.log("Validation Failed - Missing Required Fields");
-      return res.status(400).json({
-        success: false,
-        message: "Missing required fields: userId, currentPath, or sessionId",
-      });
-    }
-
-    // Create a new navigation record
+    // Create a new navigation record with optional fields
     const navigationData = new Navigation({
-      userId,
-      isAuthenticated,
-      sessionStartTime: new Date(sessionId),
+      userId: userId || null,
+      isAuthenticated: isAuthenticated || false,
+      sessionStartTime: sessionId ? new Date(sessionId) : new Date(),
       navigationStep: {
-        path: currentPath,
+        path: currentPath || "/",
         previousPath: previousPath || "/",
-        timestamp: new Date(timestamp || Date.now()),
+        timestamp: timestamp ? new Date(timestamp) : new Date(),
       },
       referrer: referrer || "direct",
-      userAgent,
-      timeSpentOnPreviousPage,
+      userAgent: userAgent || "",
+      timeSpentOnPreviousPage: timeSpentOnPreviousPage || 0,
     });
-
-    // Log the created navigation data
-    console.log("Created Navigation Data:", navigationData);
 
     // Save the navigation data
     await navigationData.save();
@@ -2042,180 +2018,36 @@ async function UpdateUserTimingAllowedLogin(req, res) {
 
 async function getallVisitors(req, res) {
   try {
-    const page = req.query.page;
+    const { startDate, endDate, path } = req.query;
 
-    if (page === "everyDayData") {
-      var data = [];
-      for (var i = 0; i < 7; i++) {
-        const startOfDay = moment().subtract(i, "days").startOf("day").toDate();
-        const endOfDay = moment().subtract(i, "days").endOf("day").toDate();
+    // Convert string dates to Date objects
+    const start = moment(startDate).startOf("day").toDate();
+    const end = moment(endDate).endOf("day").toDate();
 
-        const dailyData = await Tracking.aggregate([
-          { $match: { timestamp: { $gte: startOfDay, $lte: endOfDay } } },
-          {
-            $group: {
-              _id: {
-                path: "$path",
-                isUser: {
-                  $cond: {
-                    if: { $ne: ["$userId", null] },
-                    then: true,
-                    else: false,
-                  },
-                },
-              },
-              totalVisits: { $sum: 1 },
-              totalDuration: { $sum: "$visitDuration" },
-            },
-          },
-          {
-            $group: {
-              _id: "$_id.isUser",
-              totalVisits: { $sum: "$totalVisits" },
-              totalDuration: { $sum: "$totalDuration" },
-            },
-          },
-        ]);
+    // Build query object
+    const query = {
+      timestamp: {
+        $gte: start,
+        $lte: end,
+      },
+    };
 
-        data.push({
-          date: moment().subtract(i, "days").format("YYYY-MM-DD"),
-          registeredUsers:
-            dailyData.find((d) => d._id === true)?.totalVisits || 0,
-          visitors: dailyData.find((d) => d._id === false)?.totalVisits || 0,
-        });
-      }
-
-      return res.status(200).json({
-        data: data.reverse(),
-        type: "daily",
-      });
+    // Add path filter if provided
+    if (path) {
+      query.path = path;
     }
 
-    if (page === "everyMonthData") {
-      var data = [];
-      for (var i = 0; i < 12; i++) {
-        const startOfMonth = moment()
-          .subtract(i, "months")
-          .startOf("month")
-          .toDate();
-        const endOfMonth = moment()
-          .subtract(i, "months")
-          .endOf("month")
-          .toDate();
-
-        const monthlyData = await Tracking.aggregate([
-          { $match: { timestamp: { $gte: startOfMonth, $lte: endOfMonth } } },
-          {
-            $group: {
-              _id: {
-                path: "$path",
-                isUser: {
-                  $cond: {
-                    if: { $ne: ["$userId", null] },
-                    then: true,
-                    else: false,
-                  },
-                },
-              },
-              totalVisits: { $sum: 1 },
-              totalDuration: { $sum: "$visitDuration" },
-            },
-          },
-          {
-            $group: {
-              _id: "$_id.isUser",
-              totalVisits: { $sum: "$totalVisits" },
-              totalDuration: { $sum: "$totalDuration" },
-            },
-          },
-        ]);
-
-        data.push({
-          month: moment().subtract(i, "months").format("YYYY-MM"),
-          registeredUsers:
-            monthlyData.find((d) => d._id === true)?.totalVisits || 0,
-          visitors: monthlyData.find((d) => d._id === false)?.totalVisits || 0,
-        });
-      }
-
-      return res.status(200).json({
-        data: data.reverse(),
-        type: "monthly",
-      });
-    }
-
-    if (page === "everyYearData") {
-      var data = [];
-      for (var i = 0; i < 5; i++) {
-        const startOfYear = moment()
-          .subtract(i, "years")
-          .startOf("year")
-          .toDate();
-        const endOfYear = moment().subtract(i, "years").endOf("year").toDate();
-
-        const yearlyData = await Tracking.aggregate([
-          { $match: { timestamp: { $gte: startOfYear, $lte: endOfYear } } },
-          {
-            $group: {
-              _id: {
-                path: "$path",
-                isUser: {
-                  $cond: {
-                    if: { $ne: ["$userId", null] },
-                    then: true,
-                    else: false,
-                  },
-                },
-              },
-              totalVisits: { $sum: 1 },
-              totalDuration: { $sum: "$visitDuration" },
-            },
-          },
-          {
-            $group: {
-              _id: "$_id.isUser",
-              totalVisits: { $sum: "$totalVisits" },
-              totalDuration: { $sum: "$totalDuration" },
-            },
-          },
-        ]);
-
-        data.push({
-          year: moment().subtract(i, "years").format("YYYY"),
-          registeredUsers:
-            yearlyData.find((d) => d._id === true)?.totalVisits || 0,
-          visitors: yearlyData.find((d) => d._id === false)?.totalVisits || 0,
-        });
-      }
-
-      return res.status(200).json({
-        data: data.reverse(),
-        type: "yearly",
-      });
-    }
-
-    // Default pagination behavior
-    const limit = 20;
-    const skip = (parseInt(page) - 1) * limit || 0;
-
-    const totalCount = await Tracking.countDocuments();
-
-    const userTrackingData = await Tracking.find({})
+    const userTrackingData = await Tracking.find(query)
       .populate("userId")
       .sort({ timestamp: -1 })
-      .skip(skip)
-      .limit(limit)
       .exec();
 
     return res.status(200).json({
       data: userTrackingData,
-      pagination: {
-        total: totalCount,
-        page: parseInt(page) || 1,
-        limit,
-        totalPages: Math.ceil(totalCount / limit),
+      dateRange: {
+        from: startDate,
+        to: endDate,
       },
-      type: "paginated",
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -2353,6 +2185,111 @@ async function createReferralCodes(req, res) {
     return res
       .status(error.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
       .json(ErrorResponse({}, error));
+  }
+}
+
+async function createUserByAdmin(req, res) {
+  try {
+    const {
+      phoneNumber,
+      firstName,
+      lastName,
+      email,
+      planName = "FREE",
+      expiryDays = 30,
+    } = req.body;
+
+    if (!phoneNumber || !firstName || !lastName || !email) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(
+          ErrorResponse(
+            {},
+            "All fields (phoneNumber, firstName, lastName, email) are required"
+          )
+        );
+    }
+
+    const existing = await prisma.user.findUnique({
+      where: { phoneNumber },
+    });
+
+    if (existing) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(ErrorResponse({}, "User already exists with this phone number"));
+    }
+
+    const mongoId = new ObjectId().toString();
+
+    const existingPlan = await prisma.plan.findUnique({
+      where: { name: planName },
+    });
+
+    if (!existingPlan) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json(ErrorResponse({}, "Plan name is invalid"));
+    }
+
+    const newUser = await prisma.user.create({
+      data: {
+        mongoId,
+        phoneNumber,
+        StateLocation: "",
+        tokenUsed: 0.0,
+        duration: 0,
+        totalTokenUsed: 0.0,
+        numberOfSessions: 1,
+        generatedReferralCodeId: null,
+        redeemedReferralCodeId: null,
+        adminUserId: null,
+      },
+    });
+
+    await Client.create({
+      _id: mongoId,
+      firstName,
+      lastName,
+      email,
+      phoneNumber,
+    });
+
+    if (planName.toUpperCase() !== "FREE") {
+      const currentDate = new Date();
+      const expiryDate = new Date(
+        currentDate.getTime() + expiryDays * 24 * 60 * 60 * 1000
+      );
+
+      await prisma.userAdiraPlan.create({
+        data: {
+          userId: mongoId, // correctly using mongoId
+          planName,
+          subscriptionId: "ADMIN_CREATED",
+          createdAt: currentDate,
+          expiresAt: expiryDate,
+        },
+      });
+    }
+
+    return res.status(StatusCodes.CREATED).json(
+      SuccessResponse({
+        message: "User created successfully",
+        user: {
+          mongoId: newUser.mongoId,
+          phoneNumber,
+          firstName,
+          lastName,
+          email,
+          planName,
+        },
+      })
+    );
+  } catch (error) {
+    console.error("Error creating user by admin:", error);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json(ErrorResponse({}, "Error creating user"));
   }
 }
 
@@ -2639,4 +2576,5 @@ module.exports = {
   sessionHistory,
   createPlan,
   getUserById,
+  createUserByAdmin,
 };

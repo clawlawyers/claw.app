@@ -1,44 +1,47 @@
 const mongoose = require("mongoose");
 
-const navigationSchema = new mongoose.Schema({
-  userId: {
-    type: String,
-    required: true
-  },
-  isAuthenticated: {
-    type: Boolean,
-    required: true
-  },
-  sessionStartTime: {
-    type: Date,
-    required: true
-  },
-  navigationStep: {
-    path: {
+const navigationSchema = new mongoose.Schema(
+  {
+    userId: {
       type: String,
-      required: true
+      required: false,
     },
-    previousPath: {
-      type: String,
-      required: true
+    isAuthenticated: {
+      type: Boolean,
+      required: false,
     },
-    timestamp: {
+    sessionStartTime: {
       type: Date,
-      default: Date.now
-    }
+      required: false,
+    },
+    navigationStep: {
+      path: {
+        type: String,
+        required: false,
+      },
+      previousPath: {
+        type: String,
+        required: false,
+      },
+      timestamp: {
+        type: Date,
+        default: Date.now,
+      },
+    },
+    referrer: {
+      type: String,
+      default: "direct",
+    },
+    userAgent: {
+      type: String,
+    },
+    timeSpentOnPreviousPage: {
+      type: Number,
+      default: 0,
+    },
   },
-  referrer: {
-    type: String,
-    default: "direct"
-  },
-  userAgent: {
-    type: String
-  },
-  timeSpentOnPreviousPage: {
-    type: Number,
-    default: 0
-  }
-}, { timestamps: true });
+  { timestamps: true }
+);
 
 const Navigation = mongoose.model("Navigation", navigationSchema);
 
