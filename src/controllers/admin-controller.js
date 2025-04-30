@@ -2018,7 +2018,7 @@ async function UpdateUserTimingAllowedLogin(req, res) {
 
 async function getallVisitors(req, res) {
   try {
-    const { startDate, endDate, path } = req.query;
+    const { startDate, endDate, path, userId } = req.query;
 
     // Convert string dates to Date objects
     const start = moment(startDate).startOf("day").toDate();
@@ -2037,6 +2037,11 @@ async function getallVisitors(req, res) {
       query.path = path;
     }
 
+    // Add userId filter if provided
+    if (userId) {
+      query.userId = userId;
+    }
+
     const userTrackingData = await Tracking.find(query)
       .populate("userId")
       .sort({ timestamp: -1 })
@@ -2047,6 +2052,11 @@ async function getallVisitors(req, res) {
       dateRange: {
         from: startDate,
         to: endDate,
+      },
+      totalVisits: userTrackingData.length,
+      filteredBy: {
+        ...(path && { path }),
+        ...(userId && { userId }),
       },
     });
   } catch (error) {
